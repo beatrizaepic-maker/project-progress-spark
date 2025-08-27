@@ -1,62 +1,63 @@
 import { Card } from "@/components/ui/card";
 import { CheckCircle, Clock, Target, TrendingUp, AlertTriangle, BarChart } from "lucide-react";
-import { projectMetrics } from "@/data/projectData";
-
-const metrics = [
-  {
-    title: "Total de Tarefas",
-    value: projectMetrics.totalTarefas,
-    icon: Target,
-    gradient: "from-primary/20 to-primary/10",
-    textColor: "text-primary",
-    bgColor: "bg-primary/10"
-  },
-  {
-    title: "Tarefas no Prazo",
-    value: projectMetrics.tarefasNoPrazo,
-    subtitle: `${Math.round((projectMetrics.tarefasNoPrazo / projectMetrics.totalTarefas) * 100)}% do total`,
-    icon: CheckCircle,
-    gradient: "from-success/20 to-success/10",
-    textColor: "text-success",
-    bgColor: "bg-success/10"
-  },
-  {
-    title: "Tarefas Atrasadas", 
-    value: projectMetrics.tarefasAtrasadas,
-    subtitle: `${Math.round((projectMetrics.tarefasAtrasadas / projectMetrics.totalTarefas) * 100)}% do total`,
-    icon: AlertTriangle,
-    gradient: "from-warning/20 to-warning/10", 
-    textColor: "text-warning",
-    bgColor: "bg-warning/10"
-  },
-  {
-    title: "Média Produção",
-    value: `${projectMetrics.mediaProducao.toFixed(1)} dias`,
-    icon: TrendingUp,
-    gradient: "from-accent/20 to-accent/10",
-    textColor: "text-accent",
-    bgColor: "bg-accent/10"
-  },
-  {
-    title: "Média Atrasos",
-    value: `${projectMetrics.mediaAtrasos.toFixed(1)} dias`,
-    icon: Clock,
-    gradient: "from-destructive/20 to-destructive/10",
-    textColor: "text-destructive", 
-    bgColor: "bg-destructive/10"
-  },
-  {
-    title: "Desvio Padrão",
-    value: projectMetrics.desvioPadrao.toFixed(1),
-    subtitle: "Variação da duração",
-    icon: BarChart,
-    gradient: "from-muted-foreground/20 to-muted-foreground/10",
-    textColor: "text-muted-foreground",
-    bgColor: "bg-muted-foreground/10"
-  }
-];
+import { useData } from "@/contexts/DataContext";
 
 export default function MetricsCards() {
+  const { metrics: projectMetrics } = useData();
+  
+  const metrics = [
+    {
+      title: "Total de Tarefas",
+      value: projectMetrics.totalTarefas,
+      icon: Target,
+      gradient: "from-primary/20 to-primary/10",
+      textColor: "text-primary",
+      bgColor: "bg-primary/10"
+    },
+    {
+      title: "Tarefas no Prazo",
+      value: projectMetrics.tarefasNoPrazo,
+      subtitle: `${Math.round((projectMetrics.tarefasNoPrazo / projectMetrics.totalTarefas) * 100)}% do total`,
+      icon: CheckCircle,
+      gradient: "from-success/20 to-success/10",
+      textColor: "text-success",
+      bgColor: "bg-success/10"
+    },
+    {
+      title: "Tarefas Atrasadas", 
+      value: projectMetrics.tarefasAtrasadas,
+      subtitle: `${Math.round((projectMetrics.tarefasAtrasadas / projectMetrics.totalTarefas) * 100)}% do total`,
+      icon: AlertTriangle,
+      gradient: "from-warning/20 to-warning/10", 
+      textColor: "text-warning",
+      bgColor: "bg-warning/10"
+    },
+    {
+      title: "Média Produção",
+      value: `${projectMetrics.mediaProducao.toFixed(1)} dias`,
+      icon: TrendingUp,
+      gradient: "from-accent/20 to-accent/10",
+      textColor: "text-accent",
+      bgColor: "bg-accent/10"
+    },
+    {
+      title: "Média Atrasos",
+      value: `${projectMetrics.mediaAtrasos.toFixed(1)} dias`,
+      icon: Clock,
+      gradient: "from-destructive/20 to-destructive/10",
+      textColor: "text-destructive", 
+      bgColor: "bg-destructive/10"
+    },
+    {
+      title: "Desvio Padrão",
+      value: projectMetrics.desvioPadrao.toFixed(1),
+      subtitle: "Variação da duração",
+      icon: BarChart,
+      gradient: "from-muted-foreground/20 to-muted-foreground/10",
+      textColor: "text-muted-foreground",
+      bgColor: "bg-muted-foreground/10"
+    }
+  ];
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {metrics.map((metric, index) => {

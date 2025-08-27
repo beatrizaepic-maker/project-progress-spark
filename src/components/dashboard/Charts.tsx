@@ -1,19 +1,20 @@
 import { Card } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { mockTaskData, projectMetrics } from "@/data/projectData";
-
-const chartData = mockTaskData.map(task => ({
-  tarefa: task.tarefa.length > 15 ? task.tarefa.substring(0, 15) + "..." : task.tarefa,
-  duracao: task.duracaoDiasUteis,
-  atraso: task.atrasoDiasUteis
-}));
-
-const pieData = [
-  { name: "No Prazo", value: projectMetrics.tarefasNoPrazo, color: "hsl(142 76% 36%)" },
-  { name: "Atrasadas", value: projectMetrics.tarefasAtrasadas, color: "hsl(38 92% 50%)" }
-];
+import { useData } from "@/contexts/DataContext";
 
 export default function Charts() {
+  const { tasks, metrics } = useData();
+  
+  const chartData = tasks.map(task => ({
+    tarefa: task.tarefa.length > 15 ? task.tarefa.substring(0, 15) + "..." : task.tarefa,
+    duracao: task.duracaoDiasUteis,
+    atraso: task.atrasoDiasUteis
+  }));
+
+  const pieData = [
+    { name: "No Prazo", value: metrics.tarefasNoPrazo, color: "hsl(142 76% 36%)" },
+    { name: "Atrasadas", value: metrics.tarefasAtrasadas, color: "hsl(38 92% 50%)" }
+  ];
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Bar Chart */}
