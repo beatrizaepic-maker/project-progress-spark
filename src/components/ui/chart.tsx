@@ -104,15 +104,15 @@ const ChartTooltipContent = React.forwardRef<
   HTMLDivElement,
   {
     active?: boolean
-    payload?: any[]
-    label?: any
+    payload?: RechartsPrimitive.TooltipProps<object, object>['payload']
+    label?: string | number
     className?: string
     indicator?: "line" | "dot" | "dashed"
     hideLabel?: boolean
     hideIndicator?: boolean
-    labelFormatter?: (value: any, payload: any[]) => React.ReactNode
+    labelFormatter?: (value: string | number, payload: RechartsPrimitive.TooltipProps<object, object>['payload']) => React.ReactNode
     labelClassName?: string
-    formatter?: (value: any, name: any, item: any, index: number, payload: any) => React.ReactNode
+    formatter?: (value: string | number, name: string, item: RechartsPrimitive.TooltipProps<object, object>['payload'][0], index: number, payload: RechartsPrimitive.TooltipProps<object, object>['payload']) => React.ReactNode
     color?: string
     nameKey?: string
     labelKey?: string
@@ -266,7 +266,7 @@ const ChartLegend = RechartsPrimitive.Legend
 const ChartLegendContent = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div"> & {
-    payload?: any[]
+    payload?: RechartsPrimitive.LegendProps['payload'] | undefined
     verticalAlign?: "top" | "bottom"
     hideIcon?: boolean
     nameKey?: string
@@ -325,7 +325,7 @@ ChartLegendContent.displayName = "ChartLegend"
 // Helper to extract item config from a payload.
 function getPayloadConfigFromPayload(
   config: ChartConfig,
-  payload: unknown,
+  payload: Record<string, unknown>,
   key: string
 ) {
   if (typeof payload !== "object" || payload === null) {
