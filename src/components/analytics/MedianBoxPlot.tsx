@@ -2,6 +2,8 @@ import React from 'react';
 import { TaskData } from '@/data/projectData';
 import { formatDays } from '@/utils/kpiFormatters';
 import { KPICalculator } from '@/services/kpiCalculator';
+import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { HelpCircle, Target } from 'lucide-react';
 
 interface MedianBoxPlotProps {
   tasks: TaskData[];
@@ -48,9 +50,53 @@ const MedianBoxPlot: React.FC<MedianBoxPlotProps> = ({
   return (
     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
       <div className="mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-          Análise de Mediana (Box Plot)
-        </h3>
+        <div className="flex items-center gap-2 mb-2">
+          <Target className="h-5 w-5 text-red-600" />
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            Análise de Mediana (Box Plot)
+          </h3>
+          <TooltipProvider>
+            <UITooltip>
+              <TooltipTrigger asChild>
+                <HelpCircle className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-help transition-colors" />
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-sm p-4">
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-foreground">Box Plot da Mediana</h4>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Visualização que mostra a distribuição dos dados através de quartis, destacando a mediana como valor central.
+                  </p>
+                  <div className="space-y-1">
+                    <div className="flex items-start gap-2 text-xs">
+                      <div className="w-1 h-1 bg-muted-foreground rounded-full mt-2 flex-shrink-0" />
+                      <span className="text-muted-foreground">Caixa azul: 50% dos dados centrais (Q1 a Q3)</span>
+                    </div>
+                    <div className="flex items-start gap-2 text-xs">
+                      <div className="w-1 h-1 bg-muted-foreground rounded-full mt-2 flex-shrink-0" />
+                      <span className="text-muted-foreground">Linha vermelha: mediana (valor central)</span>
+                    </div>
+                    <div className="flex items-start gap-2 text-xs">
+                      <div className="w-1 h-1 bg-muted-foreground rounded-full mt-2 flex-shrink-0" />
+                      <span className="text-muted-foreground">Bigodes: extensão dos dados sem outliers</span>
+                    </div>
+                    <div className="flex items-start gap-2 text-xs">
+                      <div className="w-1 h-1 bg-muted-foreground rounded-full mt-2 flex-shrink-0" />
+                      <span className="text-muted-foreground">Pontos vermelhos: outliers removidos</span>
+                    </div>
+                  </div>
+                  <div className="border-t border-border/50 pt-2">
+                    <div className="text-xs">
+                      <span className="font-medium text-foreground">Interpretação:</span>
+                      <p className="text-muted-foreground mt-1">
+                        50% das tarefas levam menos que a mediana, 50% levam mais.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </TooltipContent>
+            </UITooltip>
+          </TooltipProvider>
+        </div>
         <p className="text-sm text-gray-600 dark:text-gray-400">
           Mediana: {formatDays(median)} • 
           {stats.outliers.length} outliers removidos • 
@@ -182,36 +228,115 @@ const MedianBoxPlot: React.FC<MedianBoxPlotProps> = ({
 
       {/* Estatísticas detalhadas */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-        <div className="text-center">
-          <div className="text-xl font-bold text-gray-600 dark:text-gray-400">
-            {formatDays(stats.min)}
-          </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Mínimo</div>
-        </div>
-        <div className="text-center">
-          <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
-            {formatDays(stats.q1)}
-          </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Q1 (25%)</div>
-        </div>
-        <div className="text-center">
-          <div className="text-xl font-bold text-red-600 dark:text-red-400">
-            {formatDays(stats.median)}
-          </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Mediana</div>
-        </div>
-        <div className="text-center">
-          <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
-            {formatDays(stats.q3)}
-          </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Q3 (75%)</div>
-        </div>
-        <div className="text-center">
-          <div className="text-xl font-bold text-gray-600 dark:text-gray-400">
-            {formatDays(stats.max)}
-          </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Máximo</div>
-        </div>
+        <TooltipProvider>
+          <UITooltip>
+            <TooltipTrigger asChild>
+              <div className="text-center cursor-help hover:bg-gray-50 dark:hover:bg-gray-700 rounded p-2 transition-colors">
+                <div className="text-xl font-bold text-gray-600 dark:text-gray-400">
+                  {formatDays(stats.min)}
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                  Mínimo
+                  <HelpCircle className="h-3 w-3" />
+                </div>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <div className="text-sm max-w-xs">
+                <p className="font-semibold">Valor Mínimo</p>
+                <p>Menor duração observada após remoção de outliers. Representa a tarefa mais rápida.</p>
+              </div>
+            </TooltipContent>
+          </UITooltip>
+        </TooltipProvider>
+
+        <TooltipProvider>
+          <UITooltip>
+            <TooltipTrigger asChild>
+              <div className="text-center cursor-help hover:bg-gray-50 dark:hover:bg-gray-700 rounded p-2 transition-colors">
+                <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
+                  {formatDays(stats.q1)}
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                  Q1 (25%)
+                  <HelpCircle className="h-3 w-3" />
+                </div>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <div className="text-sm max-w-xs">
+                <p className="font-semibold">Primeiro Quartil (Q1)</p>
+                <p>25% das tarefas levam menos que este tempo. Marca o início da caixa no box plot.</p>
+              </div>
+            </TooltipContent>
+          </UITooltip>
+        </TooltipProvider>
+
+        <TooltipProvider>
+          <UITooltip>
+            <TooltipTrigger asChild>
+              <div className="text-center cursor-help hover:bg-gray-50 dark:hover:bg-gray-700 rounded p-2 transition-colors">
+                <div className="text-xl font-bold text-red-600 dark:text-red-400">
+                  {formatDays(stats.median)}
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                  Mediana
+                  <HelpCircle className="h-3 w-3" />
+                </div>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <div className="text-sm max-w-xs">
+                <p className="font-semibold">Mediana (Q2)</p>
+                <p>Valor central: 50% das tarefas levam menos, 50% levam mais. Menos sensível a outliers que a média.</p>
+              </div>
+            </TooltipContent>
+          </UITooltip>
+        </TooltipProvider>
+
+        <TooltipProvider>
+          <UITooltip>
+            <TooltipTrigger asChild>
+              <div className="text-center cursor-help hover:bg-gray-50 dark:hover:bg-gray-700 rounded p-2 transition-colors">
+                <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
+                  {formatDays(stats.q3)}
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                  Q3 (75%)
+                  <HelpCircle className="h-3 w-3" />
+                </div>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <div className="text-sm max-w-xs">
+                <p className="font-semibold">Terceiro Quartil (Q3)</p>
+                <p>75% das tarefas levam menos que este tempo. Marca o fim da caixa no box plot.</p>
+              </div>
+            </TooltipContent>
+          </UITooltip>
+        </TooltipProvider>
+
+        <TooltipProvider>
+          <UITooltip>
+            <TooltipTrigger asChild>
+              <div className="text-center cursor-help hover:bg-gray-50 dark:hover:bg-gray-700 rounded p-2 transition-colors">
+                <div className="text-xl font-bold text-gray-600 dark:text-gray-400">
+                  {formatDays(stats.max)}
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                  Máximo
+                  <HelpCircle className="h-3 w-3" />
+                </div>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <div className="text-sm max-w-xs">
+                <p className="font-semibold">Valor Máximo</p>
+                <p>Maior duração observada após remoção de outliers. Representa a tarefa mais demorada.</p>
+              </div>
+            </TooltipContent>
+          </UITooltip>
+        </TooltipProvider>
       </div>
 
       {/* Explicação da mediana */}

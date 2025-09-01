@@ -65,6 +65,17 @@ const StandardDeviationCard: React.FC<StandardDeviationCardProps> = ({
       subtitle={classification}
       icon={BarChart3}
       description={getDescription(classification, standardDeviation)}
+      tooltipTitle="Desvio Padrão das Durações"
+      tooltipDescription="Mede a variabilidade na duração das tarefas. Valores baixos indicam maior previsibilidade no cronograma."
+      tooltipDetails={[
+        "📊 Baixa variação (< 20% da média): Cronograma previsível",
+        "📈 Variação moderada (20-50% da média): Algumas inconsistências",
+        "📉 Alta variação (> 50% da média): Cronograma imprevisível",
+        "Calculado apenas com tarefas concluídas",
+        "Outliers são removidos para maior precisão",
+        "Útil para identificar problemas de estimativa"
+      ]}
+      tooltipCalculation="σ = √(Σ(xi - μ)² / n) onde xi = duração, μ = média"
     />
   );
 };

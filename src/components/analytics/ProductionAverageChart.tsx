@@ -2,6 +2,8 @@ import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { TaskData } from '@/data/projectData';
 import { formatDays } from '@/utils/kpiFormatters';
+import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { HelpCircle, TrendingUp } from 'lucide-react';
 
 interface ProductionAverageChartProps {
   tasks: TaskData[];
@@ -65,9 +67,49 @@ const ProductionAverageChart: React.FC<ProductionAverageChartProps> = ({
   return (
     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
       <div className="mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-          Evolução da Média de Produção
-        </h3>
+        <div className="flex items-center gap-2 mb-2">
+          <TrendingUp className="h-5 w-5 text-blue-600" />
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            Evolução da Média de Produção
+          </h3>
+          <TooltipProvider>
+            <UITooltip>
+              <TooltipTrigger asChild>
+                <HelpCircle className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-help transition-colors" />
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-sm p-4">
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-foreground">Gráfico de Média de Produção</h4>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Mostra a evolução do tempo médio por tarefa ao longo dos meses, permitindo identificar tendências de performance.
+                  </p>
+                  <div className="space-y-1">
+                    <div className="flex items-start gap-2 text-xs">
+                      <div className="w-1 h-1 bg-muted-foreground rounded-full mt-2 flex-shrink-0" />
+                      <span className="text-muted-foreground">Linha azul: média mensal calculada</span>
+                    </div>
+                    <div className="flex items-start gap-2 text-xs">
+                      <div className="w-1 h-1 bg-muted-foreground rounded-full mt-2 flex-shrink-0" />
+                      <span className="text-muted-foreground">Linha vermelha tracejada: média geral de referência</span>
+                    </div>
+                    <div className="flex items-start gap-2 text-xs">
+                      <div className="w-1 h-1 bg-muted-foreground rounded-full mt-2 flex-shrink-0" />
+                      <span className="text-muted-foreground">Considera apenas dias úteis no cálculo</span>
+                    </div>
+                  </div>
+                  <div className="border-t border-border/50 pt-2">
+                    <div className="text-xs">
+                      <span className="font-medium text-foreground">Cálculo:</span>
+                      <p className="text-muted-foreground mt-1 font-mono bg-muted/30 px-2 py-1 rounded">
+                        Média Mensal = Σ(durações do mês) / nº tarefas do mês
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </TooltipContent>
+            </UITooltip>
+          </TooltipProvider>
+        </div>
         <p className="text-sm text-gray-600 dark:text-gray-400">
           Tempo médio por tarefa ao longo do tempo • Média geral: {formatDays(averageProduction)}
         </p>
@@ -124,24 +166,71 @@ const ProductionAverageChart: React.FC<ProductionAverageChartProps> = ({
 
       {/* Estatísticas resumidas */}
       <div className="grid grid-cols-3 gap-4 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-        <div className="text-center">
-          <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-            {formatDays(averageProduction)}
-          </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Média Geral</div>
-        </div>
-        <div className="text-center">
-          <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-            {chartData.length > 0 ? formatDays(Math.min(...chartData.map(d => d.average))) : '0'}
-          </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Melhor Mês</div>
-        </div>
-        <div className="text-center">
-          <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-            {chartData.length > 0 ? formatDays(Math.max(...chartData.map(d => d.average))) : '0'}
-          </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Pior Mês</div>
-        </div>
+        <TooltipProvider>
+          <UITooltip>
+            <TooltipTrigger asChild>
+              <div className="text-center cursor-help hover:bg-gray-50 dark:hover:bg-gray-700 rounded p-2 transition-colors">
+                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                  {formatDays(averageProduction)}
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                  Média Geral
+                  <HelpCircle className="h-3 w-3" />
+                </div>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <div className="text-sm max-w-xs">
+                <p className="font-semibold">Média Geral de Produção</p>
+                <p>Tempo médio para conclusão de todas as tarefas do projeto, considerando apenas dias úteis.</p>
+              </div>
+            </TooltipContent>
+          </UITooltip>
+        </TooltipProvider>
+
+        <TooltipProvider>
+          <UITooltip>
+            <TooltipTrigger asChild>
+              <div className="text-center cursor-help hover:bg-gray-50 dark:hover:bg-gray-700 rounded p-2 transition-colors">
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                  {chartData.length > 0 ? formatDays(Math.min(...chartData.map(d => d.average))) : '0'}
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                  Melhor Mês
+                  <HelpCircle className="h-3 w-3" />
+                </div>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <div className="text-sm max-w-xs">
+                <p className="font-semibold">Melhor Performance Mensal</p>
+                <p>Mês com menor tempo médio por tarefa. Indica período de maior eficiência da equipe.</p>
+              </div>
+            </TooltipContent>
+          </UITooltip>
+        </TooltipProvider>
+
+        <TooltipProvider>
+          <UITooltip>
+            <TooltipTrigger asChild>
+              <div className="text-center cursor-help hover:bg-gray-50 dark:hover:bg-gray-700 rounded p-2 transition-colors">
+                <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                  {chartData.length > 0 ? formatDays(Math.max(...chartData.map(d => d.average))) : '0'}
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                  Pior Mês
+                  <HelpCircle className="h-3 w-3" />
+                </div>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <div className="text-sm max-w-xs">
+                <p className="font-semibold">Menor Performance Mensal</p>
+                <p>Mês com maior tempo médio por tarefa. Pode indicar período de maior complexidade ou dificuldades.</p>
+              </div>
+            </TooltipContent>
+          </UITooltip>
+        </TooltipProvider>
       </div>
     </div>
   );

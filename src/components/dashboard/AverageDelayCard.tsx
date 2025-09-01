@@ -44,6 +44,16 @@ const AverageDelayCard: React.FC<AverageDelayCardProps> = ({
       subtitle="Por tarefa (dias úteis)"
       icon={Clock}
       description={getDescription(averageDelay)}
+      tooltipTitle="Média de Atraso em Dias Úteis"
+      tooltipDescription="Calcula o atraso médio de todas as tarefas concluídas, considerando apenas dias úteis (segunda a sexta-feira)."
+      tooltipDetails={[
+        "Considera apenas tarefas já concluídas",
+        "Exclui fins de semana do cálculo",
+        "Valores negativos indicam antecipação média",
+        "Outliers são removidos automaticamente (método IQR)",
+        "Atualizado em tempo real conforme tarefas são concluídas"
+      ]}
+      tooltipCalculation="Média = Σ(atrasos em dias úteis) / número de tarefas"
     />
   );
 };

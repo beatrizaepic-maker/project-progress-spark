@@ -2,6 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { TaskData } from '@/data/projectData';
 import { formatDays } from '@/utils/kpiFormatters';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { HelpCircle, PieChart as PieChartIcon } from 'lucide-react';
 
 interface DelayDistributionChartProps {
   tasks: TaskData[];
@@ -211,9 +213,53 @@ const DelayDistributionChart: React.FC<DelayDistributionChartProps> = ({ tasks }
   return (
     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
       <div className="mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-          Análise de Distribuição de Atrasos
-        </h3>
+        <div className="flex items-center gap-2 mb-2">
+          <PieChartIcon className="h-5 w-5 text-orange-600" />
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            Análise de Distribuição de Atrasos
+          </h3>
+          <TooltipProvider>
+            <UITooltip>
+              <TooltipTrigger asChild>
+                <HelpCircle className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-help transition-colors" />
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-sm p-4">
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-foreground">Análise de Padrões de Atraso</h4>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Visualização interativa que permite explorar os padrões de atraso por diferentes perspectivas temporais.
+                  </p>
+                  <div className="space-y-1">
+                    <div className="flex items-start gap-2 text-xs">
+                      <div className="w-1 h-1 bg-muted-foreground rounded-full mt-2 flex-shrink-0" />
+                      <span className="text-muted-foreground">Distribuição Geral: faixas de atraso em barras/pizza</span>
+                    </div>
+                    <div className="flex items-start gap-2 text-xs">
+                      <div className="w-1 h-1 bg-muted-foreground rounded-full mt-2 flex-shrink-0" />
+                      <span className="text-muted-foreground">Por Dia da Semana: identifica padrões semanais</span>
+                    </div>
+                    <div className="flex items-start gap-2 text-xs">
+                      <div className="w-1 h-1 bg-muted-foreground rounded-full mt-2 flex-shrink-0" />
+                      <span className="text-muted-foreground">Por Mês: revela tendências sazonais</span>
+                    </div>
+                    <div className="flex items-start gap-2 text-xs">
+                      <div className="w-1 h-1 bg-muted-foreground rounded-full mt-2 flex-shrink-0" />
+                      <span className="text-muted-foreground">Filtros de período para análise focada</span>
+                    </div>
+                  </div>
+                  <div className="border-t border-border/50 pt-2">
+                    <div className="text-xs">
+                      <span className="font-medium text-foreground">Uso:</span>
+                      <p className="text-muted-foreground mt-1">
+                        Identifique gargalos, padrões temporais e oportunidades de melhoria.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </TooltipContent>
+            </UITooltip>
+          </TooltipProvider>
+        </div>
         <p className="text-sm text-gray-600 dark:text-gray-400">
           Visualização detalhada dos padrões de atraso por faixas e períodos temporais
         </p>
@@ -256,30 +302,93 @@ const DelayDistributionChart: React.FC<DelayDistributionChartProps> = ({ tasks }
 
       {/* Estatísticas Resumidas */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-          <div className="text-xl font-bold text-green-600 dark:text-green-400">
-            {delayDistribution[0]?.percentage || 0}%
-          </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">No Prazo</div>
-        </div>
-        <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-          <div className="text-xl font-bold text-yellow-600 dark:text-yellow-400">
-            {(delayDistribution[1]?.percentage || 0) + (delayDistribution[2]?.percentage || 0)}%
-          </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Atraso Leve</div>
-        </div>
-        <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-          <div className="text-xl font-bold text-red-600 dark:text-red-400">
-            {(delayDistribution[3]?.percentage || 0) + (delayDistribution[4]?.percentage || 0)}%
-          </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Atraso Grave</div>
-        </div>
-        <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-          <div className="text-xl font-bold text-gray-600 dark:text-gray-400">
-            {filteredTasks.length}
-          </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Total Tarefas</div>
-        </div>
+        <TooltipProvider>
+          <UITooltip>
+            <TooltipTrigger asChild>
+              <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-help hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                <div className="text-xl font-bold text-green-600 dark:text-green-400">
+                  {delayDistribution[0]?.percentage || 0}%
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                  No Prazo
+                  <HelpCircle className="h-3 w-3" />
+                </div>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <div className="text-sm max-w-xs">
+                <p className="font-semibold">Tarefas no Prazo</p>
+                <p>Percentual de tarefas concluídas exatamente no prazo estabelecido ou antes.</p>
+              </div>
+            </TooltipContent>
+          </UITooltip>
+        </TooltipProvider>
+
+        <TooltipProvider>
+          <UITooltip>
+            <TooltipTrigger asChild>
+              <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-help hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                <div className="text-xl font-bold text-yellow-600 dark:text-yellow-400">
+                  {(delayDistribution[1]?.percentage || 0) + (delayDistribution[2]?.percentage || 0)}%
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                  Atraso Leve
+                  <HelpCircle className="h-3 w-3" />
+                </div>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <div className="text-sm max-w-xs">
+                <p className="font-semibold">Atraso Leve (1-5 dias)</p>
+                <p>Tarefas com atraso moderado que ainda podem ser recuperadas com ações corretivas.</p>
+              </div>
+            </TooltipContent>
+          </UITooltip>
+        </TooltipProvider>
+
+        <TooltipProvider>
+          <UITooltip>
+            <TooltipTrigger asChild>
+              <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-help hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                <div className="text-xl font-bold text-red-600 dark:text-red-400">
+                  {(delayDistribution[3]?.percentage || 0) + (delayDistribution[4]?.percentage || 0)}%
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                  Atraso Grave
+                  <HelpCircle className="h-3 w-3" />
+                </div>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <div className="text-sm max-w-xs">
+                <p className="font-semibold">Atraso Grave (6+ dias)</p>
+                <p>Tarefas com atraso significativo que impactam o cronograma geral e requerem intervenção.</p>
+              </div>
+            </TooltipContent>
+          </UITooltip>
+        </TooltipProvider>
+
+        <TooltipProvider>
+          <UITooltip>
+            <TooltipTrigger asChild>
+              <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-help hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                <div className="text-xl font-bold text-gray-600 dark:text-gray-400">
+                  {filteredTasks.length}
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                  Total Tarefas
+                  <HelpCircle className="h-3 w-3" />
+                </div>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <div className="text-sm max-w-xs">
+                <p className="font-semibold">Total de Tarefas</p>
+                <p>Número total de tarefas consideradas na análise atual, baseado nos filtros aplicados.</p>
+              </div>
+            </TooltipContent>
+          </UITooltip>
+        </TooltipProvider>
       </div>
 
       {/* Gráfico de Pizza (apenas para distribuição geral) */}

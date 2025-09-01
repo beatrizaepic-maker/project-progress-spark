@@ -2,6 +2,8 @@ import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { TaskData } from '@/data/projectData';
 import { formatDays, formatPercentage } from '@/utils/kpiFormatters';
+import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { HelpCircle, BarChart3 } from 'lucide-react';
 
 interface ModeFrequencyChartProps {
   tasks: TaskData[];
@@ -90,9 +92,49 @@ const ModeFrequencyChart: React.FC<ModeFrequencyChartProps> = ({
   return (
     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
       <div className="mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-          Distribuição de Frequência (Moda)
-        </h3>
+        <div className="flex items-center gap-2 mb-2">
+          <BarChart3 className="h-5 w-5 text-green-600" />
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            Distribuição de Frequência (Moda)
+          </h3>
+          <TooltipProvider>
+            <UITooltip>
+              <TooltipTrigger asChild>
+                <HelpCircle className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-help transition-colors" />
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-sm p-4">
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-foreground">Análise da Moda Estatística</h4>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    A moda é o valor que aparece com maior frequência no conjunto de dados. Representa o tempo de duração mais típico das tarefas.
+                  </p>
+                  <div className="space-y-1">
+                    <div className="flex items-start gap-2 text-xs">
+                      <div className="w-1 h-1 bg-muted-foreground rounded-full mt-2 flex-shrink-0" />
+                      <span className="text-muted-foreground">Barra verde: duração mais comum (moda)</span>
+                    </div>
+                    <div className="flex items-start gap-2 text-xs">
+                      <div className="w-1 h-1 bg-muted-foreground rounded-full mt-2 flex-shrink-0" />
+                      <span className="text-muted-foreground">Barras azuis: outras durações observadas</span>
+                    </div>
+                    <div className="flex items-start gap-2 text-xs">
+                      <div className="w-1 h-1 bg-muted-foreground rounded-full mt-2 flex-shrink-0" />
+                      <span className="text-muted-foreground">Útil para identificar padrões de produtividade</span>
+                    </div>
+                  </div>
+                  <div className="border-t border-border/50 pt-2">
+                    <div className="text-xs">
+                      <span className="font-medium text-foreground">Interpretação:</span>
+                      <p className="text-muted-foreground mt-1">
+                        Alta frequência da moda indica consistência na execução das tarefas.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </TooltipContent>
+            </UITooltip>
+          </TooltipProvider>
+        </div>
         <p className="text-sm text-gray-600 dark:text-gray-400">
           Tempo mais comum: {formatDays(modeInfo.value)} • 
           Frequência: {modeInfo.frequency} tarefas ({formatPercentage(modeInfo.percentage)})
@@ -141,30 +183,93 @@ const ModeFrequencyChart: React.FC<ModeFrequencyChartProps> = ({
 
       {/* Estatísticas da moda */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-        <div className="text-center">
-          <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-            {formatDays(modeInfo.value)}
-          </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Moda</div>
-        </div>
-        <div className="text-center">
-          <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-            {modeInfo.frequency}
-          </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Ocorrências</div>
-        </div>
-        <div className="text-center">
-          <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-            {formatPercentage(modeInfo.percentage)}
-          </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Do Total</div>
-        </div>
-        <div className="text-center">
-          <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-            {frequencyData.length}
-          </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Durações Únicas</div>
-        </div>
+        <TooltipProvider>
+          <UITooltip>
+            <TooltipTrigger asChild>
+              <div className="text-center cursor-help hover:bg-gray-50 dark:hover:bg-gray-700 rounded p-2 transition-colors">
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                  {formatDays(modeInfo.value)}
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                  Moda
+                  <HelpCircle className="h-3 w-3" />
+                </div>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <div className="text-sm max-w-xs">
+                <p className="font-semibold">Valor da Moda</p>
+                <p>Duração que aparece com maior frequência no conjunto de tarefas. Representa o tempo mais típico.</p>
+              </div>
+            </TooltipContent>
+          </UITooltip>
+        </TooltipProvider>
+
+        <TooltipProvider>
+          <UITooltip>
+            <TooltipTrigger asChild>
+              <div className="text-center cursor-help hover:bg-gray-50 dark:hover:bg-gray-700 rounded p-2 transition-colors">
+                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                  {modeInfo.frequency}
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                  Ocorrências
+                  <HelpCircle className="h-3 w-3" />
+                </div>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <div className="text-sm max-w-xs">
+                <p className="font-semibold">Frequência da Moda</p>
+                <p>Número absoluto de tarefas que tiveram exatamente esta duração.</p>
+              </div>
+            </TooltipContent>
+          </UITooltip>
+        </TooltipProvider>
+
+        <TooltipProvider>
+          <UITooltip>
+            <TooltipTrigger asChild>
+              <div className="text-center cursor-help hover:bg-gray-50 dark:hover:bg-gray-700 rounded p-2 transition-colors">
+                <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                  {formatPercentage(modeInfo.percentage)}
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                  Do Total
+                  <HelpCircle className="h-3 w-3" />
+                </div>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <div className="text-sm max-w-xs">
+                <p className="font-semibold">Percentual da Moda</p>
+                <p>Porcentagem das tarefas que seguem o padrão mais comum de duração.</p>
+              </div>
+            </TooltipContent>
+          </UITooltip>
+        </TooltipProvider>
+
+        <TooltipProvider>
+          <UITooltip>
+            <TooltipTrigger asChild>
+              <div className="text-center cursor-help hover:bg-gray-50 dark:hover:bg-gray-700 rounded p-2 transition-colors">
+                <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                  {frequencyData.length}
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                  Durações Únicas
+                  <HelpCircle className="h-3 w-3" />
+                </div>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <div className="text-sm max-w-xs">
+                <p className="font-semibold">Variabilidade</p>
+                <p>Número de durações diferentes observadas. Mais valores únicos indicam maior variabilidade.</p>
+              </div>
+            </TooltipContent>
+          </UITooltip>
+        </TooltipProvider>
       </div>
 
       {/* Explicação da moda */}

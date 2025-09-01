@@ -1,6 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { LucideIcon } from 'lucide-react';
+import { LucideIcon, HelpCircle } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export interface KPICardProps {
   title: string;
@@ -15,6 +16,10 @@ export interface KPICardProps {
   icon: LucideIcon;
   description?: string;
   className?: string;
+  tooltipTitle?: string;
+  tooltipDescription?: string;
+  tooltipDetails?: string[];
+  tooltipCalculation?: string;
 }
 
 const KPICard: React.FC<KPICardProps> = ({
@@ -25,7 +30,11 @@ const KPICard: React.FC<KPICardProps> = ({
   subtitle,
   icon: Icon,
   description,
-  className
+  className,
+  tooltipTitle,
+  tooltipDescription,
+  tooltipDetails = [],
+  tooltipCalculation
 }) => {
   const getStatusStyles = (status: KPICardProps['status']) => {
     const styles = {
@@ -68,6 +77,52 @@ const KPICard: React.FC<KPICardProps> = ({
     return isPositive ? 'text-green-600' : 'text-red-600';
   };
 
+  const renderTooltip = () => {
+    if (!tooltipTitle && !tooltipDescription) return null;
+
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <HelpCircle className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-help transition-colors" />
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-sm p-4">
+            <div className="space-y-2">
+              {tooltipTitle && (
+                <h4 className="font-semibold text-foreground">{tooltipTitle}</h4>
+              )}
+              {tooltipDescription && (
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {tooltipDescription}
+                </p>
+              )}
+              {tooltipDetails.length > 0 && (
+                <div className="space-y-1">
+                  {tooltipDetails.map((detail, index) => (
+                    <div key={index} className="flex items-start gap-2 text-xs">
+                      <div className="w-1 h-1 bg-muted-foreground rounded-full mt-2 flex-shrink-0" />
+                      <span className="text-muted-foreground leading-relaxed">{detail}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {tooltipCalculation && (
+                <div className="border-t border-border/50 pt-2">
+                  <div className="text-xs">
+                    <span className="font-medium text-foreground">Cálculo:</span>
+                    <p className="text-muted-foreground mt-1 font-mono bg-muted/30 px-2 py-1 rounded">
+                      {tooltipCalculation}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  };
+
   return (
     <div className={cn(
       'relative overflow-hidden rounded-xl border-2 p-6 transition-all duration-200 hover:shadow-lg',
@@ -85,9 +140,12 @@ const KPICard: React.FC<KPICardProps> = ({
             <Icon className="h-6 w-6" />
           </div>
           <div>
-            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">
-              {title}
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                {title}
+              </h3>
+              {renderTooltip()}
+            </div>
             {subtitle && (
               <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
                 {subtitle}

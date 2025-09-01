@@ -85,31 +85,48 @@
     - _Requisitos: 2.5, 2.6_
 
 - [ ] 4. Aprimorar tabela de tarefas com informações operacionais
-  - [ ] 4.1 Adicionar colunas de datas na tabela
+  - [x] 4.1 Adicionar colunas de datas na tabela
+
+
+
     - Implementar exibição de data de início formatada
     - Adicionar coluna de data de fim com formatação consistente
     - Criar coluna de data planejada para comparação
     - _Requisitos: 3.1_
 
-  - [ ] 4.2 Implementar cálculo e exibição de atraso
+  - [x] 4.2 Implementar cálculo e exibição de atraso
+
+
+
     - Adicionar coluna mostrando atraso em dias úteis
     - Implementar cálculo considerando apenas dias de trabalho
     - Criar formatação especial para valores zero e negativos
     - _Requisitos: 3.2, 4.3_
 
-  - [ ] 4.3 Criar indicadores visuais de status
+  - [x] 4.3 Criar indicadores visuais de status
+
+
+
     - Implementar sistema de cores para status de prazo
     - Adicionar ícones indicativos (✅ no prazo, ⚠️ risco, 🔴 atrasado)
     - Criar destaque visual para tarefas críticas
     - _Requisitos: 3.3, 3.5, 5.1_
 
-  - [ ] 4.4 Implementar sistema de filtros
+  - [x] 4.4 Implementar sistema de filtros
+
+
+
     - Criar filtro por status de prazo (no prazo/risco/atrasado)
     - Adicionar filtro por faixa de atraso (0-2 dias, 3-5 dias, etc.)
     - Implementar busca por nome de tarefa
     - _Requisitos: 3.4_
 
-  - [ ] 4.5 Adicionar tooltips informativos
+  - [x] 4.5 Adicionar tooltips informativos
+
+
+
+
+
     - Criar tooltips explicando cálculo de dias úteis
     - Adicionar detalhes sobre critérios de status
     - Implementar tooltips com informações de contexto

@@ -84,6 +84,16 @@ const ProjectDeadlineCard: React.FC<ProjectDeadlineCardProps> = ({
       subtitle={formatPercentage(completionPercentage, 0) + ' concluído'}
       icon={Target}
       description={getDescription(deadlineStatus, completionPercentage)}
+      tooltipTitle="Indicador de Prazo do Projeto"
+      tooltipDescription="Este KPI avalia o status geral do projeto baseado no cumprimento de prazos das tarefas individuais."
+      tooltipDetails={[
+        "🟢 No Prazo: Todas as tarefas estão dentro do cronograma",
+        "🟡 Em Risco: Algumas tarefas apresentam atrasos leves (1-2 dias)",
+        "🔴 Atrasado: Tarefas com atrasos significativos (3+ dias)",
+        "Porcentagem de conclusão baseada em tarefas finalizadas",
+        "Atualizado automaticamente quando dados de tarefas mudam"
+      ]}
+      tooltipCalculation="Status = Análise dos atrasos de todas as tarefas concluídas"
     />
   );
 };
