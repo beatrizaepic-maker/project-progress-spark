@@ -1,0 +1,320 @@
+import React, { useState, useMemo } from 'react';
+import { TaskData } from '@/data/projectData';
+import { formatDays } from '@/utils/kpiFormatters';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+
+interface DelayDistributionChartProps {
+  tasks: TaskData[];
+}
+
+type FilterType = 'all' | 'period' | 'weekday';
+type PeriodFilter = 'all' | 'last30' | 'last90' | 'thisYear';
+
+const DelayDistributionChart: React.FC<DelayDistributionChartProps> = ({ tasks }) => {
+  const [filterType, setFilterType] = useState<FilterType>('all');
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('all');
+
+  // Filtrar tarefas baseado nos filtros selecionados
+  const filteredTasks = useMemo(() => {
+    let filtered = [...tasks];
+
+    if (periodFilter !== 'all') {
+      const now = new Date();
+      const filterDate = new Date();
+      
+      switch (periodFilter) {
+        case 'last30':
+          filterDate.setDate(now.getDate() - 30);
+          break;
+        case 'last90':
+          filterDate.setDate(now.getDate() - 90);
+          break;
+        case 'thisYear':
+          filterDate.setMonth(0, 1);
+          break;
+      }
+      
+      filtered = filtered.filter(task => new Date(task.fim) >= filterDate);
+    }
+
+    return filtered;
+  }, [tasks, periodFilter]);
+
+  // Calcular distribuição de atrasos por faixas
+  const delayDistribution = useMemo(() => {
+    const ranges = [
+      { label: 'Sem atraso', min: 0, max: 0, color: '#10b981' },
+      { label: '1-2 dias', min: 1, max: 2, color: '#f59e0b' },
+      { label: '3-5 dias', min: 3, max: 5, color: '#f97316' },
+      { label: '6-10 dias', min: 6, max: 10, color: '#ef4444' },
+      { label: '11+ dias', min: 11, max: Infinity, color: '#dc2626' }
+    ];
+
+    return ranges.map(range => {
+      const count = filteredTasks.filter(task => 
+        task.atrasoDiasUteis >= range.min && task.atrasoDiasUteis <= range.max
+      ).length;
+      
+      const percentage = filteredTasks.length > 0 ? (count / filteredTasks.length) * 100 : 0;
+      
+      return {
+        ...range,
+        count,
+        percentage: Math.round(percentage * 10) / 10
+      };
+    });
+  }, [filteredTasks]);
+
+  // Análise por dia da semana
+  const weekdayAnalysis = useMemo(() => {
+    const weekdays = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+    
+    return weekdays.map((day, index) => {
+      const dayTasks = filteredTasks.filter(task => new Date(task.fim).getDay() === index);
+      const avgDelay = dayTasks.length > 0 
+        ? dayTasks.reduce((sum, task) => sum + task.atrasoDiasUteis, 0) / dayTasks.length
+        : 0;
+      
+      return {
+        day,
+        avgDelay: Math.round(avgDelay * 10) / 10,
+        taskCount: dayTasks.length
+      };
+    });
+  }, [filteredTasks]);
+
+  // Análise por mês
+  const monthlyAnalysis = useMemo(() => {
+    const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    
+    return months.map((month, index) => {
+      const monthTasks = filteredTasks.filter(task => new Date(task.fim).getMonth() === index);
+      const avgDelay = monthTasks.length > 0 
+        ? monthTasks.reduce((sum, task) => sum + task.atrasoDiasUteis, 0) / monthTasks.length
+        : 0;
+      
+      return {
+        month,
+        avgDelay: Math.round(avgDelay * 10) / 10,
+        taskCount: monthTasks.length
+      };
+    }).filter(item => item.taskCount > 0); // Mostrar apenas meses com dados
+  }, [filteredTasks]);
+
+  const renderDistributionChart = () => (
+    <div className="h-80">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={delayDistribution} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-gray-300" />
+          <XAxis 
+            dataKey="label" 
+            tick={{ fontSize: 12, fill: "currentColor" }}
+            className="text-gray-600"
+          />
+          <YAxis 
+            tick={{ fontSize: 12, fill: "currentColor" }}
+            className="text-gray-600"
+          />
+          <Tooltip
+            contentStyle={{
+              backgroundColor: "white",
+              border: "1px solid #e5e7eb",
+              borderRadius: "8px",
+              boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
+            }}
+            formatter={(value: number, name: string) => [
+              name === 'count' ? `${value} tarefas` : `${value}%`,
+              name === 'count' ? 'Quantidade' : 'Percentual'
+            ]}
+          />
+          <Bar 
+            dataKey="count" 
+            fill="currentColor"
+            className="text-blue-500"
+            radius={[4, 4, 0, 0]}
+          />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+
+  const renderPieChart = () => (
+    <div className="h-80">
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <Pie
+            data={delayDistribution.filter(item => item.count > 0)}
+            cx="50%"
+            cy="50%"
+            outerRadius={100}
+            dataKey="count"
+            label={({ label, percentage }) => `${label}: ${percentage}%`}
+          >
+            {delayDistribution.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={entry.color} />
+            ))}
+          </Pie>
+          <Tooltip
+            contentStyle={{
+              backgroundColor: "white",
+              border: "1px solid #e5e7eb",
+              borderRadius: "8px"
+            }}
+            formatter={(value: number) => [`${value} tarefas`, 'Quantidade']}
+          />
+        </PieChart>
+      </ResponsiveContainer>
+    </div>
+  );
+
+  const renderTemporalAnalysis = () => {
+    const data = filterType === 'weekday' ? weekdayAnalysis : monthlyAnalysis;
+    const dataKey = filterType === 'weekday' ? 'day' : 'month';
+    
+    return (
+      <div className="h-80">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-gray-300" />
+            <XAxis 
+              dataKey={dataKey} 
+              tick={{ fontSize: 12, fill: "currentColor" }}
+              className="text-gray-600"
+            />
+            <YAxis 
+              tick={{ fontSize: 12, fill: "currentColor" }}
+              className="text-gray-600"
+            />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: "white",
+                border: "1px solid #e5e7eb",
+                borderRadius: "8px"
+              }}
+              formatter={(value: number, name: string) => [
+                name === 'avgDelay' ? formatDays(value) : `${value} tarefas`,
+                name === 'avgDelay' ? 'Atraso Médio' : 'Quantidade'
+              ]}
+            />
+            <Bar 
+              dataKey="avgDelay" 
+              fill="currentColor"
+              className="text-orange-500"
+              radius={[4, 4, 0, 0]}
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    );
+  };
+
+  return (
+    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+      <div className="mb-6">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+          Análise de Distribuição de Atrasos
+        </h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Visualização detalhada dos padrões de atraso por faixas e períodos temporais
+        </p>
+      </div>
+
+      {/* Filtros */}
+      <div className="flex flex-wrap gap-4 mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+        <div className="flex items-center space-x-2">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Visualização:</label>
+          <select 
+            value={filterType} 
+            onChange={(e) => setFilterType(e.target.value as FilterType)}
+            className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-800"
+          >
+            <option value="all">Distribuição Geral</option>
+            <option value="weekday">Por Dia da Semana</option>
+            <option value="period">Por Mês</option>
+          </select>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Período:</label>
+          <select 
+            value={periodFilter} 
+            onChange={(e) => setPeriodFilter(e.target.value as PeriodFilter)}
+            className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-800"
+          >
+            <option value="all">Todos os Dados</option>
+            <option value="last30">Últimos 30 dias</option>
+            <option value="last90">Últimos 90 dias</option>
+            <option value="thisYear">Este Ano</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Gráfico Principal */}
+      <div className="mb-6">
+        {filterType === 'all' ? renderDistributionChart() : renderTemporalAnalysis()}
+      </div>
+
+      {/* Estatísticas Resumidas */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+          <div className="text-xl font-bold text-green-600 dark:text-green-400">
+            {delayDistribution[0]?.percentage || 0}%
+          </div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">No Prazo</div>
+        </div>
+        <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+          <div className="text-xl font-bold text-yellow-600 dark:text-yellow-400">
+            {(delayDistribution[1]?.percentage || 0) + (delayDistribution[2]?.percentage || 0)}%
+          </div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">Atraso Leve</div>
+        </div>
+        <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+          <div className="text-xl font-bold text-red-600 dark:text-red-400">
+            {(delayDistribution[3]?.percentage || 0) + (delayDistribution[4]?.percentage || 0)}%
+          </div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">Atraso Grave</div>
+        </div>
+        <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+          <div className="text-xl font-bold text-gray-600 dark:text-gray-400">
+            {filteredTasks.length}
+          </div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">Total Tarefas</div>
+        </div>
+      </div>
+
+      {/* Gráfico de Pizza (apenas para distribuição geral) */}
+      {filterType === 'all' && (
+        <div className="mb-6">
+          <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100 mb-4">
+            Distribuição Proporcional
+          </h4>
+          {renderPieChart()}
+        </div>
+      )}
+
+      {/* Insights */}
+      <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+        <h4 className="text-sm font-semibold text-blue-800 dark:text-blue-200 mb-2">
+          📊 Insights da Análise
+        </h4>
+        <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+          {filterType === 'all' && (
+            <>
+              <p>• {delayDistribution[0]?.count || 0} tarefas foram entregues no prazo</p>
+              <p>• {(delayDistribution[3]?.count || 0) + (delayDistribution[4]?.count || 0)} tarefas tiveram atrasos significativos (6+ dias)</p>
+            </>
+          )}
+          {filterType === 'weekday' && (
+            <p>• Análise por dia da semana mostra padrões de entrega e possíveis gargalos</p>
+          )}
+          {filterType === 'period' && (
+            <p>• Análise mensal revela tendências sazonais e variações de performance</p>
+          )}
+          <p>• Use os filtros para explorar diferentes perspectivas dos dados</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default DelayDistributionChart;

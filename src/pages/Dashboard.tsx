@@ -1,4 +1,5 @@
 import MetricsCards from "@/components/dashboard/MetricsCards";
+import DashboardKPIs from "@/components/dashboard/DashboardKPIs";
 import { DataProvider } from "@/contexts/DataContext";
 import { mockTaskData } from "@/data/projectData";
 
@@ -6,11 +7,20 @@ const Dashboard = () => {
   return (
     <DataProvider initialTasks={mockTaskData}>
       <main className="container mx-auto px-6 py-8 space-y-8">
-          {/* Métricas Principais */}
+          {/* KPIs Estatísticos Avançados */}
           <section>
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-foreground mb-2">Dashboard</h2>
               <p className="text-muted-foreground">Visão geral das principais estatísticas de performance do projeto</p>
+            </div>
+            <DashboardKPIs tasks={mockTaskData} />
+          </section>
+
+          {/* Métricas Originais */}
+          <section>
+            <div className="mb-6">
+              <h3 className="text-xl font-semibold text-foreground mb-2">Métricas Complementares</h3>
+              <p className="text-muted-foreground">Informações adicionais de acompanhamento</p>
             </div>
             <MetricsCards />
           </section>

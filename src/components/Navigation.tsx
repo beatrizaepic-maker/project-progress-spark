@@ -41,12 +41,12 @@ const Navigation = () => {
   ];
 
   return (
-    <nav className="bg-card border-b">
+    <nav className="fixed top-0 left-0 right-0 z-50 glass">
       <div className="container mx-auto px-6">
         <div className="flex items-center space-x-8">
           <div className="flex items-center space-x-2 py-4">
-            <BarChart3 className="h-6 w-6 text-primary" />
-            <span className="font-bold text-lg">Project Spark</span>
+            <BarChart3 className="h-6 w-6 text-primary drop-shadow-sm" />
+            <span className="font-bold text-lg text-foreground text-shadow">Project Spark</span>
           </div>
           
           <div className="flex space-x-1">
@@ -59,10 +59,10 @@ const Navigation = () => {
                   key={item.path}
                   to={item.path}
                   className={cn(
-                    "flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                    "flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300",
                     isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                      ? "glass-card text-foreground text-shadow"
+                      : "text-muted-foreground hover:text-foreground glass-hover"
                   )}
                 >
                   <Icon className="h-4 w-4" />
