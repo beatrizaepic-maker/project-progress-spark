@@ -2,7 +2,7 @@
 
 ## Overview
 
-Este documento detalha o design técnico para implementar KPIs estatísticos avançados na plataforma Project Progress Spark. A solução será distribuída em três páginas principais (Dashboard, Analytics, Tasks) com cálculos estatísticos precisos e interface intuitiva.
+Este documento detalha o design técnico para implementar KPIs estatísticos avançados na plataforma Epic Board. A solução será distribuída em três páginas principais (Dashboard, Analytics, Tasks) com cálculos estatísticos precisos e interface intuitiva.
 
 ## Architecture
 

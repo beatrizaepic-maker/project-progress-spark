@@ -7,12 +7,22 @@ interface StandardDeviationCardProps {
   standardDeviation: number;
   averageProduction: number;
   lastUpdated: Date;
+  isCalculating?: boolean;
+  calculationId?: string;
+  processingTime?: number;
+  cacheHit?: boolean;
+  calculationVersion?: string;
 }
 
 const StandardDeviationCard: React.FC<StandardDeviationCardProps> = ({
   standardDeviation,
   averageProduction,
-  lastUpdated
+  lastUpdated,
+  isCalculating = false,
+  calculationId,
+  processingTime,
+  cacheHit = false,
+  calculationVersion
 }) => {
   const classification = classifyStandardDeviation(standardDeviation, averageProduction);
   
@@ -76,6 +86,12 @@ const StandardDeviationCard: React.FC<StandardDeviationCardProps> = ({
         "Útil para identificar problemas de estimativa"
       ]}
       tooltipCalculation="σ = √(Σ(xi - μ)² / n) onde xi = duração, μ = média"
+      lastUpdated={lastUpdated}
+      isCalculating={isCalculating}
+      calculationId={calculationId}
+      processingTime={processingTime}
+      cacheHit={cacheHit}
+      calculationVersion={calculationVersion}
     />
   );
 };

@@ -7,12 +7,22 @@ interface AverageDelayCardProps {
   averageDelay: number;
   lastUpdated: Date;
   previousAverageDelay?: number; // Para calcular tendência
+  isCalculating?: boolean;
+  calculationId?: string;
+  processingTime?: number;
+  cacheHit?: boolean;
+  calculationVersion?: string;
 }
 
 const AverageDelayCard: React.FC<AverageDelayCardProps> = ({
   averageDelay,
   lastUpdated,
-  previousAverageDelay = 0
+  previousAverageDelay = 0,
+  isCalculating = false,
+  calculationId,
+  processingTime,
+  cacheHit = false,
+  calculationVersion
 }) => {
   const getCardStatus = (delay: number) => {
     if (delay === 0) return 'success' as const;
@@ -54,6 +64,12 @@ const AverageDelayCard: React.FC<AverageDelayCardProps> = ({
         "Atualizado em tempo real conforme tarefas são concluídas"
       ]}
       tooltipCalculation="Média = Σ(atrasos em dias úteis) / número de tarefas"
+      lastUpdated={lastUpdated}
+      isCalculating={isCalculating}
+      calculationId={calculationId}
+      processingTime={processingTime}
+      cacheHit={cacheHit}
+      calculationVersion={calculationVersion}
     />
   );
 };

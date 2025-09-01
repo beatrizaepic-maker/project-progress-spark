@@ -2,6 +2,8 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import { LucideIcon, HelpCircle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { KPITimestamp } from '@/components/ui/kpi-timestamp';
+import { KPIVersionBadge } from '@/components/ui/kpi-version-indicator';
 
 export interface KPICardProps {
   title: string;
@@ -20,6 +22,15 @@ export interface KPICardProps {
   tooltipDescription?: string;
   tooltipDetails?: string[];
   tooltipCalculation?: string;
+  // Propriedades de timestamp
+  lastUpdated?: Date;
+  isCalculating?: boolean;
+  calculationId?: string;
+  processingTime?: number;
+  cacheHit?: boolean;
+  showTimestamp?: boolean;
+  calculationVersion?: string;
+  showVersioning?: boolean;
 }
 
 const KPICard: React.FC<KPICardProps> = ({
@@ -34,7 +45,16 @@ const KPICard: React.FC<KPICardProps> = ({
   tooltipTitle,
   tooltipDescription,
   tooltipDetails = [],
-  tooltipCalculation
+  tooltipCalculation,
+  // Propriedades de timestamp
+  lastUpdated,
+  isCalculating = false,
+  calculationId,
+  processingTime,
+  cacheHit = false,
+  showTimestamp = true,
+  calculationVersion,
+  showVersioning = false
 }) => {
   const getStatusStyles = (status: KPICardProps['status']) => {
     const styles = {
@@ -175,9 +195,33 @@ const KPICard: React.FC<KPICardProps> = ({
 
       {/* Descrição adicional */}
       {description && (
-        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-3">
           {description}
         </p>
+      )}
+
+      {/* Timestamp de atualização */}
+      {showTimestamp && lastUpdated && (
+        <div className="flex justify-between items-center mt-4 pt-3 border-t border-gray-200/50 dark:border-gray-700/50">
+          <KPITimestamp
+            lastUpdated={lastUpdated}
+            isCalculating={isCalculating}
+            calculationId={calculationId}
+            processingTime={processingTime}
+            cacheHit={cacheHit}
+            showDetails={false}
+            className="text-xs"
+          />
+          
+          {/* Indicador de versão do cálculo */}
+          {(showVersioning || process.env.NODE_ENV === 'development') && calculationId && calculationVersion && (
+            <KPIVersionBadge
+              calculationId={calculationId}
+              calculationVersion={calculationVersion}
+              cacheHit={cacheHit}
+            />
+          )}
+        </div>
       )}
 
       {/* Efeito de brilho sutil */}

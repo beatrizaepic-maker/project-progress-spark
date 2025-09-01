@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Este documento define os requisitos para implementar KPIs estatísticos avançados na plataforma Project Progress Spark. O objetivo é fornecer métricas detalhadas de performance, análise estatística e indicadores de prazo para melhorar o gerenciamento de projetos e tomada de decisões.
+Este documento define os requisitos para implementar KPIs estatísticos avançados na plataforma Epic Board. O objetivo é fornecer métricas detalhadas de performance, análise estatística e indicadores de prazo para melhorar o gerenciamento de projetos e tomada de decisões.
 
 ## Requirements
 

@@ -24,6 +24,10 @@ export interface KPIResults {
   lastUpdated: Date;
   totalTasks: number;
   completedTasks: number;
+  calculationVersion: string;
+  calculationId: string;
+  processingTime: number;
+  dataHash: string;
 }
 
 export interface KPIConfig {
@@ -36,6 +40,7 @@ export interface KPIConfig {
 
 export class KPICalculator {
   private config: KPIConfig;
+  private static readonly VERSION = '1.2.0';
 
   constructor(config: Partial<KPIConfig> = {}) {
     this.config = {
@@ -49,9 +54,32 @@ export class KPICalculator {
   }
 
   /**
+   * Gera ID único para o cálculo
+   */
+  private generateCalculationId(): string {
+    return `calc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  /**
+   * Gera hash dos dados de entrada
+   */
+  private generateDataHash(tasks: TaskData[]): string {
+    const hashData = tasks.map(t => `${t.id}-${t.inicio}-${t.fim}-${t.prazo}`).join('|');
+    let hash = 0;
+    for (let i = 0; i < hashData.length; i++) {
+      const char = hashData.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+    return Math.abs(hash).toString(36);
+  }
+
+  /**
    * Calcula todos os KPIs baseado nos dados das tarefas
    */
   calculateAll(tasks: TaskData[]): KPIResults {
+    const startTime = performance.now();
+    
     if (!tasks || tasks.length === 0) {
       return this.getEmptyResults();
     }
@@ -59,8 +87,10 @@ export class KPICalculator {
     const durations = tasks.map(t => t.duracaoDiasUteis);
     const delays = tasks.map(t => t.atrasoDiasUteis);
     const completedTasks = tasks.filter(t => t.fim !== '').length;
+    const calculationId = this.generateCalculationId();
+    const dataHash = this.generateDataHash(tasks);
 
-    return {
+    const results = {
       // Dashboard KPIs
       projectDeadlineStatus: this.calculateProjectDeadlineStatus(tasks),
       projectCompletionPercentage: this.calculateCompletionPercentage(tasks),
@@ -79,8 +109,14 @@ export class KPICalculator {
       // Metadata
       lastUpdated: new Date(),
       totalTasks: tasks.length,
-      completedTasks: completedTasks
+      completedTasks: completedTasks,
+      calculationVersion: KPICalculator.VERSION,
+      calculationId: calculationId,
+      processingTime: Math.round(performance.now() - startTime),
+      dataHash: dataHash
     };
+
+    return results;
   }
 
   /**
@@ -294,7 +330,11 @@ export class KPICalculator {
       taskDetails: [],
       lastUpdated: new Date(),
       totalTasks: 0,
-      completedTasks: 0
+      completedTasks: 0,
+      calculationVersion: KPICalculator.VERSION,
+      calculationId: this.generateCalculationId(),
+      processingTime: 0,
+      dataHash: 'empty'
     };
   }
 }

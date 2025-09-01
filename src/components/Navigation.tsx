@@ -46,7 +46,7 @@ const Navigation = () => {
         <div className="flex items-center space-x-8">
           <div className="flex items-center space-x-2 py-4">
             <BarChart3 className="h-6 w-6 text-primary drop-shadow-sm" />
-            <span className="font-bold text-lg text-foreground text-shadow">Project Spark</span>
+            <span className="font-bold text-lg text-foreground text-shadow">Epic Board</span>
           </div>
           
           <div className="flex space-x-1">

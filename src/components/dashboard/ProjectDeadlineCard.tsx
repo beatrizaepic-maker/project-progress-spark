@@ -7,12 +7,22 @@ interface ProjectDeadlineCardProps {
   deadlineStatus: 'on-time' | 'at-risk' | 'delayed';
   completionPercentage: number;
   lastUpdated: Date;
+  isCalculating?: boolean;
+  calculationId?: string;
+  processingTime?: number;
+  cacheHit?: boolean;
+  calculationVersion?: string;
 }
 
 const ProjectDeadlineCard: React.FC<ProjectDeadlineCardProps> = ({
   deadlineStatus,
   completionPercentage,
-  lastUpdated
+  lastUpdated,
+  isCalculating = false,
+  calculationId,
+  processingTime,
+  cacheHit = false,
+  calculationVersion
 }) => {
   const getCardStatus = (status: 'on-time' | 'at-risk' | 'delayed') => {
     const statusMap = {
@@ -94,6 +104,12 @@ const ProjectDeadlineCard: React.FC<ProjectDeadlineCardProps> = ({
         "Atualizado automaticamente quando dados de tarefas mudam"
       ]}
       tooltipCalculation="Status = Análise dos atrasos de todas as tarefas concluídas"
+      lastUpdated={lastUpdated}
+      isCalculating={isCalculating}
+      calculationId={calculationId}
+      processingTime={processingTime}
+      cacheHit={cacheHit}
+      calculationVersion={calculationVersion}
     />
   );
 };
