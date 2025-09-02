@@ -68,7 +68,7 @@ const AnalyticsContent = () => {
           />
           
           {analyticsKPIs.calculationId && analyticsKPIs.calculationVersion && (
-            <div className="bg-gray-50 rounded-lg p-3 border">
+            <div className="bg-gray-50 p-3 border">
               <h4 className="text-sm font-semibold mb-2">Informações de Versionamento</h4>
               <KPIVersionIndicator
                 calculationId={analyticsKPIs.calculationId}
@@ -88,7 +88,7 @@ const AnalyticsContent = () => {
 
       {/* Insights Adicionais */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-card p-6 rounded-lg border">
+        <div className="bg-card p-6 border">
           <h3 className="text-lg font-semibold mb-4">Resumo Estatístico</h3>
           <p className="text-muted-foreground mb-4">Principais métricas calculadas automaticamente</p>
           <div className="space-y-3">
@@ -111,7 +111,7 @@ const AnalyticsContent = () => {
           </div>
         </div>
         
-        <div className="bg-card p-6 rounded-lg border">
+        <div className="bg-card p-6 border">
           <h3 className="text-lg font-semibold mb-4">Status do Sistema</h3>
           <p className="text-muted-foreground mb-4">Informações sobre o processamento dos dados</p>
           <div className="space-y-3">

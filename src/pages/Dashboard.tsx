@@ -27,15 +27,15 @@ const Dashboard = () => {
 
           {/* Resumo Rápido */}
           <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="bg-card p-6 rounded-lg border">
+            <div className="bg-card p-6 rounded-lg border border-border">
               <h3 className="text-lg font-semibold mb-2">Status Geral</h3>
               <p className="text-muted-foreground">Acompanhe o progresso geral do projeto</p>
             </div>
-            <div className="bg-card p-6 rounded-lg border">
+            <div className="bg-card p-6 rounded-lg border border-border">
               <h3 className="text-lg font-semibold mb-2">Próximas Ações</h3>
               <p className="text-muted-foreground">Tarefas prioritárias para hoje</p>
             </div>
-            <div className="bg-card p-6 rounded-lg border">
+            <div className="bg-card p-6 rounded-lg border border-border">
               <h3 className="text-lg font-semibold mb-2">Alertas</h3>
               <p className="text-muted-foreground">Itens que precisam de atenção</p>
             </div>

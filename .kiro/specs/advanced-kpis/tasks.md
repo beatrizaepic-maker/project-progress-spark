@@ -163,13 +163,19 @@
     - _Requisitos: 4.5_
 
 - [ ] 6. Implementar tratamento de erros e casos extremos
-  - [ ] 6.1 Criar sistema de tratamento de erros
+  - [x] 6.1 Criar sistema de tratamento de erros
+
+
+
     - Implementar fallbacks para quando cálculos falham
     - Criar mensagens de erro claras e acionáveis
     - Adicionar logging de erros para debugging
     - _Requisitos: 4.6_
 
-  - [ ] 6.2 Tratar casos de dados insuficientes
+
+  - [x] 6.2 Tratar casos de dados insuficientes
+
+
     - Implementar placeholders para quando não há dados
     - Criar avisos quando dados são parciais ou incompletos
     - Adicionar sugestões de ação para resolver problemas

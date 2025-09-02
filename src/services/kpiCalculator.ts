@@ -1,4 +1,5 @@
 import { TaskData } from '@/data/projectData';
+import { kpiErrorHandler, ErrorType, ErrorSeverity } from './errorHandler';
 
 export interface KPIResults {
   // Dashboard KPIs
@@ -28,6 +29,11 @@ export interface KPIResults {
   calculationId: string;
   processingTime: number;
   dataHash: string;
+  
+  // Error handling
+  hasErrors: boolean;
+  errorCount: number;
+  criticalErrors: boolean;
 }
 
 export interface KPIConfig {
@@ -51,6 +57,24 @@ export class KPICalculator {
       modeGroupingInterval: 0.5,
       ...config
     };
+  }
+
+  /**
+   * Executa uma operação com tratamento de erro seguro
+   */
+  private safeExecute<T>(operation: () => T, defaultValue: T, context?: string): T {
+    try {
+      return operation();
+    } catch (error) {
+      kpiErrorHandler.createError(
+        ErrorType.CALCULATION,
+        ErrorSeverity.MEDIUM,
+        error instanceof Error ? error.message : 'Erro desconhecido',
+        context || 'KPICalculator',
+        { originalError: error }
+      );
+      return defaultValue;
+    }
   }
 
   /**
@@ -80,40 +104,79 @@ export class KPICalculator {
   calculateAll(tasks: TaskData[]): KPIResults {
     const startTime = performance.now();
     
+    // Validação inicial dos dados
     if (!tasks || tasks.length === 0) {
       return this.getEmptyResults();
     }
 
-    const durations = tasks.map(t => t.duracaoDiasUteis);
-    const delays = tasks.map(t => t.atrasoDiasUteis);
-    const completedTasks = tasks.filter(t => t.fim !== '').length;
     const calculationId = this.generateCalculationId();
     const dataHash = this.generateDataHash(tasks);
 
+    // Executa cálculos com tratamento de erro
     const results = {
       // Dashboard KPIs
-      projectDeadlineStatus: this.calculateProjectDeadlineStatus(tasks),
-      projectCompletionPercentage: this.calculateCompletionPercentage(tasks),
-      averageDelay: this.calculateAverage(delays),
-      standardDeviation: this.calculateStandardDeviation(durations),
+      projectDeadlineStatus: this.safeExecute(
+        () => this.calculateProjectDeadlineStatus(tasks),
+        'on-time' as const
+      ),
+      projectCompletionPercentage: this.safeExecute(
+        () => this.calculateCompletionPercentage(tasks),
+        0,
+        'calculateCompletionPercentage'
+      ),
+      averageDelay: this.safeExecute(
+        () => this.calculateAverage(tasks.map(t => t.atrasoDiasUteis)),
+        0,
+        'calculateAverageDelay'
+      ),
+      standardDeviation: this.safeExecute(
+        () => this.calculateStandardDeviation(tasks.map(t => t.duracaoDiasUteis)),
+        0,
+        'calculateStandardDeviation'
+      ),
       
       // Analytics KPIs
-      averageProduction: this.calculateAverage(durations),
-      mode: this.calculateMode(durations),
-      median: this.calculateMedian(this.removeOutliers(durations)),
-      delayDistribution: this.calculateDelayDistribution(delays),
+      averageProduction: this.safeExecute(
+        () => this.calculateAverage(tasks.map(t => t.duracaoDiasUteis)),
+        0,
+        'calculateAverageProduction'
+      ),
+      mode: this.safeExecute(
+        () => this.calculateMode(tasks.map(t => t.duracaoDiasUteis)),
+        { value: 0, frequency: 0, percentage: 0 },
+        'calculateMode'
+      ),
+      median: this.safeExecute(
+        () => this.calculateMedian(this.removeOutliers(tasks.map(t => t.duracaoDiasUteis))),
+        0,
+        'calculateMedian'
+      ),
+      delayDistribution: this.safeExecute(
+        () => this.calculateDelayDistribution(tasks.map(t => t.atrasoDiasUteis)),
+        [],
+        'calculateDelayDistribution'
+      ),
       
       // Tasks KPIs
-      taskDetails: this.calculateTaskDetails(tasks),
+      taskDetails: this.safeExecute(
+        () => this.calculateTaskDetails(tasks),
+        [],
+        'calculateTaskDetails'
+      ),
       
       // Metadata
       lastUpdated: new Date(),
       totalTasks: tasks.length,
-      completedTasks: completedTasks,
+      completedTasks: tasks.filter(t => t.fim !== '').length,
       calculationVersion: KPICalculator.VERSION,
       calculationId: calculationId,
       processingTime: Math.round(performance.now() - startTime),
-      dataHash: dataHash
+      dataHash: dataHash,
+      
+      // Error handling
+      hasErrors: kpiErrorHandler.getErrorHistory().length > 0,
+      errorCount: kpiErrorHandler.getErrorHistory().length,
+      criticalErrors: kpiErrorHandler.hasCriticalErrors()
     };
 
     return results;
@@ -123,6 +186,15 @@ export class KPICalculator {
    * Calcula o número de dias úteis entre duas datas
    */
   calculateWorkingDays(startDate: Date, endDate: Date): number {
+    try {
+      if (!startDate || !endDate) {
+        throw new Error('Datas de início e fim são obrigatórias');
+      }
+
+      if (startDate > endDate) {
+        throw new Error('Data de início não pode ser posterior à data de fim');
+      }
+
     let count = 0;
     const current = new Date(startDate);
     
@@ -139,13 +211,31 @@ export class KPICalculator {
     }
     
     return count;
+    } catch (error) {
+      console.error('Erro em calculateWorkingDays:', error);
+      return 0;
+    }
   }
 
   /**
    * Remove outliers usando o método IQR (Interquartile Range)
    */
   removeOutliers(values: number[]): number[] {
-    if (values.length < 4) return values;
+    try {
+      if (!Array.isArray(values)) {
+        throw new Error('Valores devem ser um array');
+      }
+
+    if (values.length < 4) {
+      console.warn('Dados insuficientes para remoção de outliers, retornando valores originais');
+      return values;
+    }
+
+    // Valida se todos os valores são números
+    const invalidValues = values.filter(v => typeof v !== 'number' || isNaN(v));
+    if (invalidValues.length > 0) {
+      throw new Error(`Valores inválidos encontrados: ${invalidValues.length} itens`);
+    }
 
     const sorted = [...values].sort((a, b) => a - b);
     const q1Index = Math.floor(sorted.length * 0.25);
@@ -155,10 +245,37 @@ export class KPICalculator {
     const q3 = sorted[q3Index];
     const iqr = q3 - q1;
     
+    if (iqr === 0) {
+      // Todos os valores são iguais, não há outliers
+      return values;
+    }
+    
     const lowerBound = q1 - (this.config.outlierThreshold * iqr);
     const upperBound = q3 + (this.config.outlierThreshold * iqr);
     
-    return values.filter(value => value >= lowerBound && value <= upperBound);
+    const filtered = values.filter(value => value >= lowerBound && value <= upperBound);
+    
+    // Log se muitos outliers foram removidos
+    const removedCount = values.length - filtered.length;
+    if (removedCount > values.length * 0.3) {
+      kpiErrorHandler.createError(
+        ErrorType.CALCULATION,
+        ErrorSeverity.MEDIUM,
+        `Muitos outliers detectados: ${removedCount} de ${values.length} valores foram removidos`,
+        'removeOutliers',
+        { 
+          originalCount: values.length, 
+          filteredCount: filtered.length,
+          percentage: (removedCount / values.length) * 100
+        }
+      );
+    }
+    
+    return filtered;
+    } catch (error) {
+      console.error('Erro em removeOutliers:', error);
+      return [];
+    }
   }
 
   /**
@@ -334,8 +451,37 @@ export class KPICalculator {
       calculationVersion: KPICalculator.VERSION,
       calculationId: this.generateCalculationId(),
       processingTime: 0,
-      dataHash: 'empty'
+      dataHash: 'empty',
+      hasErrors: kpiErrorHandler.getErrorHistory().length > 0,
+      errorCount: kpiErrorHandler.getErrorHistory().length,
+      criticalErrors: kpiErrorHandler.hasCriticalErrors()
     };
+  }
+
+  /**
+   * Obtém relatório de erros do último cálculo
+   */
+  getErrorReport() {
+    const errors = kpiErrorHandler.getErrorHistory();
+    return {
+      totalErrors: errors.length,
+      criticalErrors: errors.filter(e => e.severity === ErrorSeverity.CRITICAL).length,
+      errors: errors
+    };
+  }
+
+  /**
+   * Obtém histórico de erros
+   */
+  getErrorHistory() {
+    return kpiErrorHandler.getErrorHistory();
+  }
+
+  /**
+   * Limpa histórico de erros
+   */
+  clearErrors() {
+    kpiErrorHandler.clearErrorHistory();
   }
 }
 

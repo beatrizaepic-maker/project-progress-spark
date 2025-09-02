@@ -145,29 +145,28 @@ const KPICard: React.FC<KPICardProps> = ({
 
   return (
     <div className={cn(
-      'relative overflow-hidden rounded-xl border-2 p-6 transition-all duration-200 hover:shadow-lg',
-      'backdrop-blur-sm bg-white/80 dark:bg-gray-900/80',
-      getStatusStyles(status),
+      'relative overflow-hidden border-2 border-electric-purple p-6 transition-all duration-200 hover:shadow-lg',
+      'bg-dark-navy',
       className
     )}>
       {/* Header com ícone e título */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center space-x-3">
           <div className={cn(
-            'flex h-12 w-12 items-center justify-center rounded-lg',
+            'flex h-12 w-12 items-center justify-center',
             getIconStyles(status)
           )}>
             <Icon className="h-6 w-6" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <h3 className="text-sm font-medium text-white">
                 {title}
               </h3>
               {renderTooltip()}
             </div>
             {subtitle && (
-              <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+              <p className="text-xs text-light-gray mt-1">
                 {subtitle}
               </p>
             )}
@@ -188,14 +187,14 @@ const KPICard: React.FC<KPICardProps> = ({
 
       {/* Valor principal */}
       <div className="mb-2">
-        <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+        <div className="text-3xl font-bold text-white font-mono">
           {value}
         </div>
       </div>
 
       {/* Descrição adicional */}
       {description && (
-        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-3">
+        <p className="text-sm text-light-gray leading-relaxed mb-4">
           {description}
         </p>
       )}

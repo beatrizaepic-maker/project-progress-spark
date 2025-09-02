@@ -1,9 +1,18 @@
 import { Card } from "@/components/ui/card";
-import { CheckCircle, Clock, Target, TrendingUp, AlertTriangle, BarChart } from "lucide-react";
+import { CheckCircle, Clock, Target, AlertTriangle, BarChart3 } from "lucide-react";
+import TrendingUp from "lucide-react/dist/esm/icons/trending-up";
 import { useData } from "@/contexts/DataContext";
+import { ErrorDisplay, ErrorSummary } from "@/components/ui/error-display";
+import { kpiCalculator } from "@/services/kpiCalculator";
 
 export default function MetricsCards() {
-  const { metrics: projectMetrics } = useData();
+  const { metrics: projectMetrics, kpiResults } = useData();
+  
+  // Obtém erros do último cálculo
+  const errorHistory = kpiCalculator.getErrorHistory();
+  const hasErrors = kpiResults?.hasErrors || false;
+  const errorCount = kpiResults?.errorCount || 0;
+  const criticalErrors = kpiResults?.criticalErrors || false;
   
   const metrics = [
     {
@@ -52,36 +61,61 @@ export default function MetricsCards() {
       title: "Desvio Padrão",
       value: projectMetrics.desvioPadrao.toFixed(1),
       subtitle: "Variação da duração",
-      icon: BarChart,
+      icon: BarChart3,
       gradient: "from-muted-foreground/20 to-muted-foreground/10",
       textColor: "text-muted-foreground",
       bgColor: "bg-muted-foreground/10"
     }
   ];
+  const handleRetry = () => {
+    // Força recálculo dos KPIs
+    window.location.reload();
+  };
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {metrics.map((metric, index) => {
-        const Icon = metric.icon;
-        return (
-          <Card
-            key={index}
-            className="p-6 hover:shadow-lg transition-all duration-300 border-0 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm"
-          >
-            <div className="flex items-start justify-between">
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-muted-foreground">{metric.title}</p>
-                <p className="text-2xl font-bold text-foreground">{metric.value}</p>
-                {metric.subtitle && (
-                  <p className="text-xs text-muted-foreground">{metric.subtitle}</p>
-                )}
+    <div className="space-y-6">
+      {/* Exibe resumo de erros se houver */}
+      {hasErrors && (
+        <ErrorSummary
+          errorCount={errorCount}
+          criticalErrors={criticalErrors}
+          onViewDetails={() => console.log('Ver detalhes dos erros')}
+        />
+      )}
+
+      {/* Exibe erros detalhados se houver erros críticos */}
+      {criticalErrors && (
+        <ErrorDisplay
+          errors={errorHistory}
+          onRetry={handleRetry}
+          showDetails={false}
+        />
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {metrics.map((metric, index) => {
+          const Icon = metric.icon;
+          return (
+            <Card
+              key={index}
+              className="p-6 hover:shadow-lg transition-all duration-300 border-0 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm"
+            >
+              <div className="flex items-start justify-between">
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-muted-foreground">{metric.title}</p>
+                  <p className="text-2xl font-bold text-foreground">{metric.value}</p>
+                  {metric.subtitle && (
+                    <p className="text-xs text-muted-foreground">{metric.subtitle}</p>
+                  )}
+                </div>
+                <div className={`p-2 rounded-lg bg-gradient-to-br ${metric.gradient} border border-opacity-20`}>
+                  <Icon className={`h-5 w-5 ${metric.textColor}`} />
+                </div>
               </div>
-              <div className={`p-2 rounded-lg bg-gradient-to-br ${metric.gradient} border border-opacity-20`}>
-                <Icon className={`h-5 w-5 ${metric.textColor}`} />
-              </div>
-            </div>
-          </Card>
-        );
-      })}
+            </Card>
+          );
+        })}
+      </div>
     </div>
   );
 }

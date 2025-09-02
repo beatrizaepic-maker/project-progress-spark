@@ -35,8 +35,21 @@
 
 .card {
   padding: 2em;
+  border: 2px solid #ff0066; /* Alteração da cor da borda */
+  transition: transform 0.3s, background-color 0.3s; /* Suavidade no hover */
+  border-radius: 0 !important; /* Remove bordas arredondadas */
+}
+
+.card:hover {
+  transform: scale(1.25); /* Aumenta o tamanho em 25% */
+  background-color: #1e1dff; /* Alteração da cor do hover */
 }
 
 .read-the-docs {
   color: #888;
+}
+
+/* Remove bordas arredondadas de todos os cards */
+[class*="card"], .bg-card, [class*="rounded"] {
+  border-radius: 0 !important;
 }

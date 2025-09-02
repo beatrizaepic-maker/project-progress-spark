@@ -14,12 +14,12 @@ const Settings = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Aparência */}
-              <div className="bg-card p-6 rounded-lg border">
+              <div className="bg-card p-6 border">
                 <h3 className="text-lg font-semibold mb-4">Aparência</h3>
                 <div className="space-y-4">
                   <div>
                     <label className="text-sm font-medium">Tema</label>
-                    <select className="w-full mt-1 p-2 border rounded-md bg-background">
+                    <select className="w-full mt-1 p-2 border bg-background">
                       <option>Claro</option>
                       <option>Escuro</option>
                       <option>Sistema</option>
@@ -27,7 +27,7 @@ const Settings = () => {
                   </div>
                   <div>
                     <label className="text-sm font-medium">Idioma</label>
-                    <select className="w-full mt-1 p-2 border rounded-md bg-background">
+                    <select className="w-full mt-1 p-2 border bg-background">
                       <option>Português (BR)</option>
                       <option>English</option>
                       <option>Español</option>
@@ -37,42 +37,42 @@ const Settings = () => {
               </div>
 
               {/* Notificações */}
-              <div className="bg-card p-6 rounded-lg border">
+              <div className="bg-card p-6 border">
                 <h3 className="text-lg font-semibold mb-4">Notificações</h3>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-sm">Tarefas em atraso</span>
-                    <input type="checkbox" className="rounded" defaultChecked />
+                    <input type="checkbox" className="" defaultChecked />
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm">Metas atingidas</span>
-                    <input type="checkbox" className="rounded" defaultChecked />
+                    <input type="checkbox" className="" defaultChecked />
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm">Relatórios semanais</span>
-                    <input type="checkbox" className="rounded" />
+                    <input type="checkbox" className="" />
                   </div>
                 </div>
               </div>
 
               {/* Dados */}
-              <div className="bg-card p-6 rounded-lg border">
+              <div className="bg-card p-6 border">
                 <h3 className="text-lg font-semibold mb-4">Gerenciamento de Dados</h3>
                 <div className="space-y-3">
-                  <button className="w-full p-2 text-left text-sm border rounded-md hover:bg-muted">
+                  <button className="w-full p-2 text-left text-sm border hover:bg-muted">
                     Exportar todos os dados
                   </button>
-                  <button className="w-full p-2 text-left text-sm border rounded-md hover:bg-muted">
+                  <button className="w-full p-2 text-left text-sm border hover:bg-muted">
                     Importar dados
                   </button>
-                  <button className="w-full p-2 text-left text-sm border rounded-md hover:bg-muted text-destructive">
+                  <button className="w-full p-2 text-left text-sm border hover:bg-muted text-destructive">
                     Limpar todos os dados
                   </button>
                 </div>
               </div>
 
               {/* Sobre */}
-              <div className="bg-card p-6 rounded-lg border">
+              <div className="bg-card p-6 border">
                 <h3 className="text-lg font-semibold mb-4">Sobre</h3>
                 <div className="space-y-2 text-sm text-muted-foreground">
                   <p>Versão: 1.0.0</p>

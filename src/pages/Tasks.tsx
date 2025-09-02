@@ -17,7 +17,7 @@ const Tasks = () => {
 
           {/* Ações Rápidas */}
           <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-card p-4 rounded-lg border">
+            <div className="bg-card p-4 border">
               <h3 className="text-sm font-semibold mb-2">Filtros Rápidos</h3>
               <div className="space-y-2">
                 <button className="w-full text-left text-sm text-muted-foreground hover:text-foreground">
@@ -31,7 +31,7 @@ const Tasks = () => {
                 </button>
               </div>
             </div>
-            <div className="bg-card p-4 rounded-lg border">
+            <div className="bg-card p-4 border">
               <h3 className="text-sm font-semibold mb-2">Ações</h3>
               <div className="space-y-2">
                 <button className="w-full text-left text-sm text-muted-foreground hover:text-foreground">
@@ -45,7 +45,7 @@ const Tasks = () => {
                 </button>
               </div>
             </div>
-            <div className="bg-card p-4 rounded-lg border">
+            <div className="bg-card p-4 border">
               <h3 className="text-sm font-semibold mb-2">Estatísticas</h3>
               <div className="space-y-2">
                 <div className="text-sm">

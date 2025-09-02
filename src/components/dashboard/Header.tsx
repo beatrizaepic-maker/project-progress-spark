@@ -1,4 +1,4 @@
-import { CalendarDays, BarChart3 } from "lucide-react";
+import CalendarDays from "lucide-react/dist/esm/icons/calendar-days";
 
 export default function Header() {
   return (
@@ -7,11 +7,15 @@ export default function Header() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/20">
-              <BarChart3 className="h-6 w-6 text-primary" />
+              <img 
+                src="/LOGOEPIC.png" 
+                alt="EPIC Logo" 
+                className="h-8 w-8 object-contain"
+              />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Dashboard de Projeto</h1>
-              <p className="text-sm text-muted-foreground">Análise completa do último projeto entregue</p>
+              <h1 className="text-2xl font-bold text-foreground">EPIC - Dashboard de Projeto</h1>
+              <p className="text-sm text-muted-foreground">Sistema de Acompanhamento de Progresso de Projetos</p>
             </div>
           </div>
           

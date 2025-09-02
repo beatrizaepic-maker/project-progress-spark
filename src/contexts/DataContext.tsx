@@ -1,10 +1,21 @@
 import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 import { TaskData, projectMetrics as initialMetrics } from '@/data/projectData';
 import { toast } from '@/hooks/use-toast';
+import { kpiCalculator, KPIResults } from '@/services/kpiCalculator';
+import { kpiErrorHandler } from '@/services/errorHandler';
 
 interface DataContextType {
   tasks: TaskData[];
   metrics: typeof initialMetrics;
+  kpiResults: KPIResults | null;
+  dataQuality: {
+    totalTasks: number;
+    completeTasks: number;
+    validTasks: number;
+    hasMinimumData: boolean;
+    completionRate: number;
+    validityRate: number;
+  };
   updateTasks: (newTasks: TaskData[]) => void;
   addTask: (task: Omit<TaskData, 'id'>) => void;
   editTask: (id: number, task: Partial<TaskData>) => void;
@@ -12,6 +23,8 @@ interface DataContextType {
   importData: (data: TaskData[]) => void;
   exportData: () => string;
   recalculateMetrics: () => void;
+  validateData: () => boolean;
+  getErrorHistory: () => any[];
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -62,47 +75,92 @@ const calculateDelay = (endDate: string, deadline: string): number => {
 export const DataProvider: React.FC<DataProviderProps> = ({ children, initialTasks }) => {
   const [tasks, setTasks] = useState<TaskData[]>(initialTasks);
   const [metrics, setMetrics] = useState(initialMetrics);
+  const [kpiResults, setKpiResults] = useState<KPIResults | null>(null);
+  const [dataQuality, setDataQuality] = useState({
+    totalTasks: 0,
+    completeTasks: 0,
+    validTasks: 0,
+    hasMinimumData: false,
+    completionRate: 0,
+    validityRate: 0
+  });
+
+  const validateData = useCallback(() => {
+    const validation = kpiErrorHandler.validateTaskData(tasks);
+    return validation.isValid;
+  }, [tasks]);
+
+  const calculateDataQuality = useCallback(() => {
+    const totalTasks = tasks.length;
+    const completeTasks = tasks.filter(t => t.fim !== '' && t.inicio !== '' && t.prazo !== '').length;
+    const validTasks = tasks.filter(t => {
+      // Verifica se todos os campos obrigatórios estão preenchidos e válidos
+      return t.fim !== '' && 
+             t.inicio !== '' && 
+             t.prazo !== '' &&
+             !isNaN(t.duracaoDiasUteis) &&
+             !isNaN(t.atrasoDiasUteis) &&
+             new Date(t.inicio).getTime() <= new Date(t.fim).getTime();
+    }).length;
+
+    const completionRate = totalTasks > 0 ? (completeTasks / totalTasks) * 100 : 0;
+    const validityRate = totalTasks > 0 ? (validTasks / totalTasks) * 100 : 0;
+    const hasMinimumData = completeTasks >= 3; // Mínimo de 3 tarefas completas
+
+    setDataQuality({
+      totalTasks,
+      completeTasks,
+      validTasks,
+      hasMinimumData,
+      completionRate,
+      validityRate
+    });
+
+    return { totalTasks, completeTasks, validTasks, hasMinimumData };
+  }, [tasks]);
 
   const recalculateMetrics = useCallback(() => {
-    if (tasks.length === 0) return;
+    // Calcula qualidade dos dados
+    const quality = calculateDataQuality();
+    
+    if (tasks.length === 0) {
+      setKpiResults(null);
+      return;
+    }
 
+    // Se não há dados suficientes, não calcula KPIs avançados
+    if (!quality.hasMinimumData) {
+      kpiErrorHandler.handleInsufficientData(3, quality.completeTasks, {
+        operation: 'recalculateMetrics',
+        totalTasks: quality.totalTasks
+      });
+    }
+
+    // Calcula KPIs usando o novo sistema
+    const results = kpiCalculator.calculateAll(tasks);
+    setKpiResults(results);
+
+    // Mantém compatibilidade com métricas antigas
     const totalTarefas = tasks.length;
     const tarefasNoPrazo = tasks.filter(t => t.atendeuPrazo).length;
     const tarefasAtrasadas = tasks.filter(t => !t.atendeuPrazo).length;
-    const mediaProducao = tasks.reduce((acc, t) => acc + t.duracaoDiasUteis, 0) / totalTarefas;
-    const mediaAtrasos = tasks.reduce((acc, t) => acc + t.atrasoDiasUteis, 0) / totalTarefas;
-    
-    // Calculate standard deviation
-    const durations = tasks.map(t => t.duracaoDiasUteis);
-    const mean = mediaProducao;
-    const squaredDifferences = durations.map(d => Math.pow(d - mean, 2));
-    const desvioPadrao = Math.sqrt(squaredDifferences.reduce((a, b) => a + b, 0) / totalTarefas);
-    
-    // Calculate mode (most frequent delay)
-    const delays = tasks.map(t => t.atrasoDiasUteis);
-    const delayCount = delays.reduce((acc, delay) => {
-      acc[delay] = (acc[delay] || 0) + 1;
-      return acc;
-    }, {} as Record<number, number>);
-    const moda = parseInt(Object.keys(delayCount).reduce((a, b) => delayCount[parseInt(a)] > delayCount[parseInt(b)] ? a : b));
-    
-    // Calculate median
-    const sortedDurations = [...durations].sort((a, b) => a - b);
-    const mediana = totalTarefas % 2 === 0 
-      ? (sortedDurations[totalTarefas / 2 - 1] + sortedDurations[totalTarefas / 2]) / 2
-      : sortedDurations[Math.floor(totalTarefas / 2)];
+    const mediaProducao = results.averageProduction;
+    const mediaAtrasos = results.averageDelay;
+    const desvioPadrao = results.standardDeviation;
+    const moda = results.mode.value;
+    const mediana = results.median;
 
     setMetrics({
       totalTarefas,
       tarefasNoPrazo,
       tarefasAtrasadas,
-      mediaProducao: Math.round(mediaProducao * 10) / 10,
-      mediaAtrasos: Math.round(mediaAtrasos * 10) / 10,
-      desvioPadrao: Math.round(desvioPadrao * 10) / 10,
+      mediaProducao,
+      mediaAtrasos,
+      desvioPadrao,
       moda,
-      mediana: Math.round(mediana * 10) / 10,
+      mediana,
     });
-  }, [tasks]);
+  }, [tasks, calculateDataQuality]);
 
   const updateTasks = useCallback((newTasks: TaskData[]) => {
     // Recalculate derived fields
@@ -117,13 +175,23 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, initialTas
   }, []);
 
   const addTask = useCallback((task: Omit<TaskData, 'id'>) => {
+    // Valida dados da nova tarefa
+    if (!task.tarefa || !task.inicio || !task.prazo) {
+      toast({
+        title: "Erro ao adicionar tarefa",
+        description: "Todos os campos obrigatórios devem ser preenchidos.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     const newId = Math.max(...tasks.map(t => t.id), 0) + 1;
     const newTask: TaskData = {
       ...task,
       id: newId,
-      duracaoDiasUteis: calculateWorkDays(task.inicio, task.fim),
-      atrasoDiasUteis: calculateDelay(task.fim, task.prazo),
-      atendeuPrazo: new Date(task.fim) <= new Date(task.prazo)
+      duracaoDiasUteis: task.fim ? calculateWorkDays(task.inicio, task.fim) : 0,
+      atrasoDiasUteis: task.fim ? calculateDelay(task.fim, task.prazo) : 0,
+      atendeuPrazo: task.fim ? new Date(task.fim) <= new Date(task.prazo) : true
     };
     
     setTasks(prev => [...prev, newTask]);
@@ -162,6 +230,18 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, initialTas
   }, []);
 
   const importData = useCallback((data: TaskData[]) => {
+    // Valida dados antes de importar
+    const validation = kpiErrorHandler.validateTaskData(data);
+    
+    if (!validation.isValid) {
+      toast({
+        title: "Erro na importação",
+        description: `${validation.errors.length} erro(s) encontrado(s) nos dados.`,
+        variant: "destructive"
+      });
+      return;
+    }
+
     updateTasks(data);
     toast({
       title: "Dados importados",
@@ -173,6 +253,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, initialTas
     return JSON.stringify(tasks, null, 2);
   }, [tasks]);
 
+  const getErrorHistory = useCallback(() => {
+    return kpiCalculator.getErrorHistory();
+  }, []);
+
   // Recalculate metrics whenever tasks change
   React.useEffect(() => {
     recalculateMetrics();
@@ -182,13 +266,17 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, initialTas
     <DataContext.Provider value={{
       tasks,
       metrics,
+      kpiResults,
+      dataQuality,
       updateTasks,
       addTask,
       editTask,
       deleteTask,
       importData,
       exportData,
-      recalculateMetrics
+      recalculateMetrics,
+      validateData,
+      getErrorHistory
     }}>
       {children}
     </DataContext.Provider>

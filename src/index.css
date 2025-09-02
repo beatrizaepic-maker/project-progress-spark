@@ -8,26 +8,41 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 240 10% 98%;
-    --foreground: 240 10% 9%;
+    /* Paleta Principal - Baseada no paleta.md */
+    --background: 240 47% 14%;
+    /* #1A1A2E - Azul Marinho Escuro */
+    --foreground: 0 0% 100%;
+    /* #FFFFFF - Branco Puro */
 
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 9%;
+    --card: 240 47% 14%;
+    /* #1A1A2E - Azul Marinho Escuro */
+    --card-foreground: 0 0% 100%;
+    /* #FFFFFF - Branco Puro */
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 9%;
+    --popover: 240 47% 14%;
+    /* #1A1A2E - Azul Marinho Escuro */
+    --popover-foreground: 0 0% 100%;
+    /* #FFFFFF - Branco Puro */
 
-    --primary: 262 83% 58%;
+    --primary: 330 100% 50%;
+    /* #FF0066 - Rosa Vibrante/Magenta Fluorescente */
     --primary-foreground: 0 0% 100%;
+    /* #FFFFFF - Branco Puro */
 
-    --secondary: 240 5% 96%;
-    --secondary-foreground: 240 6% 10%;
+    --secondary: 270 91% 36%;
+    /* #6A0DAD - Roxo Elétrico/Violeta Vibrante */
+    --secondary-foreground: 0 0% 100%;
+    /* #FFFFFF - Branco Puro */
 
-    --muted: 240 5% 96%;
-    --muted-foreground: 240 4% 46%;
+    --muted: 240 47% 14%;
+    /* #1A1A2E - Azul Marinho Escuro */
+    --muted-foreground: 0 0% 75%;
+    /* #C0C0C0 - Cinza Claro */
 
-    --accent: 262 83% 58%;
+    --accent: 270 91% 36%;
+    /* #6A0DAD - Roxo Elétrico */
     --accent-foreground: 0 0% 100%;
+    /* #FFFFFF - Branco Puro */
 
     --success: 142 76% 36%;
     --success-foreground: 0 0% 100%;
@@ -38,82 +53,120 @@ All colors MUST be HSL.
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 240 6% 90%;
-    --input: 240 6% 90%;
-    --ring: 262 83% 58%;
+    --border: 270 91% 36%;
+    /* #6A0DAD - Roxo Elétrico para bordas */
+    --input: 240 47% 14%;
+    /* #1A1A2E - Azul Marinho Escuro */
+    --ring: 330 100% 50%;
+    /* #FF0066 - Rosa Vibrante para focus */
 
-    /* Custom dashboard colors */
-    --dashboard-bg: 240 10% 98%;
-    --dashboard-card: 0 0% 100%;
-    --dashboard-border: 240 6% 90%;
-    
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(262 83% 58%), hsl(262 83% 68%));
-    --gradient-success: linear-gradient(135deg, hsl(142 76% 36%), hsl(142 76% 46%));
-    --gradient-warning: linear-gradient(135deg, hsl(38 92% 50%), hsl(38 92% 60%));
-    
-    /* Shadows */
-    --shadow-card: 0 1px 3px 0 hsl(240 6% 90% / 0.4), 0 1px 2px -1px hsl(240 6% 90% / 0.4);
-    --shadow-card-hover: 0 4px 6px -1px hsl(240 6% 90% / 0.4), 0 2px 4px -2px hsl(240 6% 90% / 0.4);
-    
+    /* Custom dashboard colors - Paleta Principal */
+    --dashboard-bg: 240 47% 14%;
+    /* #1A1A2E - Azul Marinho Escuro */
+    --dashboard-card: 240 47% 14%;
+    /* #1A1A2E - Azul Marinho Escuro */
+    --dashboard-border: 270 91% 36%;
+    /* #6A0DAD - Roxo Elétrico */
+
+    /* Gradients - Usando a paleta principal */
+    --gradient-primary: linear-gradient(135deg, hsl(330 100% 50%), hsl(270 91% 36%));
+    /* Rosa para Roxo */
+    --gradient-secondary: linear-gradient(135deg, hsl(270 91% 36%), hsl(240 47% 14%));
+    /* Roxo para Azul Escuro */
+    --gradient-accent: linear-gradient(135deg, hsl(330 100% 50%), hsl(330 100% 60%));
+    /* Rosa Vibrante */
+
+    /* Shadows - Adaptadas para tema escuro */
+    --shadow-card: 0 1px 3px 0 hsl(240 47% 14% / 0.6), 0 1px 2px -1px hsl(240 47% 14% / 0.6);
+    --shadow-card-hover: 0 4px 6px -1px hsl(330 100% 50% / 0.3), 0 2px 4px -2px hsl(270 91% 36% / 0.3);
+
     /* Transitions */
     --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
     --radius: 0.5rem;
 
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Sidebar - Usando paleta principal */
+    --sidebar-background: 240 47% 14%;
+    /* #1A1A2E - Azul Marinho Escuro */
+    --sidebar-foreground: 0 0% 100%;
+    /* #FFFFFF - Branco Puro */
+    --sidebar-primary: 330 100% 50%;
+    /* #FF0066 - Rosa Vibrante */
+    --sidebar-primary-foreground: 0 0% 100%;
+    /* #FFFFFF - Branco Puro */
+    --sidebar-accent: 270 91% 36%;
+    /* #6A0DAD - Roxo Elétrico */
+    --sidebar-accent-foreground: 0 0% 100%;
+    /* #FFFFFF - Branco Puro */
+    --sidebar-border: 270 91% 36%;
+    /* #6A0DAD - Roxo Elétrico */
+    --sidebar-ring: 330 100% 50%;
+    /* #FF0066 - Rosa Vibrante */
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    /* Modo escuro mantém a mesma paleta principal */
+    --background: 240 47% 14%;
+    /* #1A1A2E - Azul Marinho Escuro */
+    --foreground: 0 0% 100%;
+    /* #FFFFFF - Branco Puro */
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 240 47% 14%;
+    /* #1A1A2E - Azul Marinho Escuro */
+    --card-foreground: 0 0% 100%;
+    /* #FFFFFF - Branco Puro */
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 240 47% 14%;
+    /* #1A1A2E - Azul Marinho Escuro */
+    --popover-foreground: 0 0% 100%;
+    /* #FFFFFF - Branco Puro */
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 330 100% 50%;
+    /* #FF0066 - Rosa Vibrante */
+    --primary-foreground: 0 0% 100%;
+    /* #FFFFFF - Branco Puro */
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 270 91% 36%;
+    /* #6A0DAD - Roxo Elétrico */
+    --secondary-foreground: 0 0% 100%;
+    /* #FFFFFF - Branco Puro */
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 240 47% 14%;
+    /* #1A1A2E - Azul Marinho Escuro */
+    --muted-foreground: 0 0% 75%;
+    /* #C0C0C0 - Cinza Claro */
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 270 91% 36%;
+    /* #6A0DAD - Roxo Elétrico */
+    --accent-foreground: 0 0% 100%;
+    /* #FFFFFF - Branco Puro */
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --border: 270 91% 36%;
+    /* #6A0DAD - Roxo Elétrico */
+    --input: 240 47% 14%;
+    /* #1A1A2E - Azul Marinho Escuro */
+    --ring: 330 100% 50%;
+    /* #FF0066 - Rosa Vibrante */
+
+    --sidebar-background: 240 47% 14%;
+    /* #1A1A2E - Azul Marinho Escuro */
+    --sidebar-foreground: 0 0% 100%;
+    /* #FFFFFF - Branco Puro */
+    --sidebar-primary: 330 100% 50%;
+    /* #FF0066 - Rosa Vibrante */
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* #FFFFFF - Branco Puro */
+    --sidebar-accent: 270 91% 36%;
+    /* #6A0DAD - Roxo Elétrico */
+    --sidebar-accent-foreground: 0 0% 100%;
+    /* #FFFFFF - Branco Puro */
+    --sidebar-border: 270 91% 36%;
+    /* #6A0DAD - Roxo Elétrico */
+    --sidebar-ring: 330 100% 50%;
+    /* #FF0066 - Rosa Vibrante */
   }
 }
 
@@ -128,20 +181,90 @@ All colors MUST be HSL.
 }
 
 @layer utilities {
+
   /* Glassmorphism utilities */
   .glass {
     @apply backdrop-blur-md bg-white/10 dark:bg-black/10 border border-white/20 dark:border-white/10;
   }
-  
+
   .glass-card {
     @apply backdrop-blur-sm bg-white/20 dark:bg-black/20 border border-white/30 dark:border-white/20 shadow-lg;
   }
-  
+
   .glass-hover {
     @apply hover:backdrop-blur-md hover:bg-white/15 dark:hover:bg-black/15 transition-all duration-300;
   }
-  
+
   .text-shadow {
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   }
+
+  /* Paleta Principal - Classes utilitárias específicas */
+  .bg-vibrant-pink {
+    background-color: #FF0066;
+    /* Rosa Vibrante/Magenta Fluorescente */
+  }
+
+  .bg-dark-navy {
+    background-color: #1A1A2E;
+    /* Azul Marinho Escuro */
+  }
+
+  .bg-electric-purple {
+    background-color: #6A0DAD;
+    /* Roxo Elétrico/Violeta Vibrante */
+  }
+
+  .text-vibrant-pink {
+    color: #FF0066;
+    /* Rosa Vibrante */
+  }
+
+  .text-electric-purple {
+    color: #6A0DAD;
+    /* Roxo Elétrico */
+  }
+
+  .text-light-gray {
+    color: #C0C0C0;
+    /* Cinza Claro */
+  }
+
+  .border-vibrant-pink {
+    border-color: #FF0066;
+    /* Rosa Vibrante */
+  }
+
+  .border-electric-purple {
+    border-color: #6A0DAD;
+    /* Roxo Elétrico */
+  }
+
+  /* Gradientes da paleta */
+  .gradient-primary {
+    background: linear-gradient(135deg, #FF0066, #6A0DAD);
+    /* Rosa para Roxo */
+  }
+
+  .gradient-secondary {
+    background: linear-gradient(135deg, #6A0DAD, #1A1A2E);
+    /* Roxo para Azul Escuro */
+  }
+
+  .gradient-accent {
+    background: linear-gradient(135deg, #FF0066, #FF1A7A);
+    /* Rosa Vibrante */
+  }
+}
+
+/* Força o background para a cor exata da paleta */
+body,
+html,
+#root {
+  background-color: #1A1A2E !important;
+  color: #FFFFFF;
+}
+
+.bg-background {
+  background-color: #1A1A2E !important;
 }
