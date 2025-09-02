@@ -4,13 +4,22 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { WorkingDaysTooltip, DelayTooltip, StatusTooltip, DateTooltip } from "@/components/ui/informative-tooltip";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckCircle, XCircle, Calendar, Clock, Info, AlertTriangle, Target, Zap, Search, Filter, X, HelpCircle } from "lucide-react";
+import { 
+  CheckCircle, 
+  AlertTriangle, 
+  Target, 
+  Clock, 
+  HelpCircle, 
+  Zap
+} from "lucide-react";
 import { useData } from "@/contexts/DataContext";
 import { formatDays } from "@/utils/kpiFormatters";
 import { useState, useMemo } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const TaskTable = () => {
   const { tasks } = useData();
+  const isMobile = useIsMobile();
   
   // Estados para filtros
   const [searchTerm, setSearchTerm] = useState('');
@@ -50,7 +59,7 @@ const TaskTable = () => {
       }
     }
     
-    return plannedEnd.toISOString().split('T')[0];
+    return plannedEnd;
   };
 
   // Função para calcular atraso preciso em dias úteis
@@ -89,7 +98,17 @@ const TaskTable = () => {
   };
 
   // Função para determinar o status da tarefa
-  const getTaskStatus = (task: any) => {
+  type TaskStatusType = 'early' | 'on-time' | 'at-risk' | 'delayed' | 'critical';
+
+  const getTaskStatus = (task: any): {
+    type: TaskStatusType;
+    label: string;
+    icon: any;
+    color: string;
+    bgColor: string;
+    borderColor: string;
+    variant?: 'default' | 'secondary' | 'destructive' | 'outline';
+  } => {
     const preciseDelay = calculatePreciseDelay(task.fim, task.prazo);
     
     if (preciseDelay < 0) {
@@ -99,7 +118,8 @@ const TaskTable = () => {
         icon: Zap,
         color: 'text-blue-600 dark:text-blue-400',
         bgColor: 'bg-blue-50 dark:bg-blue-900/20',
-        borderColor: 'border-blue-200 dark:border-blue-800'
+        borderColor: 'border-blue-200 dark:border-blue-800',
+        variant: 'secondary'
       };
     } else if (preciseDelay === 0) {
       return {
@@ -108,16 +128,18 @@ const TaskTable = () => {
         icon: Target,
         color: 'text-green-600 dark:text-green-400',
         bgColor: 'bg-green-50 dark:bg-green-900/20',
-        borderColor: 'border-green-200 dark:border-green-800'
+        borderColor: 'border-green-200 dark:border-green-800',
+        variant: 'default'
       };
     } else if (preciseDelay <= 2) {
       return {
         type: 'at-risk',
         label: 'Risco Baixo',
-        icon: Info,
+        icon: AlertTriangle,
         color: 'text-yellow-600 dark:text-yellow-400',
         bgColor: 'bg-yellow-50 dark:bg-yellow-900/20',
-        borderColor: 'border-yellow-200 dark:border-yellow-800'
+        borderColor: 'border-yellow-200 dark:border-yellow-800',
+        variant: 'outline'
       };
     } else if (preciseDelay <= 5) {
       return {
@@ -126,16 +148,18 @@ const TaskTable = () => {
         icon: AlertTriangle,
         color: 'text-orange-600 dark:text-orange-400',
         bgColor: 'bg-orange-50 dark:bg-orange-900/20',
-        borderColor: 'border-orange-200 dark:border-orange-800'
+        borderColor: 'border-orange-200 dark:border-orange-800',
+        variant: 'destructive'
       };
     } else {
       return {
         type: 'critical',
         label: 'Crítica',
-        icon: XCircle,
+        icon: AlertTriangle,
         color: 'text-red-600 dark:text-red-400',
         bgColor: 'bg-red-50 dark:bg-red-900/20',
-        borderColor: 'border-red-200 dark:border-red-800'
+        borderColor: 'border-red-200 dark:border-red-800',
+        variant: 'destructive'
       };
     }
   };
@@ -237,10 +261,10 @@ const TaskTable = () => {
 
         {/* Interface de Filtros */}
         <div className="mt-4 space-y-4">
-          <div className="flex flex-wrap gap-4 items-center">
+          <div className={`flex gap-4 items-center ${isMobile ? 'flex-col' : 'flex-wrap'}`}>
             {/* Busca por nome */}
-            <div className="flex items-center gap-2 min-w-[200px]">
-              <Search className="h-4 w-4 text-muted-foreground" />
+            <div className={`flex items-center gap-2 ${isMobile ? 'w-full' : 'min-w-[200px]'}`}>
+              <span className="text-muted-foreground">🔍</span>
               <Input
                 placeholder="Buscar tarefa..."
                 value={searchTerm}
@@ -250,10 +274,10 @@ const TaskTable = () => {
             </div>
 
             {/* Filtro por status */}
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
+            <div className={`flex items-center gap-2 ${isMobile ? 'w-full' : ''}`}>
+              <span className="text-muted-foreground">🔽</span>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[180px] h-8">
+                <SelectTrigger className={`h-8 ${isMobile ? 'w-full' : 'w-[180px]'}`}>
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -268,10 +292,10 @@ const TaskTable = () => {
             </div>
 
             {/* Filtro por faixa de atraso */}
-            <div className="flex items-center gap-2">
+            <div className={`flex items-center gap-2 ${isMobile ? 'w-full' : ''}`}>
               <Clock className="h-4 w-4 text-muted-foreground" />
               <Select value={delayRangeFilter} onValueChange={setDelayRangeFilter}>
-                <SelectTrigger className="w-[160px] h-8">
+                <SelectTrigger className={`h-8 ${isMobile ? 'w-full' : 'w-[160px]'}`}>
                   <SelectValue placeholder="Atraso" />
                 </SelectTrigger>
                 <SelectContent>
@@ -288,9 +312,9 @@ const TaskTable = () => {
             {(searchTerm || statusFilter !== 'all' || delayRangeFilter !== 'all') && (
               <button
                 onClick={clearAllFilters}
-                className="flex items-center gap-1 px-3 py-1 text-xs bg-muted hover:bg-muted/80 rounded-md transition-colors"
+                className={`flex items-center gap-1 px-3 py-1 text-xs bg-muted hover:bg-muted/80 rounded-md transition-colors ${isMobile ? 'w-full justify-center' : ''}`}
               >
-                <X className="h-3 w-3" />
+                <span>✕</span>
                 Limpar filtros
               </button>
             )}
@@ -302,28 +326,34 @@ const TaskTable = () => {
               {searchTerm && (
                 <Badge variant="secondary" className="gap-1">
                   Busca: "{searchTerm}"
-                  <X 
-                    className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                  <span 
+                    className="cursor-pointer hover:text-destructive" 
                     onClick={() => setSearchTerm('')}
-                  />
+                  >
+                    ✕
+                  </span>
                 </Badge>
               )}
               {statusFilter !== 'all' && (
                 <Badge variant="secondary" className="gap-1">
                   Status: {statusFilter}
-                  <X 
-                    className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                  <span 
+                    className="cursor-pointer hover:text-destructive" 
                     onClick={() => setStatusFilter('all')}
-                  />
+                  >
+                    ✕
+                  </span>
                 </Badge>
               )}
               {delayRangeFilter !== 'all' && (
                 <Badge variant="secondary" className="gap-1">
                   Atraso: {delayRangeFilter}
-                  <X 
-                    className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                  <span 
+                    className="cursor-pointer hover:text-destructive" 
                     onClick={() => setDelayRangeFilter('all')}
-                  />
+                  >
+                    ✕
+                  </span>
                 </Badge>
               )}
             </div>
@@ -331,7 +361,7 @@ const TaskTable = () => {
         </div>
         <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mt-2">
           <div className="flex items-center gap-1">
-            <Calendar className="h-4 w-4 text-blue-500" />
+            <span className="text-blue-500">📅</span>
             <span>Data Planejada: Baseada na duração estimada</span>
           </div>
           <div className="flex items-center gap-1">
@@ -375,7 +405,7 @@ const TaskTable = () => {
               <span className="text-green-600 dark:text-green-400">No Prazo</span>
             </div>
             <div className="flex items-center gap-1">
-              <Info className="h-3 w-3 text-yellow-500" />
+              <span className="text-yellow-500">⚠️</span>
               <span className="text-yellow-600 dark:text-yellow-400">Risco Baixo (1-2d)</span>
             </div>
             <div className="flex items-center gap-1">
@@ -383,7 +413,7 @@ const TaskTable = () => {
               <span className="text-orange-600 dark:text-orange-400">Atrasada (3-5d)</span>
             </div>
             <div className="flex items-center gap-1">
-              <XCircle className="h-3 w-3 text-red-500" />
+              <span className="text-red-500">🔴</span>
               <span className="text-red-600 dark:text-red-400">Crítica (6+d)</span>
             </div>
           </div>
@@ -391,16 +421,71 @@ const TaskTable = () => {
       </CardHeader>
       
       <CardContent>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-muted/30">
-              <tr>
-                <th className="text-left p-4 text-sm font-medium text-muted-foreground">Tarefa</th>
+        {isMobile ? (
+          /* Layout mobile: cards empilhados */
+          <div className="space-y-4">
+            {filteredTasks.map((task, index) => {
+              const status = getTaskStatus(task);
+              const startDate = formatDate(task.inicio);
+              const endDate = formatDate(task.fim);
+              const plannedEndDate = formatDate(calculatePlannedEndDate(task.inicio, task.duracaoDiasUteis).toISOString().split('T')[0]);
+
+              return (
+                <div
+                  key={index}
+                  className="border rounded-lg p-4 space-y-3 bg-card"
+                >
+                  {/* Nome da tarefa */}
+                  <div>
+                    <h3 className="font-medium text-sm">{task.tarefa}</h3>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge variant={status.variant} className="text-xs">
+                        {status.icon} {status.label}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* Datas */}
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <span className="text-muted-foreground">Início:</span>
+                      <div className="font-mono">{startDate.short}</div>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Fim:</span>
+                      <div className="font-mono">{endDate.short}</div>
+                    </div>
+                  </div>
+
+                  {/* Duração e atraso */}
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <span className="text-muted-foreground">Duração:</span>
+                      <div className="font-mono">{formatDays(task.duracaoDiasUteis)}</div>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Atraso:</span>
+                      <div className={`font-mono ${task.atrasoDiasUteis > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                        {formatDays(task.atrasoDiasUteis)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          /* Layout desktop: tabela tradicional */
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-muted/30">
+                <tr>
+                  <th className="text-left p-4 text-sm font-medium text-muted-foreground">Tarefa</th>
                 <th className="text-left p-4 text-sm font-medium text-muted-foreground">
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div className="flex items-center gap-1 cursor-help">
-                        <Calendar className="h-4 w-4" />
+                        <span>📅</span>
                         Data Início
                         <HelpCircle className="h-3 w-3" />
                       </div>
@@ -417,7 +502,7 @@ const TaskTable = () => {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div className="flex items-center gap-1 cursor-help">
-                        <Calendar className="h-4 w-4" />
+                        <span>📅</span>
                         Data Fim
                         <HelpCircle className="h-3 w-3" />
                       </div>
@@ -451,7 +536,7 @@ const TaskTable = () => {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div className="flex items-center gap-1 cursor-help">
-                        <Calendar className="h-4 w-4" />
+                        <span>📅</span>
                         Prazo Final
                         <HelpCircle className="h-3 w-3" />
                       </div>
@@ -527,7 +612,7 @@ const TaskTable = () => {
                 const startDate = formatDate(task.inicio);
                 const endDate = formatDate(task.fim);
                 const deadlineDate = formatDate(task.prazo);
-                const plannedEndDate = formatDate(calculatePlannedEndDate(task.inicio, task.duracaoDiasUteis));
+                const plannedEndDate = formatDate(calculatePlannedEndDate(task.inicio, task.duracaoDiasUteis).toISOString().split('T')[0]);
                 
                 return (
                   <tr 
@@ -593,7 +678,7 @@ const TaskTable = () => {
                     {/* Data Planejada */}
                     <td className="p-4">
                       <DateTooltip
-                        date={calculatePlannedEndDate(task.inicio, task.duracaoDiasUteis)}
+                        date={calculatePlannedEndDate(task.inicio, task.duracaoDiasUteis).toISOString().split('T')[0]}
                         label="Data Planejada"
                         description="Data calculada baseada na duração estimada da tarefa."
                         isPlanned={true}
@@ -742,7 +827,7 @@ const TaskTable = () => {
                 <tr>
                   <td colSpan={8} className="p-8 text-center">
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                      <Search className="h-8 w-8" />
+                      <span className="text-4xl">🔍</span>
                       <p className="text-sm">Nenhuma tarefa encontrada com os filtros aplicados</p>
                       <button
                         onClick={clearAllFilters}
@@ -757,6 +842,7 @@ const TaskTable = () => {
             </tbody>
           </table>
         </div>
+        )}
       </CardContent>
     </Card>
     </TooltipProvider>

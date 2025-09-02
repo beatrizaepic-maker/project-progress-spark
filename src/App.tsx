@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Navigation from "./components/Navigation";
-import { 
+import {
   CustomSidebar,
   CustomSidebarBody,
   CustomSidebarLink,
@@ -33,7 +33,7 @@ const sidebarLinks = [
   },
   {
     label: "Análise",
-    href: "/analytics", 
+    href: "/analytics",
     icon: <TrendingUp className="h-4 w-4" />,
   },
   {
@@ -55,13 +55,13 @@ const sidebarLinks = [
 
 const LogoSection = () => {
   const { open } = useCustomSidebar();
-  
+
   return (
     <div className={`flex items-center gap-2 px-2 py-4 mt-20 border-b border-border ${open ? 'justify-start' : 'justify-center'}`}>
       <div className="p-2 bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/20 flex-shrink-0">
-        <img 
-          src="/LOGOEPIC.png" 
-          alt="EPIC Logo" 
+        <img
+          src="/LOGOEPIC.png"
+          alt="EPIC Logo"
           className="h-6 w-6 object-contain"
         />
       </div>
@@ -84,7 +84,7 @@ const App = () => (
           <CustomSidebar>
             <CustomSidebarBody className="gap-4">
               <LogoSection />
-              
+
               {/* Navigation Links */}
               <div className="flex-1 px-2">
                 {sidebarLinks.map((link) => (
@@ -93,7 +93,7 @@ const App = () => (
               </div>
             </CustomSidebarBody>
           </CustomSidebar>
-          
+
           <div className="md:ml-[60px] transition-all duration-300">
             <Navigation />
             <div className="pt-20">

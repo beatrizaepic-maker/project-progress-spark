@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import MetricsCards from "@/components/dashboard/MetricsCards";
 import DashboardKPIs from "@/components/dashboard/DashboardKPIs";
+import KPIDebugSection from "@/components/dashboard/KPIDebugSection";
 import { DataProvider } from "@/contexts/DataContext";
 import { mockTaskData } from "@/data/projectData";
 
@@ -57,20 +58,35 @@ const Dashboard = () => {
             <MetricsCards />
           </section>
 
-          {/* Resumo Rápido */}
-          <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <SummaryCard>
-              <h3 className="text-lg font-semibold mb-2">Status Geral</h3>
-              <p className="text-muted-foreground">Acompanhe o progresso geral do projeto</p>
-            </SummaryCard>
-            <SummaryCard>
-              <h3 className="text-lg font-semibold mb-2">Próximas Ações</h3>
-              <p className="text-muted-foreground">Tarefas prioritárias para hoje</p>
-            </SummaryCard>
-            <SummaryCard>
-              <h3 className="text-lg font-semibold mb-2">Alertas</h3>
-              <p className="text-muted-foreground">Itens que precisam de atenção</p>
-            </SummaryCard>
+          {/* Resumo Rápido - Movido para baixo das Métricas Complementares */}
+          <section>
+            <div className="mb-6">
+              <h3 className="text-xl font-semibold text-foreground mb-2">Resumo Rápido</h3>
+              <p className="text-muted-foreground">Visão geral das principais informações do projeto</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <SummaryCard>
+                <h3 className="text-lg font-semibold mb-2">Status Geral</h3>
+                <p className="text-muted-foreground">Acompanhe o progresso geral do projeto</p>
+              </SummaryCard>
+              <SummaryCard>
+                <h3 className="text-lg font-semibold mb-2">Próximas Ações</h3>
+                <p className="text-muted-foreground">Tarefas prioritárias para hoje</p>
+              </SummaryCard>
+              <SummaryCard>
+                <h3 className="text-lg font-semibold mb-2">Alertas</h3>
+                <p className="text-muted-foreground">Itens que precisam de atenção</p>
+              </SummaryCard>
+            </div>
+          </section>
+
+          {/* Seção de Debug e Monitoramento - Movida para baixo do Resumo Rápido */}
+          <section>
+            <div className="mb-6">
+              <h3 className="text-xl font-semibold text-foreground mb-2">Debug e Monitoramento</h3>
+              <p className="text-muted-foreground">Informações técnicas e métricas de performance dos KPIs</p>
+            </div>
+            <KPIDebugSection tasks={mockTaskData} />
           </section>
       </main>
     </DataProvider>

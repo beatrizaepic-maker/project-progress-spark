@@ -1,20 +1,20 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useDashboardKPIs, useKPIMonitoring } from '@/hooks/useKPIs';
 import { TaskData } from '@/data/projectData';
 import ProjectDeadlineCard from './ProjectDeadlineCard';
 import AverageDelayCard from './AverageDelayCard';
 import StandardDeviationCard from './StandardDeviationCard';
-import KPILoadingIndicator from '@/components/ui/kpi-loading-indicator';
 import { KPIRecalculationIndicator } from '@/components/ui/kpi-recalculation-indicator';
 import { toast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface DashboardKPIsProps {
   tasks: TaskData[];
 }
 
 const DashboardKPIs: React.FC<DashboardKPIsProps> = ({ tasks }) => {
-  const [showMonitoring, setShowMonitoring] = useState(false);
   const monitoring = useKPIMonitoring();
+  const isMobile = useIsMobile();
 
   const kpis = useDashboardKPIs(tasks, {
     debounceMs: 300,
@@ -49,32 +49,6 @@ const DashboardKPIs: React.FC<DashboardKPIsProps> = ({ tasks }) => {
 
   return (
     <div className="space-y-6">
-      {/* Indicador de Status dos KPIs */}
-      <div className="flex items-center justify-between">
-        <KPILoadingIndicator
-          isCalculating={kpis.isCalculating}
-          lastUpdated={kpis.lastUpdated}
-          cacheHit={kpis.cacheHit}
-          variant="detailed"
-          className="flex-1"
-          calculationVersion={kpis.calculationVersion}
-          showVersion={true}
-          processingTime={kpis.processingTime}
-          showProcessingTime={true}
-          onRefresh={kpis.invalidateCache}
-        />
-        
-        {/* Botão de Monitoramento (apenas em desenvolvimento) */}
-        {process.env.NODE_ENV === 'development' && (
-          <button
-            onClick={() => setShowMonitoring(!showMonitoring)}
-            className="ml-4 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 shadow-lg shadow-pink-500/25 hover:shadow-pink-500/40 transition-all duration-200 transform hover:scale-105"
-          >
-            {showMonitoring ? 'Ocultar' : 'Mostrar'} Debug
-          </button>
-        )}
-      </div>
-
       {/* Indicador de Recálculo em Tempo Real */}
       <KPIRecalculationIndicator
         isCalculating={kpis.isCalculating}
@@ -87,37 +61,8 @@ const DashboardKPIs: React.FC<DashboardKPIsProps> = ({ tasks }) => {
         showDetails={true}
       />
 
-      {/* Painel de Monitoramento (apenas em desenvolvimento) */}
-      {showMonitoring && process.env.NODE_ENV === 'development' && (
-        <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border">
-          <h4 className="text-sm font-semibold mb-2">Debug - Monitoramento de KPIs</h4>
-          <div className="grid grid-cols-3 gap-4 text-xs">
-            <div>
-              <span className="text-muted-foreground">Cálculos:</span>
-              <span className="ml-2 font-mono">{monitoring.calculationCount}</span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Cache Hit:</span>
-              <span className="ml-2 font-mono">{monitoring.cacheMetrics.hitRate}%</span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Tempo Médio:</span>
-              <span className="ml-2 font-mono">{monitoring.averageCalculationTime}ms</span>
-            </div>
-          </div>
-          <div className="mt-2 flex gap-2">
-            <button
-              onClick={kpis.invalidateCache}
-              className="px-2 py-1 text-xs bg-red-100 hover:bg-red-200 text-red-700 rounded"
-            >
-              Limpar Cache
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Grid de KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className={`grid gap-6 ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>
         <ProjectDeadlineCard
           deadlineStatus={kpis.projectDeadlineStatus}
           completionPercentage={kpis.projectCompletionPercentage}
@@ -153,15 +98,7 @@ const DashboardKPIs: React.FC<DashboardKPIsProps> = ({ tasks }) => {
         />
       </div>
 
-      {/* Indicador Minimal na parte inferior */}
-      <div className="flex justify-end">
-        <KPILoadingIndicator
-          isCalculating={kpis.isCalculating}
-          lastUpdated={kpis.lastUpdated}
-          cacheHit={kpis.cacheHit}
-          variant="badge"
-        />
-      </div>
+
     </div>
   );
 };

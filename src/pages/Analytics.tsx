@@ -1,46 +1,15 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React from 'react';
 import Charts from "@/components/dashboard/Charts";
 import { DataProvider, useData } from "@/contexts/DataContext";
 import { mockTaskData } from "@/data/projectData";
 import { useAnalyticsKPIs } from "@/hooks/useKPIs";
 import KPILoadingIndicator from "@/components/ui/kpi-loading-indicator";
-import { KPITimestampDetailed } from "@/components/ui/kpi-timestamp";
+
 import { KPIVersionIndicator } from "@/components/ui/kpi-version-indicator";
 import { toast } from "@/hooks/use-toast";
 
 const AnalyticsContent = () => {
   const { tasks } = useData();
-  
-  // Componente para cards com efeito de elevação
-  const InsightCard = ({ children }: { children: React.ReactNode }) => {
-    const [isHovered, setIsHovered] = useState(false);
-    
-    return (
-      <motion.div
-        initial={{ y: 0 }}
-        animate={{
-          y: isHovered ? -8 : 0,
-        }}
-        transition={{
-          type: "spring",
-          stiffness: 300,
-          damping: 20
-        }}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        style={{
-          boxShadow: isHovered 
-            ? "0 20px 40px rgba(0, 0, 0, 0.3), 0 10px 20px rgba(139, 92, 246, 0.2)" 
-            : "0 4px 8px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(139, 92, 246, 0.1)"
-        }}
-      >
-        <div className="bg-card p-6 border-2 border-purple-500 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-all duration-300">
-          {children}
-        </div>
-      </motion.div>
-    );
-  };
   
   const analyticsKPIs = useAnalyticsKPIs(tasks, {
     debounceMs: 500, // Maior debounce para analytics (gráficos mais pesados)
@@ -90,18 +59,71 @@ const AnalyticsContent = () => {
         
         {/* Timestamp e Versionamento Detalhado para Analytics */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-          <KPITimestampDetailed
-            lastUpdated={analyticsKPIs.lastUpdated}
-            isCalculating={analyticsKPIs.isCalculating}
-            calculationId={analyticsKPIs.calculationId}
-            processingTime={analyticsKPIs.processingTime}
-            cacheHit={analyticsKPIs.cacheHit}
-            showDetails={true}
-          />
+          <div className="relative overflow-hidden border-2 border-purple-500 bg-card p-6 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-all duration-200">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="flex items-center justify-center h-10 w-10 text-orange-600 bg-orange-100 rounded-lg">
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <h4 className="kpi-title text-white text-sm">Última Atualização</h4>
+                <p className="kpi-subtitle text-light-gray text-xs mt-1">
+                  {analyticsKPIs.lastUpdated.toLocaleDateString('pt-BR')} às {analyticsKPIs.lastUpdated.toLocaleTimeString('pt-BR')}
+                </p>
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="card-content text-light-gray text-sm">Status:</span>
+                <span className={`kpi-value text-lg ${analyticsKPIs.isCalculating ? 'text-blue-400' : 'text-green-400'}`}>
+                  {analyticsKPIs.isCalculating ? '⚡ Recalculando' : '✅ Atualizado'}
+                </span>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span className="card-content text-light-gray text-sm">Fonte:</span>
+                <span className="kpi-value text-white text-lg">
+                  {analyticsKPIs.cacheHit ? (
+                    <span className="inline-flex items-center gap-1">
+                      <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+                      Cache
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1">
+                      <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                      Tempo Real
+                    </span>
+                  )}
+                </span>
+              </div>
+              
+              {analyticsKPIs.processingTime && (
+                <div className="flex justify-between items-center">
+                  <span className="card-content text-light-gray text-sm">Tempo de Processamento:</span>
+                  <span className="kpi-value text-white text-lg">{analyticsKPIs.processingTime}ms</span>
+                </div>
+              )}
+            </div>
+            
+            {/* Efeito de brilho sutil */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+          </div>
           
           {analyticsKPIs.calculationId && analyticsKPIs.calculationVersion && (
-            <div className="bg-gray-50 p-3 border">
-              <h4 className="text-sm font-semibold mb-2">Informações de Versionamento</h4>
+            <div className="relative overflow-hidden border-2 border-purple-500 bg-card p-6 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-all duration-200">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="flex items-center justify-center h-10 w-10 text-purple-600 bg-purple-100 rounded-lg">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <h4 className="kpi-title text-white text-sm">Informações de Versionamento</h4>
+                  <p className="kpi-subtitle text-light-gray text-xs mt-1">Detalhes técnicos do processamento</p>
+                </div>
+              </div>
               <KPIVersionIndicator
                 calculationId={analyticsKPIs.calculationId}
                 calculationVersion={analyticsKPIs.calculationVersion}
@@ -111,6 +133,8 @@ const AnalyticsContent = () => {
                 dataHash={analyticsKPIs.dataHash}
                 totalTasks={analyticsKPIs.totalTasks}
               />
+              {/* Efeito de brilho sutil */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
             </div>
           )}
         </div>
@@ -120,61 +144,95 @@ const AnalyticsContent = () => {
 
       {/* Insights Adicionais */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <InsightCard>
-          <h3 className="text-lg font-semibold mb-4">Resumo Estatístico</h3>
-          <p className="text-muted-foreground mb-4">Principais métricas calculadas automaticamente</p>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Média de Produção:</span>
-              <span className="font-mono text-sm">{analyticsKPIs.averageProduction.toFixed(1)} dias</span>
+        <div className="relative overflow-hidden border-2 border-purple-500 bg-card p-6 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-all duration-200 hover:shadow-lg">
+          {/* Header com ícone e título */}
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="flex items-center justify-center h-12 w-12 text-green-600 bg-green-100 rounded-lg">
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Moda:</span>
-              <span className="font-mono text-sm">{analyticsKPIs.mode.value} dias ({analyticsKPIs.mode.frequency}x)</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Mediana:</span>
-              <span className="font-mono text-sm">{analyticsKPIs.median.toFixed(1)} dias</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Desvio Padrão:</span>
-              <span className="font-mono text-sm">{analyticsKPIs.standardDeviation.toFixed(1)} dias</span>
+            <div>
+              <h3 className="kpi-title text-white text-sm">Resumo Estatístico</h3>
+              <p className="kpi-subtitle text-light-gray text-xs mt-1">Principais métricas calculadas automaticamente</p>
             </div>
           </div>
-        </InsightCard>
-        
-        <InsightCard>
-          <h3 className="text-lg font-semibold mb-4">Status do Sistema</h3>
-          <p className="text-muted-foreground mb-4">Informações sobre o processamento dos dados</p>
+
+          {/* Métricas */}
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Status:</span>
-              <span className={`text-sm font-medium ${
-                analyticsKPIs.isCalculating ? 'text-blue-600' : 'text-green-600'
+              <span className="card-content text-light-gray text-sm">Média de Produção:</span>
+              <span className="kpi-value text-white text-lg">{analyticsKPIs.averageProduction.toFixed(1)} dias</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="card-content text-light-gray text-sm">Moda:</span>
+              <span className="kpi-value text-white text-lg">{analyticsKPIs.mode.value} dias ({analyticsKPIs.mode.frequency}x)</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="card-content text-light-gray text-sm">Mediana:</span>
+              <span className="kpi-value text-white text-lg">{analyticsKPIs.median.toFixed(1)} dias</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="card-content text-light-gray text-sm">Desvio Padrão:</span>
+              <span className="kpi-value text-white text-lg">{analyticsKPIs.standardDeviation.toFixed(1)} dias</span>
+            </div>
+          </div>
+
+          {/* Efeito de brilho sutil */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+        </div>
+        
+        <div className="relative overflow-hidden border-2 border-purple-500 bg-card p-6 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-all duration-200 hover:shadow-lg">
+          {/* Header com ícone e título */}
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="flex items-center justify-center h-12 w-12 text-blue-600 bg-blue-100 rounded-lg">
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="kpi-title text-white text-sm">Status do Sistema</h3>
+              <p className="kpi-subtitle text-light-gray text-xs mt-1">Informações sobre o processamento dos dados</p>
+            </div>
+          </div>
+
+          {/* Status */}
+          <div className="space-y-3 mb-4">
+            <div className="flex justify-between items-center">
+              <span className="card-content text-light-gray text-sm">Status:</span>
+              <span className={`kpi-value text-lg ${
+                analyticsKPIs.isCalculating ? 'text-blue-400' : 'text-green-400'
               }`}>
-                {analyticsKPIs.isCalculating ? 'Processando' : 'Atualizado'}
+                {analyticsKPIs.isCalculating ? '⚡ Processando' : '✅ Atualizado'}
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Fonte dos Dados:</span>
-              <span className="text-sm font-mono">
-                {analyticsKPIs.cacheHit ? 'Cache' : 'Recalculado'}
+              <span className="card-content text-light-gray text-sm">Fonte dos Dados:</span>
+              <span className="kpi-value text-white text-lg">
+                {analyticsKPIs.cacheHit ? '💾 Cache' : '🔄 Recalculado'}
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Última Atualização:</span>
-              <span className="text-sm font-mono">
+              <span className="card-content text-light-gray text-sm">Última Atualização:</span>
+              <span className="kpi-value text-white text-lg">
                 {analyticsKPIs.lastUpdated.toLocaleTimeString('pt-BR')}
               </span>
             </div>
+          </div>
+
+          {/* Ação */}
+          <div className="pt-3 border-t border-gray-200/50 dark:border-gray-700/50">
             <button
               onClick={analyticsKPIs.invalidateCache}
-              className="w-full mt-4 px-3 py-2 text-sm bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors"
+              className="w-full px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 shadow-lg shadow-pink-500/25 hover:shadow-pink-500/40 transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2"
             >
-              Forçar Recálculo
+              🔄 Forçar Recálculo
             </button>
           </div>
-        </InsightCard>
+
+          {/* Efeito de brilho sutil */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+        </div>
       </section>
     </main>
   );
