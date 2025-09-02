@@ -1,5 +1,6 @@
 import { TaskData } from '@/data/projectData';
 import { kpiErrorHandler, ErrorType, ErrorSeverity } from './errorHandler';
+import { dataValidator, ValidationResult } from './dataValidator';
 
 export interface KPIResults {
   // Dashboard KPIs
@@ -34,6 +35,9 @@ export interface KPIResults {
   hasErrors: boolean;
   errorCount: number;
   criticalErrors: boolean;
+  
+  // Validation results
+  validationResult?: ValidationResult;
 }
 
 export interface KPIConfig {
@@ -81,7 +85,7 @@ export class KPICalculator {
    * Gera ID único para o cálculo
    */
   private generateCalculationId(): string {
-    return `calc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `calc_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   }
 
   /**
@@ -109,8 +113,20 @@ export class KPICalculator {
       return this.getEmptyResults();
     }
 
+    // Validação e sanitização dos dados
+    const validationResult = dataValidator.validateAndSanitize(tasks);
+    
+    // Se há erros críticos de validação, retorna resultados vazios
+    if (!validationResult.isValid) {
+      const emptyResults = this.getEmptyResults();
+      emptyResults.validationResult = validationResult;
+      return emptyResults;
+    }
+
+    // Usa dados sanitizados para os cálculos
+    const sanitizedTasks = validationResult.sanitizedData || tasks;
     const calculationId = this.generateCalculationId();
-    const dataHash = this.generateDataHash(tasks);
+    const dataHash = this.generateDataHash(sanitizedTasks);
 
     // Executa cálculos com tratamento de erro
     const results = {

@@ -181,7 +181,8 @@
     - Adicionar sugestões de ação para resolver problemas
     - _Requisitos: 4.6, 5.4_
 
-  - [ ] 6.3 Validar integridade dos dados
+  - [x] 6.3 Validar integridade dos dados
+
     - Implementar validação de tipos e formatos de data
     - Criar verificação de consistência entre datas
     - Adicionar sanitização de dados de entrada

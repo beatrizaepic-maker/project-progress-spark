@@ -2,7 +2,7 @@ import CalendarDays from "lucide-react/dist/esm/icons/calendar-days";
 
 export default function Header() {
   return (
-    <div className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40">
+    <div className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
