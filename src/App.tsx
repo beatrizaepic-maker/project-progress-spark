@@ -58,7 +58,7 @@ const LogoSection = () => {
   
   return (
     <div className={`flex items-center gap-2 px-2 py-4 mt-20 border-b border-border ${open ? 'justify-start' : 'justify-center'}`}>
-      <div className="p-2 rounded-lg bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/20 flex-shrink-0">
+      <div className="p-2 bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/20 flex-shrink-0">
         <img 
           src="/LOGOEPIC.png" 
           alt="EPIC Logo" 

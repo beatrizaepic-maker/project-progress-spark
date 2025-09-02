@@ -1,3 +1,5 @@
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import Charts from "@/components/dashboard/Charts";
 import { DataProvider, useData } from "@/contexts/DataContext";
 import { mockTaskData } from "@/data/projectData";
@@ -9,6 +11,36 @@ import { toast } from "@/hooks/use-toast";
 
 const AnalyticsContent = () => {
   const { tasks } = useData();
+  
+  // Componente para cards com efeito de elevação
+  const InsightCard = ({ children }: { children: React.ReactNode }) => {
+    const [isHovered, setIsHovered] = useState(false);
+    
+    return (
+      <motion.div
+        initial={{ y: 0 }}
+        animate={{
+          y: isHovered ? -8 : 0,
+        }}
+        transition={{
+          type: "spring",
+          stiffness: 300,
+          damping: 20
+        }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        style={{
+          boxShadow: isHovered 
+            ? "0 20px 40px rgba(0, 0, 0, 0.3), 0 10px 20px rgba(139, 92, 246, 0.2)" 
+            : "0 4px 8px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(139, 92, 246, 0.1)"
+        }}
+      >
+        <div className="bg-card p-6 border-2 border-purple-500 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-all duration-300">
+          {children}
+        </div>
+      </motion.div>
+    );
+  };
   
   const analyticsKPIs = useAnalyticsKPIs(tasks, {
     debounceMs: 500, // Maior debounce para analytics (gráficos mais pesados)
@@ -88,7 +120,7 @@ const AnalyticsContent = () => {
 
       {/* Insights Adicionais */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-card p-6 border">
+        <InsightCard>
           <h3 className="text-lg font-semibold mb-4">Resumo Estatístico</h3>
           <p className="text-muted-foreground mb-4">Principais métricas calculadas automaticamente</p>
           <div className="space-y-3">
@@ -109,9 +141,9 @@ const AnalyticsContent = () => {
               <span className="font-mono text-sm">{analyticsKPIs.standardDeviation.toFixed(1)} dias</span>
             </div>
           </div>
-        </div>
+        </InsightCard>
         
-        <div className="bg-card p-6 border">
+        <InsightCard>
           <h3 className="text-lg font-semibold mb-4">Status do Sistema</h3>
           <p className="text-muted-foreground mb-4">Informações sobre o processamento dos dados</p>
           <div className="space-y-3">
@@ -137,12 +169,12 @@ const AnalyticsContent = () => {
             </div>
             <button
               onClick={analyticsKPIs.invalidateCache}
-              className="w-full mt-4 px-3 py-2 text-sm bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-md transition-colors"
+              className="w-full mt-4 px-3 py-2 text-sm bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors"
             >
               Forçar Recálculo
             </button>
           </div>
-        </div>
+        </InsightCard>
       </section>
     </main>
   );

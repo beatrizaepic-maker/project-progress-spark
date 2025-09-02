@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { LucideIcon, HelpCircle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -56,6 +57,7 @@ const KPICard: React.FC<KPICardProps> = ({
   calculationVersion,
   showVersioning = false
 }) => {
+  const [isHovered, setIsHovered] = useState(false);
   const getStatusStyles = (status: KPICardProps['status']) => {
     const styles = {
       success: 'border-green-200 bg-green-50/50 text-green-800',
@@ -120,7 +122,7 @@ const KPICard: React.FC<KPICardProps> = ({
                 <div className="space-y-1">
                   {tooltipDetails.map((detail, index) => (
                     <div key={index} className="flex items-start gap-2 text-xs">
-                      <div className="w-1 h-1 bg-muted-foreground rounded-full mt-2 flex-shrink-0" />
+                      <div className="w-1 h-1 bg-muted-foreground mt-2 flex-shrink-0" />
                       <span className="text-muted-foreground leading-relaxed">{detail}</span>
                     </div>
                   ))}
@@ -130,7 +132,7 @@ const KPICard: React.FC<KPICardProps> = ({
                 <div className="border-t border-border/50 pt-2">
                   <div className="text-xs">
                     <span className="font-medium text-foreground">Cálculo:</span>
-                    <p className="text-muted-foreground mt-1 font-mono bg-muted/30 px-2 py-1 rounded">
+                    <p className="text-muted-foreground mt-1 font-mono bg-muted/30 px-2 py-1">
                       {tooltipCalculation}
                     </p>
                   </div>
@@ -144,11 +146,29 @@ const KPICard: React.FC<KPICardProps> = ({
   };
 
   return (
-    <div className={cn(
-      'relative overflow-hidden border-2 border-electric-purple p-6 transition-all duration-200 hover:shadow-lg',
-      'bg-dark-navy',
-      className
-    )}>
+    <motion.div 
+      className={cn(
+        'relative overflow-hidden border-2 border-purple-500 p-6 transition-all duration-200 hover:shadow-lg shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50',
+        'bg-card',
+        className
+      )}
+      initial={{ y: 0 }}
+      animate={{
+        y: isHovered ? -8 : 0,
+      }}
+      transition={{
+        type: "spring",
+        stiffness: 300,
+        damping: 20
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      style={{
+        boxShadow: isHovered 
+          ? "0 20px 40px rgba(0, 0, 0, 0.3), 0 10px 20px rgba(139, 92, 246, 0.2)" 
+          : "0 4px 8px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(139, 92, 246, 0.1)"
+      }}
+    >
       {/* Header com ícone e título */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center space-x-3">
@@ -225,7 +245,7 @@ const KPICard: React.FC<KPICardProps> = ({
 
       {/* Efeito de brilho sutil */}
       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-    </div>
+    </motion.div>
   );
 };
 

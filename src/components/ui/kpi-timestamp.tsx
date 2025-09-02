@@ -110,7 +110,7 @@ export const KPITimestampDetailed: React.FC<KPITimestampDetailedProps> = ({
 
   if (isCalculating) {
     return (
-      <div className={cn('flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200', className)}>
+      <div className={cn('flex items-center justify-between p-3 bg-blue-50 border border-blue-200', className)}>
         <div className="flex items-center gap-2">
           <RefreshCw className="h-4 w-4 animate-spin text-blue-600" />
           <div>
@@ -123,7 +123,7 @@ export const KPITimestampDetailed: React.FC<KPITimestampDetailedProps> = ({
   }
 
   return (
-    <div className={cn('flex items-center justify-between p-3 bg-gray-50 rounded-lg border', className)}>
+    <div className={cn('flex items-center justify-between p-3 bg-gray-50 border', className)}>
       <div className="flex items-center gap-2">
         <Clock className="h-4 w-4 text-gray-500" />
         <div>

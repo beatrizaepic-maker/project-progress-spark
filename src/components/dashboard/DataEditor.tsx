@@ -207,7 +207,10 @@ const DataEditor: React.FC = () => {
             
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
-                <Button size="sm">
+                <Button 
+                  size="sm"
+                  className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 shadow-lg shadow-pink-500/25 hover:shadow-pink-500/40 transition-all duration-200 transform hover:scale-105 border-0"
+                >
                   <Plus className="w-4 h-4 mr-2" />
                   Nova Tarefa
                 </Button>

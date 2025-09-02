@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Loader2, RefreshCw, Clock, CheckCircle, AlertCircle, Database, Zap, History, Activity } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -34,6 +35,7 @@ const KPILoadingIndicator: React.FC<KPILoadingIndicatorProps> = ({
   showProcessingTime = false
 }) => {
   const [timeAgo, setTimeAgo] = useState('');
+  const [isHovered, setIsHovered] = useState(false);
 
   // Atualiza o tempo relativo periodicamente
   useEffect(() => {
@@ -106,7 +108,7 @@ const KPILoadingIndicator: React.FC<KPILoadingIndicatorProps> = ({
   if (variant === 'badge') {
     return (
       <div className={cn(
-        "inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors",
+        "inline-flex items-center gap-1 px-2 py-1 text-xs font-medium transition-colors",
         isCalculating 
           ? "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
           : "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400",
@@ -131,7 +133,7 @@ const KPILoadingIndicator: React.FC<KPILoadingIndicatorProps> = ({
   if (variant === 'timestamp') {
     return (
       <div className={cn(
-        "flex items-center justify-between p-2 rounded-md border bg-card text-card-foreground",
+        "flex items-center justify-between p-2 border bg-card text-card-foreground",
         className
       )}>
         <div className="flex items-center gap-2 text-sm">
@@ -170,13 +172,13 @@ const KPILoadingIndicator: React.FC<KPILoadingIndicatorProps> = ({
           ) : (
             <>
               <div className={cn(
-                "w-2 h-2 rounded-full",
+                "w-2 h-2",
                 cacheHit ? "bg-blue-500" : "bg-green-500"
               )} />
               {onRefresh && (
                 <button
                   onClick={onRefresh}
-                  className="p-1 rounded-md hover:bg-muted transition-colors"
+                  className="p-1 hover:bg-muted transition-colors"
                   title="Forçar recálculo"
                 >
                   <RefreshCw className="h-3 w-3 text-muted-foreground hover:text-foreground" />
@@ -191,17 +193,35 @@ const KPILoadingIndicator: React.FC<KPILoadingIndicatorProps> = ({
 
   // variant === 'detailed'
   return (
-    <div className={cn(
-      "flex items-center justify-between p-3 rounded-lg border transition-colors",
-      isCalculating 
-        ? "bg-blue-50 border-blue-200 dark:bg-blue-900/10 dark:border-blue-800"
-        : "bg-green-50 border-green-200 dark:bg-green-900/10 dark:border-green-800",
-      className
-    )}>
+    <motion.div 
+      className={cn(
+        "flex items-center justify-between p-3 border-2 border-purple-500 transition-colors shadow-lg shadow-purple-500/30",
+        isCalculating 
+          ? "bg-card hover:shadow-purple-500/50"
+          : "bg-card hover:shadow-purple-500/50",
+        className
+      )}
+      initial={{ y: 0 }}
+      animate={{
+        y: isHovered ? -8 : 0,
+      }}
+      transition={{
+        type: "spring",
+        stiffness: 300,
+        damping: 20
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      style={{
+        boxShadow: isHovered 
+          ? "0 20px 40px rgba(0, 0, 0, 0.3), 0 10px 20px rgba(139, 92, 246, 0.2)" 
+          : "0 4px 8px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(139, 92, 246, 0.1)"
+      }}
+    >
       <div className="flex items-center gap-3">
         {isCalculating ? (
           <>
-            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/20">
+            <div className="flex items-center justify-center w-8 h-8 bg-blue-100 dark:bg-blue-900/20">
               <Loader2 className="h-4 w-4 animate-spin text-blue-600 dark:text-blue-400" />
             </div>
             <div>
@@ -215,7 +235,7 @@ const KPILoadingIndicator: React.FC<KPILoadingIndicatorProps> = ({
           </>
         ) : (
           <>
-            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/20">
+            <div className="flex items-center justify-center w-8 h-8 bg-green-100 dark:bg-green-900/20">
               <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
             </div>
             <div>
@@ -226,12 +246,12 @@ const KPILoadingIndicator: React.FC<KPILoadingIndicatorProps> = ({
                 <Clock className="h-3 w-3" />
                 <span>Última atualização: {timeAgo}</span>
                 {cacheHit && (
-                  <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 rounded">
+                  <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
                     Cache
                   </span>
                 )}
                 {showVersion && calculationVersion && (
-                  <span className="px-1.5 py-0.5 bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 rounded">
+                  <span className="px-1.5 py-0.5 bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300">
                     v{calculationVersion}
                   </span>
                 )}
@@ -244,13 +264,13 @@ const KPILoadingIndicator: React.FC<KPILoadingIndicatorProps> = ({
       {!isCalculating && onRefresh && (
         <button
           onClick={onRefresh}
-          className="p-1 rounded-md hover:bg-green-100 dark:hover:bg-green-900/20 transition-colors"
+          className="p-1 hover:bg-green-100 dark:hover:bg-green-900/20 transition-colors"
           title="Forçar recálculo"
         >
           <RefreshCw className="h-4 w-4 text-green-600 dark:text-green-400" />
         </button>
       )}
-    </div>
+    </motion.div>
   );
 };
 

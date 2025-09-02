@@ -68,7 +68,7 @@ const DashboardKPIs: React.FC<DashboardKPIsProps> = ({ tasks }) => {
         {process.env.NODE_ENV === 'development' && (
           <button
             onClick={() => setShowMonitoring(!showMonitoring)}
-            className="ml-4 px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+            className="ml-4 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 shadow-lg shadow-pink-500/25 hover:shadow-pink-500/40 transition-all duration-200 transform hover:scale-105"
           >
             {showMonitoring ? 'Ocultar' : 'Mostrar'} Debug
           </button>

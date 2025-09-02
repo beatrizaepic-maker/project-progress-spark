@@ -6,7 +6,7 @@ export default function Header() {
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/20">
+            <div className="p-2 bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/20">
               <img 
                 src="/LOGOEPIC.png" 
                 alt="EPIC Logo" 
@@ -19,7 +19,7 @@ export default function Header() {
             </div>
           </div>
           
-          <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 px-3 py-2 rounded-lg border">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 px-3 py-2 border">
             <CalendarDays className="h-4 w-4" />
             <span>Última atualização: {new Date().toLocaleDateString('pt-BR')}</span>
           </div>

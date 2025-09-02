@@ -87,12 +87,12 @@ export const KPIRecalculationIndicator: React.FC<KPIRecalculationIndicatorProps>
         isCalculating ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none",
         className
       )}>
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border p-4 min-w-[280px]">
+        <div className="bg-white dark:bg-gray-800 shadow-lg border p-4 min-w-[280px]">
           <div className="flex items-center gap-3">
             <div className="relative">
               <RefreshCw className="w-5 h-5 animate-spin text-blue-500" />
               {progress > 0 && (
-                <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-500"
+                <div className="absolute inset-0 border-2 border-transparent border-t-blue-500"
                      style={{ transform: `rotate(${(progress / 100) * 360}deg)` }} />
               )}
             </div>
@@ -105,9 +105,9 @@ export const KPIRecalculationIndicator: React.FC<KPIRecalculationIndicatorProps>
                 </span>
               </div>
               
-              <div className="w-full bg-gray-200 rounded-full h-1.5">
+              <div className="w-full bg-gray-200 h-1.5">
                 <div 
-                  className="bg-blue-500 h-1.5 rounded-full transition-all duration-200"
+                  className="bg-blue-500 h-1.5 transition-all duration-200"
                   style={{ width: `${progress}%` }}
                 />
               </div>
@@ -129,7 +129,7 @@ export const KPIRecalculationIndicator: React.FC<KPIRecalculationIndicatorProps>
     
     return (
       <div className={cn(
-        "fixed top-4 right-4 z-50 bg-blue-50 border border-blue-200 rounded-lg p-3 shadow-lg",
+        "fixed top-4 right-4 z-50 bg-blue-50 border border-blue-200 p-3 shadow-lg",
         "animate-in slide-in-from-right-full duration-300",
         className
       )}>
@@ -146,7 +146,7 @@ export const KPIRecalculationIndicator: React.FC<KPIRecalculationIndicatorProps>
   // variant === 'inline'
   return (
     <div className={cn(
-      "flex items-center gap-2 p-2 rounded-md transition-all duration-200",
+      "flex items-center gap-2 p-2 transition-all duration-200",
       isCalculating 
         ? "bg-blue-50 border border-blue-200 text-blue-800" 
         : "bg-green-50 border border-green-200 text-green-800",
@@ -157,7 +157,7 @@ export const KPIRecalculationIndicator: React.FC<KPIRecalculationIndicatorProps>
           <div className="relative">
             <RefreshCw className="w-4 h-4 animate-spin" />
             {progress > 0 && showDetails && (
-              <div className="absolute -inset-1 rounded-full border border-blue-300"
+              <div className="absolute -inset-1 border border-blue-300"
                    style={{ 
                      background: `conic-gradient(from 0deg, #3b82f6 ${progress * 3.6}deg, transparent ${progress * 3.6}deg)`,
                      opacity: 0.3
@@ -220,7 +220,7 @@ export const KPIRecalculationIndicator: React.FC<KPIRecalculationIndicatorProps>
           {onForceRecalculation && (
             <button
               onClick={onForceRecalculation}
-              className="p-1 rounded hover:bg-green-100 transition-colors"
+              className="p-1 hover:bg-green-100 transition-colors"
               title="Forçar recálculo"
             >
               <RefreshCw className="w-3 h-3" />
@@ -300,9 +300,9 @@ export const GlobalRecalculationStatus: React.FC<{
         </div>
         
         <div className="flex items-center gap-2">
-          <div className="w-24 bg-blue-500 rounded-full h-1">
+          <div className="w-24 bg-blue-500 h-1">
             <div 
-              className="bg-white h-1 rounded-full transition-all duration-200"
+              className="bg-white h-1 transition-all duration-200"
               style={{ width: `${totalProgress}%` }}
             />
           </div>
