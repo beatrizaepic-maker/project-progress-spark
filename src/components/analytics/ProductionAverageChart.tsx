@@ -65,11 +65,11 @@ const ProductionAverageChart: React.FC<ProductionAverageChartProps> = ({
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+    <div className="relative overflow-hidden border-2 border-purple-500 bg-card p-6 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-all duration-200">
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-2">
-          <TrendingUp className="h-5 w-5 text-blue-600" />
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <TrendingUp className="h-5 w-5 text-green-400" />
+          <h3 className="text-lg font-semibold text-white">
             Evolução da Média de Produção
           </h3>
           <TooltipProvider>
@@ -79,32 +79,25 @@ const ProductionAverageChart: React.FC<ProductionAverageChartProps> = ({
               </TooltipTrigger>
               <TooltipContent side="top" className="max-w-sm p-4">
                 <div className="space-y-2">
-                  <h4 className="font-semibold text-foreground">Gráfico de Média de Produção</h4>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
+                  <h4 className="font-semibold text-white">Gráfico de Média de Produção</h4>
+                  <p className="text-sm text-light-gray leading-relaxed">
                     Mostra a evolução do tempo médio por tarefa ao longo dos meses, permitindo identificar tendências de performance.
                   </p>
                   <div className="space-y-1">
                     <div className="flex items-start gap-2 text-xs">
-                      <div className="w-1 h-1 bg-muted-foreground rounded-full mt-2 flex-shrink-0" />
-                      <span className="text-muted-foreground">Linha azul: média mensal calculada</span>
+                      <div className="w-1 h-1 bg-light-gray rounded-full mt-2 flex-shrink-0" />
+                      <span className="text-light-gray">Linha azul: média mensal calculada</span>
                     </div>
                     <div className="flex items-start gap-2 text-xs">
-                      <div className="w-1 h-1 bg-muted-foreground rounded-full mt-2 flex-shrink-0" />
-                      <span className="text-muted-foreground">Linha vermelha tracejada: média geral de referência</span>
+                      <div className="w-1 h-1 bg-light-gray rounded-full mt-2 flex-shrink-0" />
+                      <span className="text-light-gray">Linha vermelha tracejada: média geral de referência</span>
                     </div>
                     <div className="flex items-start gap-2 text-xs">
-                      <div className="w-1 h-1 bg-muted-foreground rounded-full mt-2 flex-shrink-0" />
-                      <span className="text-muted-foreground">Considera apenas dias úteis no cálculo</span>
+                      <div className="w-1 h-1 bg-light-gray rounded-full mt-2 flex-shrink-0" />
+                      <span className="text-light-gray">Considera apenas dias úteis no cálculo</span>
                     </div>
                   </div>
-                  <div className="border-t border-border/50 pt-2">
-                    <div className="text-xs">
-                      <span className="font-medium text-foreground">Cálculo:</span>
-                      <p className="text-muted-foreground mt-1 font-mono bg-muted/30 px-2 py-1 rounded">
-                        Média Mensal = Σ(durações do mês) / nº tarefas do mês
-                      </p>
-                    </div>
-                  </div>
+                  <div className="border-t border-border/50 pt-2" />
                 </div>
               </TooltipContent>
             </UITooltip>
@@ -232,6 +225,9 @@ const ProductionAverageChart: React.FC<ProductionAverageChartProps> = ({
           </UITooltip>
         </TooltipProvider>
       </div>
+
+      {/* Efeito de brilho sutil */}
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
     </div>
   );
 };

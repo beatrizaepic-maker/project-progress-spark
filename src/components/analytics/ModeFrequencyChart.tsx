@@ -90,11 +90,11 @@ const ModeFrequencyChart: React.FC<ModeFrequencyChartProps> = ({
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+    <div className="relative overflow-hidden border-2 border-purple-500 bg-card p-6 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-all duration-200">
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-2">
-          <BarChart3 className="h-5 w-5 text-green-600" />
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <BarChart3 className="h-5 w-5 text-green-400" />
+          <h3 className="text-lg font-semibold text-white">
             Distribuição de Frequência (Moda)
           </h3>
           <TooltipProvider>
@@ -104,32 +104,21 @@ const ModeFrequencyChart: React.FC<ModeFrequencyChartProps> = ({
               </TooltipTrigger>
               <TooltipContent side="top" className="max-w-sm p-4">
                 <div className="space-y-2">
-                  <h4 className="font-semibold text-foreground">Análise da Moda Estatística</h4>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
+                  <h4 className="font-semibold text-white">Análise da Moda Estatística</h4>
+                  <p className="text-sm text-light-gray leading-relaxed">
                     A moda é o valor que aparece com maior frequência no conjunto de dados. Representa o tempo de duração mais típico das tarefas.
                   </p>
                   <div className="space-y-1">
                     <div className="flex items-start gap-2 text-xs">
-                      <div className="w-1 h-1 bg-muted-foreground rounded-full mt-2 flex-shrink-0" />
-                      <span className="text-muted-foreground">Barra verde: duração mais comum (moda)</span>
+                      <div className="w-1 h-1 bg-light-gray rounded-full mt-2 flex-shrink-0" />
+                      <span className="text-light-gray">Barra verde: duração mais comum (moda)</span>
                     </div>
                     <div className="flex items-start gap-2 text-xs">
-                      <div className="w-1 h-1 bg-muted-foreground rounded-full mt-2 flex-shrink-0" />
-                      <span className="text-muted-foreground">Barras azuis: outras durações observadas</span>
-                    </div>
-                    <div className="flex items-start gap-2 text-xs">
-                      <div className="w-1 h-1 bg-muted-foreground rounded-full mt-2 flex-shrink-0" />
-                      <span className="text-muted-foreground">Útil para identificar padrões de produtividade</span>
+                      <div className="w-1 h-1 bg-light-gray rounded-full mt-2 flex-shrink-0" />
+                      <span className="text-light-gray">Barras azuis: outras durações observadas</span>
                     </div>
                   </div>
-                  <div className="border-t border-border/50 pt-2">
-                    <div className="text-xs">
-                      <span className="font-medium text-foreground">Interpretação:</span>
-                      <p className="text-muted-foreground mt-1">
-                        Alta frequência da moda indica consistência na execução das tarefas.
-                      </p>
-                    </div>
-                  </div>
+                  <div className="border-t border-border/50 pt-2" />
                 </div>
               </TooltipContent>
             </UITooltip>

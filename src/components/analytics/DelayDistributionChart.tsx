@@ -3,7 +3,7 @@ import { TaskData } from '@/data/projectData';
 import { formatDays } from '@/utils/kpiFormatters';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { HelpCircle, PieChart as PieChartIcon } from 'lucide-react';
+import { HelpCircle } from 'lucide-react';
 
 interface DelayDistributionChartProps {
   tasks: TaskData[];
@@ -211,11 +211,11 @@ const DelayDistributionChart: React.FC<DelayDistributionChartProps> = ({ tasks }
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+    <div className="relative overflow-hidden border-2 border-purple-500 bg-card p-6 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-all duration-200">
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-2">
-          <PieChartIcon className="h-5 w-5 text-orange-600" />
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <HelpCircle className="h-5 w-5 text-orange-400" />
+          <h3 className="text-lg font-semibold text-white">
             Análise de Distribuição de Atrasos
           </h3>
           <TooltipProvider>
@@ -225,36 +225,29 @@ const DelayDistributionChart: React.FC<DelayDistributionChartProps> = ({ tasks }
               </TooltipTrigger>
               <TooltipContent side="top" className="max-w-sm p-4">
                 <div className="space-y-2">
-                  <h4 className="font-semibold text-foreground">Análise de Padrões de Atraso</h4>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
+                  <h4 className="font-semibold text-white">Análise de Padrões de Atraso</h4>
+                  <p className="text-sm text-light-gray leading-relaxed">
                     Visualização interativa que permite explorar os padrões de atraso por diferentes perspectivas temporais.
                   </p>
                   <div className="space-y-1">
                     <div className="flex items-start gap-2 text-xs">
-                      <div className="w-1 h-1 bg-muted-foreground rounded-full mt-2 flex-shrink-0" />
-                      <span className="text-muted-foreground">Distribuição Geral: faixas de atraso em barras/pizza</span>
+                      <div className="w-1 h-1 bg-light-gray rounded-full mt-2 flex-shrink-0" />
+                      <span className="text-light-gray">Distribuição Geral: faixas de atraso em barras/pizza</span>
                     </div>
                     <div className="flex items-start gap-2 text-xs">
-                      <div className="w-1 h-1 bg-muted-foreground rounded-full mt-2 flex-shrink-0" />
-                      <span className="text-muted-foreground">Por Dia da Semana: identifica padrões semanais</span>
+                      <div className="w-1 h-1 bg-light-gray rounded-full mt-2 flex-shrink-0" />
+                      <span className="text-light-gray">Por Dia da Semana: identifica padrões semanais</span>
                     </div>
                     <div className="flex items-start gap-2 text-xs">
-                      <div className="w-1 h-1 bg-muted-foreground rounded-full mt-2 flex-shrink-0" />
-                      <span className="text-muted-foreground">Por Mês: revela tendências sazonais</span>
+                      <div className="w-1 h-1 bg-light-gray rounded-full mt-2 flex-shrink-0" />
+                      <span className="text-light-gray">Por Mês: revela tendências sazonais</span>
                     </div>
                     <div className="flex items-start gap-2 text-xs">
-                      <div className="w-1 h-1 bg-muted-foreground rounded-full mt-2 flex-shrink-0" />
-                      <span className="text-muted-foreground">Filtros de período para análise focada</span>
+                      <div className="w-1 h-1 bg-light-gray rounded-full mt-2 flex-shrink-0" />
+                      <span className="text-light-gray">Filtros de período para análise focada</span>
                     </div>
                   </div>
-                  <div className="border-t border-border/50 pt-2">
-                    <div className="text-xs">
-                      <span className="font-medium text-foreground">Uso:</span>
-                      <p className="text-muted-foreground mt-1">
-                        Identifique gargalos, padrões temporais e oportunidades de melhoria.
-                      </p>
-                    </div>
-                  </div>
+                  <div className="border-t border-border/50 pt-2" />
                 </div>
               </TooltipContent>
             </UITooltip>

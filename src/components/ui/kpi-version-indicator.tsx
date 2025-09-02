@@ -164,6 +164,20 @@ export const KPIVersionIndicator: React.FC<KPIVersionIndicatorProps> = ({
           {totalTasks} tarefas
         </span>
       )}
+
+      {/* Informativo de Atualização (Cache) */}
+      {cacheHit && (
+        <div className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 shadow-lg shadow-pink-500/25 hover:shadow-pink-500/40 transition-all duration-200 transform hover:scale-105">
+          Atualizado (cache)
+        </div>
+      )}
+
+      {/* Informativo de Atualização */}
+      {!cacheHit && (
+        <div className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 shadow-lg shadow-pink-500/25 hover:shadow-pink-500/40 transition-all duration-200 transform hover:scale-105">
+          Atualizado
+        </div>
+      )}
     </div>
   );
 };

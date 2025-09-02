@@ -48,11 +48,11 @@ const MedianBoxPlot: React.FC<MedianBoxPlotProps> = ({
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+    <div className="relative overflow-hidden border-2 border-purple-500 bg-card p-6 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-all duration-200">
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-2">
-          <Target className="h-5 w-5 text-red-600" />
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <Target className="h-5 w-5 text-red-400" />
+          <h3 className="text-lg font-semibold text-white">
             Análise de Mediana (Box Plot)
           </h3>
           <TooltipProvider>
@@ -62,36 +62,25 @@ const MedianBoxPlot: React.FC<MedianBoxPlotProps> = ({
               </TooltipTrigger>
               <TooltipContent side="top" className="max-w-sm p-4">
                 <div className="space-y-2">
-                  <h4 className="font-semibold text-foreground">Box Plot da Mediana</h4>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
+                  <h4 className="font-semibold text-white">Box Plot da Mediana</h4>
+                  <p className="text-sm text-light-gray leading-relaxed">
                     Visualização que mostra a distribuição dos dados através de quartis, destacando a mediana como valor central.
                   </p>
                   <div className="space-y-1">
                     <div className="flex items-start gap-2 text-xs">
-                      <div className="w-1 h-1 bg-muted-foreground rounded-full mt-2 flex-shrink-0" />
-                      <span className="text-muted-foreground">Caixa azul: 50% dos dados centrais (Q1 a Q3)</span>
+                      <div className="w-1 h-1 bg-light-gray rounded-full mt-2 flex-shrink-0" />
+                      <span className="text-light-gray">Caixa azul: 50% dos dados centrais (Q1 a Q3)</span>
                     </div>
                     <div className="flex items-start gap-2 text-xs">
-                      <div className="w-1 h-1 bg-muted-foreground rounded-full mt-2 flex-shrink-0" />
-                      <span className="text-muted-foreground">Linha vermelha: mediana (valor central)</span>
+                      <div className="w-1 h-1 bg-light-gray rounded-full mt-2 flex-shrink-0" />
+                      <span className="text-light-gray">Linha vermelha: mediana (valor central)</span>
                     </div>
                     <div className="flex items-start gap-2 text-xs">
-                      <div className="w-1 h-1 bg-muted-foreground rounded-full mt-2 flex-shrink-0" />
-                      <span className="text-muted-foreground">Bigodes: extensão dos dados sem outliers</span>
-                    </div>
-                    <div className="flex items-start gap-2 text-xs">
-                      <div className="w-1 h-1 bg-muted-foreground rounded-full mt-2 flex-shrink-0" />
-                      <span className="text-muted-foreground">Pontos vermelhos: outliers removidos</span>
+                      <div className="w-1 h-1 bg-light-gray rounded-full mt-2 flex-shrink-0" />
+                      <span className="text-light-gray">Bigodes: extensão dos dados sem outliers</span>
                     </div>
                   </div>
-                  <div className="border-t border-border/50 pt-2">
-                    <div className="text-xs">
-                      <span className="font-medium text-foreground">Interpretação:</span>
-                      <p className="text-muted-foreground mt-1">
-                        50% das tarefas levam menos que a mediana, 50% levam mais.
-                      </p>
-                    </div>
-                  </div>
+                  <div className="border-t border-border/50 pt-2" />
                 </div>
               </TooltipContent>
             </UITooltip>
