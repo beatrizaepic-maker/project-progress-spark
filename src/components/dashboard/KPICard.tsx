@@ -104,13 +104,8 @@ const KPICard: React.FC<KPICardProps> = ({
   };
 
   const getIconStyles = (status: KPICardProps['status']) => {
-    const styles = {
-      success: 'text-green-600 bg-green-100',
-      warning: 'text-yellow-600 bg-yellow-100',
-      error: 'text-red-600 bg-red-100',
-      neutral: 'text-gray-600 bg-gray-100'
-    };
-    return styles[status];
+    // Estilo glassmorphism unificado para todos os ícones
+    return 'text-white bg-white/10 backdrop-blur-sm border border-white/20 transition-all duration-300 hover:bg-purple-500/20 hover:border-purple-500/40 hover:text-purple-400';
   };
 
   const getTrendIcon = (direction: 'up' | 'down' | 'stable') => {
@@ -243,7 +238,7 @@ const KPICard: React.FC<KPICardProps> = ({
             isMobile ? 'h-10 w-10' : 'h-12 w-12',
             getIconStyles(status)
           )}>
-            <Icon className={isMobile ? 'h-5 w-5' : 'h-6 w-6'} aria-hidden="true" />
+            <Icon className={isMobile ? 'h-6 w-6' : 'h-7 w-7'} aria-hidden="true" />
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -302,31 +297,7 @@ const KPICard: React.FC<KPICardProps> = ({
       )}
 
       {/* Timestamp de atualização */}
-      {showTimestamp && lastUpdated && (
-        <div className={cn(
-          'flex items-center pt-3 border-t border-gray-200/50 dark:border-gray-700/50',
-          isMobile ? 'mt-3 flex-col space-y-2' : 'mt-4 justify-between'
-        )}>
-          <KPITimestamp
-            lastUpdated={lastUpdated}
-            isCalculating={isCalculating}
-            calculationId={calculationId}
-            processingTime={processingTime}
-            cacheHit={cacheHit}
-            showDetails={!isMobile}
-            className="text-xs"
-          />
-          
-          {/* Indicador de versão do cálculo */}
-          {(showVersioning || process.env.NODE_ENV === 'development') && calculationId && calculationVersion && (
-            <KPIVersionBadge
-              calculationId={calculationId}
-              calculationVersion={calculationVersion}
-              cacheHit={cacheHit}
-            />
-          )}
-        </div>
-      )}
+      {/* Timestamp e versioning removidos - informações muito técnicas para o usuário */}
 
       {/* Efeito de brilho sutil */}
       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none" />

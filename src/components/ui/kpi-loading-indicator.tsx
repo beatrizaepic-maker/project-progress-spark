@@ -235,26 +235,16 @@ const KPILoadingIndicator: React.FC<KPILoadingIndicatorProps> = ({
           </>
         ) : (
           <>
-            <div className="flex items-center justify-center w-8 h-8 bg-green-100 dark:bg-green-900/20">
-              <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+            <div className="flex items-center justify-center w-8 h-8 bg-white/10 backdrop-blur-sm border border-white/20 transition-all duration-300 hover:bg-purple-500/20 hover:border-purple-500/40">
+              <CheckCircle className="h-5 w-5 text-white hover:text-purple-400 transition-colors duration-300" />
             </div>
             <div>
-              <p className="text-sm font-medium text-green-900 dark:text-green-100">
+              <p className="text-sm font-medium text-white">
                 KPIs Atualizados
               </p>
-              <div className="flex items-center gap-2 text-xs text-green-600 dark:text-green-400">
-                <Clock className="h-3 w-3" />
+              <div className="flex items-center gap-2 text-xs text-white">
+                <Clock className="h-4 w-4 text-white hover:text-purple-400 transition-colors duration-300" />
                 <span>Última atualização: {timeAgo}</span>
-                {cacheHit && (
-                  <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
-                    Cache
-                  </span>
-                )}
-                {showVersion && calculationVersion && (
-                  <span className="px-1.5 py-0.5 bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300">
-                    v{calculationVersion}
-                  </span>
-                )}
               </div>
             </div>
           </>
@@ -264,10 +254,10 @@ const KPILoadingIndicator: React.FC<KPILoadingIndicatorProps> = ({
       {!isCalculating && onRefresh && (
         <button
           onClick={onRefresh}
-          className="p-1 hover:bg-green-100 dark:hover:bg-green-900/20 transition-colors"
+          className="p-1 bg-white/10 backdrop-blur-sm border border-white/20 transition-all duration-300 hover:bg-purple-500/20 hover:border-purple-500/40"
           title="Forçar recálculo"
         >
-          <RefreshCw className="h-4 w-4 text-green-600 dark:text-green-400" />
+          <RefreshCw className="h-5 w-5 text-white hover:text-purple-400 transition-colors duration-300" />
         </button>
       )}
     </motion.div>

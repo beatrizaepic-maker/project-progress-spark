@@ -329,16 +329,16 @@ const MedianBoxPlot: React.FC<MedianBoxPlotProps> = ({
       </div>
 
       {/* Explicação da mediana */}
-      <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-        <h4 className="text-sm font-semibold text-blue-800 dark:text-blue-200 mb-2">
+      <div className="p-4 bg-card border border-border rounded-lg">
+        <h4 className="text-base font-semibold text-white mb-2">
           📊 Interpretação da Mediana
         </h4>
-        <p className="text-xs text-blue-700 dark:text-blue-300 mb-2">
+        <p className="text-sm text-white mb-2">
           A mediana representa o valor central quando as durações são ordenadas. 
           50% das tarefas levam menos que {formatDays(median)} e 50% levam mais.
         </p>
         {stats.outliers.length > 0 && (
-          <p className="text-xs text-blue-700 dark:text-blue-300">
+          <p className="text-sm text-white">
             {stats.outliers.length} outliers foram removidos do cálculo para maior precisão: 
             {stats.outliers.map(o => formatDays(o)).join(', ')}.
           </p>

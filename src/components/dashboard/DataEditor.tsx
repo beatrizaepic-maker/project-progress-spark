@@ -3,6 +3,7 @@ import { useData } from '@/contexts/DataContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -13,6 +14,8 @@ import { toast } from '@/hooks/use-toast';
 
 interface TaskFormData {
   tarefa: string;
+  responsavel: string;
+  status: 'backlog' | 'todo' | 'in-progress' | 'completed';
   inicio: string;
   fim: string;
   prazo: string;
@@ -25,6 +28,8 @@ const TaskForm: React.FC<{
 }> = ({ task, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState<TaskFormData>({
     tarefa: task?.tarefa || '',
+    responsavel: task?.responsavel || '',
+    status: task?.status || 'backlog',
     inicio: task?.inicio || '',
     fim: task?.fim || '',
     prazo: task?.prazo || ''
@@ -32,7 +37,7 @@ const TaskForm: React.FC<{
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.tarefa || !formData.inicio || !formData.fim || !formData.prazo) {
+    if (!formData.tarefa || !formData.responsavel || !formData.status || !formData.inicio || !formData.fim || !formData.prazo) {
       toast({
         title: "Erro",
         description: "Todos os campos são obrigatórios.",
@@ -63,6 +68,31 @@ const TaskForm: React.FC<{
           onChange={(e) => setFormData(prev => ({ ...prev, tarefa: e.target.value }))}
           placeholder="Digite o nome da tarefa"
         />
+      </div>
+      
+      <div>
+        <Label htmlFor="responsavel">Responsável</Label>
+        <Input
+          id="responsavel"
+          value={formData.responsavel}
+          onChange={(e) => setFormData(prev => ({ ...prev, responsavel: e.target.value }))}
+          placeholder="Digite o nome do responsável"
+        />
+      </div>
+      
+      <div>
+        <Label htmlFor="status">Status</Label>
+        <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value as any }))}>
+          <SelectTrigger>
+            <SelectValue placeholder="Selecione o status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="backlog">Backlog</SelectItem>
+            <SelectItem value="todo">A Fazer</SelectItem>
+            <SelectItem value="in-progress">Em Andamento</SelectItem>
+            <SelectItem value="completed">Concluída</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       
       <div className="grid grid-cols-3 gap-4">
@@ -113,6 +143,26 @@ const DataEditor: React.FC = () => {
   const { tasks, addTask, editTask, deleteTask, importData, exportData } = useData();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<TaskData | null>(null);
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'backlog': return 'Backlog';
+      case 'todo': return 'A Fazer';
+      case 'in-progress': return 'Em Andamento';
+      case 'completed': return 'Concluída';
+      default: return status;
+    }
+  };
+
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status) {
+      case 'backlog': return 'secondary';
+      case 'todo': return 'outline';
+      case 'in-progress': return 'default';
+      case 'completed': return 'default';
+      default: return 'secondary';
+    }
+  };
 
   const handleAddTask = (data: TaskFormData) => {
     addTask({
@@ -215,7 +265,7 @@ const DataEditor: React.FC = () => {
                   Nova Tarefa
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl">
+              <DialogContent className="max-w-2xl" style={{ borderRadius: '0' }}>
                 <DialogHeader>
                   <DialogTitle>Adicionar Nova Tarefa</DialogTitle>
                   <DialogDescription>
@@ -233,11 +283,35 @@ const DataEditor: React.FC = () => {
       </CardHeader>
       
       <CardContent>
-        <div className="rounded-lg border">
+        <div 
+          className="rounded-lg border overflow-x-auto" 
+          style={{
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#a855f7 transparent'
+          }}
+        >
+          <style dangerouslySetInnerHTML={{
+            __html: `
+              .rounded-lg::-webkit-scrollbar {
+                height: 8px;
+              }
+              .rounded-lg::-webkit-scrollbar-track {
+                background: transparent;
+              }
+              .rounded-lg::-webkit-scrollbar-thumb {
+                background-color: #a855f7;
+                border-radius: 0;
+              }
+              .rounded-lg::-webkit-scrollbar-thumb:hover {
+                background-color: #9333ea;
+              }
+            `
+          }} />
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Tarefa</TableHead>
+                <TableHead>Responsável</TableHead>
                 <TableHead>Início</TableHead>
                 <TableHead>Fim</TableHead>
                 <TableHead>Prazo</TableHead>
@@ -251,6 +325,7 @@ const DataEditor: React.FC = () => {
               {tasks.map((task) => (
                 <TableRow key={task.id}>
                   <TableCell className="font-medium">{task.tarefa}</TableCell>
+                  <TableCell>{task.responsavel || 'Não informado'}</TableCell>
                   <TableCell>{new Date(task.inicio).toLocaleDateString('pt-BR')}</TableCell>
                   <TableCell>{new Date(task.fim).toLocaleDateString('pt-BR')}</TableCell>
                   <TableCell>{new Date(task.prazo).toLocaleDateString('pt-BR')}</TableCell>
@@ -263,11 +338,9 @@ const DataEditor: React.FC = () => {
                     )}
                   </TableCell>
                   <TableCell>
-                    {task.atendeuPrazo ? (
-                      <CheckCircle className="w-5 h-5 text-green-500" />
-                    ) : (
-                      <XCircle className="w-5 h-5 text-red-500" />
-                    )}
+                    <Badge variant={getStatusBadgeVariant(task.status)}>
+                      {getStatusLabel(task.status)}
+                    </Badge>
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
@@ -295,7 +368,7 @@ const DataEditor: React.FC = () => {
         
         {/* Edit Dialog */}
         <Dialog open={!!editingTask} onOpenChange={() => setEditingTask(null)}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl" style={{ borderRadius: '0' }}>
             <DialogHeader>
               <DialogTitle>Editar Tarefa</DialogTitle>
               <DialogDescription>

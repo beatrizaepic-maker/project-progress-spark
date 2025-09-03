@@ -116,7 +116,7 @@ const TaskTable = () => {
         type: 'early',
         label: 'Antecipada',
         icon: Zap,
-        color: 'text-blue-600 dark:text-blue-400',
+        color: 'text-white hover:text-purple-500 transition-colors duration-200',
         bgColor: 'bg-blue-50 dark:bg-blue-900/20',
         borderColor: 'border-blue-200 dark:border-blue-800',
         variant: 'secondary'
@@ -126,7 +126,7 @@ const TaskTable = () => {
         type: 'on-time',
         label: 'No Prazo',
         icon: Target,
-        color: 'text-green-600 dark:text-green-400',
+        color: 'text-white hover:text-purple-500 transition-colors duration-200',
         bgColor: 'bg-green-50 dark:bg-green-900/20',
         borderColor: 'border-green-200 dark:border-green-800',
         variant: 'default'
@@ -136,7 +136,7 @@ const TaskTable = () => {
         type: 'at-risk',
         label: 'Risco Baixo',
         icon: AlertTriangle,
-        color: 'text-yellow-600 dark:text-yellow-400',
+        color: 'text-white hover:text-purple-500 transition-colors duration-200',
         bgColor: 'bg-yellow-50 dark:bg-yellow-900/20',
         borderColor: 'border-yellow-200 dark:border-yellow-800',
         variant: 'outline'
@@ -146,7 +146,7 @@ const TaskTable = () => {
         type: 'delayed',
         label: 'Atrasada',
         icon: AlertTriangle,
-        color: 'text-orange-600 dark:text-orange-400',
+        color: 'text-white hover:text-purple-500 transition-colors duration-200',
         bgColor: 'bg-orange-50 dark:bg-orange-900/20',
         borderColor: 'border-orange-200 dark:border-orange-800',
         variant: 'destructive'
@@ -156,7 +156,7 @@ const TaskTable = () => {
         type: 'critical',
         label: 'Crítica',
         icon: AlertTriangle,
-        color: 'text-red-600 dark:text-red-400',
+        color: 'text-white hover:text-purple-500 transition-colors duration-200',
         bgColor: 'bg-red-50 dark:bg-red-900/20',
         borderColor: 'border-red-200 dark:border-red-800',
         variant: 'destructive'
@@ -250,7 +250,7 @@ const TaskTable = () => {
 
   return (
     <TooltipProvider>
-      <Card className="border-0 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm overflow-hidden">
+      <Card className="border-2 border-purple-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm overflow-hidden">
       <CardHeader>
         <CardTitle className="text-foreground">
           Detalhamento das Tarefas
@@ -476,11 +476,35 @@ const TaskTable = () => {
           </div>
         ) : (
           /* Layout desktop: tabela tradicional */
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto" style={{
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#a855f7 transparent'
+          }}>
+            <style jsx>{`
+              div::-webkit-scrollbar {
+                height: 8px;
+              }
+              div::-webkit-scrollbar-track {
+                background: transparent;
+              }
+              div::-webkit-scrollbar-thumb {
+                background-color: #a855f7;
+                border-radius: 0;
+              }
+              div::-webkit-scrollbar-thumb:hover {
+                background-color: #9333ea;
+              }
+            `}</style>
             <table className="w-full">
               <thead className="bg-muted/30">
                 <tr>
                   <th className="text-left p-4 text-sm font-medium text-muted-foreground">Tarefa</th>
+                  <th className="text-left p-4 text-sm font-medium text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <span>👤</span>
+                      Responsável
+                    </div>
+                  </th>
                 <th className="text-left p-4 text-sm font-medium text-muted-foreground">
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -636,6 +660,13 @@ const TaskTable = () => {
                           return null;
                         })()}
                         <div className="font-medium text-foreground">{task.tarefa}</div>
+                      </div>
+                    </td>
+                    
+                    {/* Responsável */}
+                    <td className="p-4">
+                      <div className="text-sm text-foreground">
+                        {task.responsavel || 'Não informado'}
                       </div>
                     </td>
                     
@@ -800,9 +831,9 @@ const TaskTable = () => {
                             const IconComponent = status.icon;
                             
                             return (
-                              <div className={`flex flex-col items-center gap-1 p-2 rounded-lg ${status.bgColor} ${status.borderColor} border hover:shadow-md transition-shadow`}>
+                              <div className="flex flex-col items-center gap-1 p-2">
                                 <IconComponent className={`h-5 w-5 ${status.color}`} />
-                                <span className={`text-xs font-medium ${status.color}`}>
+                                <span className={`text-xs font-medium text-white hover:text-purple-500 transition-colors duration-200`}>
                                   {status.label}
                                 </span>
                                 {status.type === 'critical' && (
@@ -811,7 +842,7 @@ const TaskTable = () => {
                                     <span>Atenção</span>
                                   </div>
                                 )}
-                                <HelpCircle className="h-3 w-3 text-muted-foreground mt-1" />
+                                <HelpCircle className="h-3 w-3 text-white hover:text-purple-500 transition-colors duration-200 mt-1" />
                               </div>
                             );
                           })()}

@@ -45,8 +45,8 @@ export default function MetricsCards() {
                 <p className="text-xs text-muted-foreground">{metric.subtitle}</p>
               )}
             </div>
-            <div className={`p-2 bg-gradient-to-br ${metric.gradient} border border-opacity-20`}>
-              <Icon className={`h-5 w-5 ${metric.textColor}`} />
+            <div className="p-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded transition-all duration-300 hover:bg-purple-500/20 hover:border-purple-500/40">
+              <Icon className="h-6 w-6 text-white hover:text-purple-400 transition-colors duration-300" />
             </div>
           </div>
         </Card>

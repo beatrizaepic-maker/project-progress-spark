@@ -259,31 +259,31 @@ const DelayDistributionChart: React.FC<DelayDistributionChartProps> = ({ tasks }
       </div>
 
       {/* Filtros */}
-      <div className="flex flex-wrap gap-4 mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+      <div className="flex flex-wrap gap-4 mb-6 p-4 bg-card border border-border rounded-lg">
         <div className="flex items-center space-x-2">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Visualização:</label>
+          <label className="text-sm font-medium text-white">Visualização:</label>
           <select 
             value={filterType} 
             onChange={(e) => setFilterType(e.target.value as FilterType)}
-            className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-800"
+            className="px-3 py-1 border border-white/20 rounded-md text-sm bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 transition-colors"
           >
-            <option value="all">Distribuição Geral</option>
-            <option value="weekday">Por Dia da Semana</option>
-            <option value="period">Por Mês</option>
+            <option value="all" className="bg-gray-800 text-white">Distribuição Geral</option>
+            <option value="weekday" className="bg-gray-800 text-white">Por Dia da Semana</option>
+            <option value="period" className="bg-gray-800 text-white">Por Mês</option>
           </select>
         </div>
         
         <div className="flex items-center space-x-2">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Período:</label>
+          <label className="text-sm font-medium text-white">Período:</label>
           <select 
             value={periodFilter} 
             onChange={(e) => setPeriodFilter(e.target.value as PeriodFilter)}
-            className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-800"
+            className="px-3 py-1 border border-white/20 rounded-md text-sm bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 transition-colors"
           >
-            <option value="all">Todos os Dados</option>
-            <option value="last30">Últimos 30 dias</option>
-            <option value="last90">Últimos 90 dias</option>
-            <option value="thisYear">Este Ano</option>
+            <option value="all" className="bg-gray-800 text-white">Todos os Dados</option>
+            <option value="last30" className="bg-gray-800 text-white">Últimos 30 dias</option>
+            <option value="last90" className="bg-gray-800 text-white">Últimos 90 dias</option>
+            <option value="thisYear" className="bg-gray-800 text-white">Este Ano</option>
           </select>
         </div>
       </div>
@@ -298,13 +298,13 @@ const DelayDistributionChart: React.FC<DelayDistributionChartProps> = ({ tasks }
         <TooltipProvider>
           <UITooltip>
             <TooltipTrigger asChild>
-              <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-help hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
-                <div className="text-xl font-bold text-green-600 dark:text-green-400">
+              <div className="text-center p-4 bg-card border border-border rounded-lg cursor-help hover:bg-white/20 transition-colors">
+                <div className="text-2xl font-bold text-green-400">
                   {delayDistribution[0]?.percentage || 0}%
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                <div className="text-sm text-white flex items-center justify-center gap-1 mt-2">
                   No Prazo
-                  <HelpCircle className="h-3 w-3" />
+                  <HelpCircle className="h-4 w-4" />
                 </div>
               </div>
             </TooltipTrigger>
@@ -320,13 +320,13 @@ const DelayDistributionChart: React.FC<DelayDistributionChartProps> = ({ tasks }
         <TooltipProvider>
           <UITooltip>
             <TooltipTrigger asChild>
-              <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-help hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
-                <div className="text-xl font-bold text-yellow-600 dark:text-yellow-400">
+              <div className="text-center p-4 bg-card border border-border rounded-lg cursor-help hover:bg-white/20 transition-colors">
+                <div className="text-2xl font-bold text-yellow-400">
                   {(delayDistribution[1]?.percentage || 0) + (delayDistribution[2]?.percentage || 0)}%
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                <div className="text-sm text-white flex items-center justify-center gap-1 mt-2">
                   Atraso Leve
-                  <HelpCircle className="h-3 w-3" />
+                  <HelpCircle className="h-4 w-4" />
                 </div>
               </div>
             </TooltipTrigger>
@@ -342,13 +342,13 @@ const DelayDistributionChart: React.FC<DelayDistributionChartProps> = ({ tasks }
         <TooltipProvider>
           <UITooltip>
             <TooltipTrigger asChild>
-              <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-help hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
-                <div className="text-xl font-bold text-red-600 dark:text-red-400">
+              <div className="text-center p-4 bg-card border border-border rounded-lg cursor-help hover:bg-white/20 transition-colors">
+                <div className="text-2xl font-bold text-red-400">
                   {(delayDistribution[3]?.percentage || 0) + (delayDistribution[4]?.percentage || 0)}%
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                <div className="text-sm text-white flex items-center justify-center gap-1 mt-2">
                   Atraso Grave
-                  <HelpCircle className="h-3 w-3" />
+                  <HelpCircle className="h-4 w-4" />
                 </div>
               </div>
             </TooltipTrigger>
@@ -364,13 +364,13 @@ const DelayDistributionChart: React.FC<DelayDistributionChartProps> = ({ tasks }
         <TooltipProvider>
           <UITooltip>
             <TooltipTrigger asChild>
-              <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-help hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
-                <div className="text-xl font-bold text-gray-600 dark:text-gray-400">
+              <div className="text-center p-4 bg-card border border-border rounded-lg cursor-help hover:bg-white/20 transition-colors">
+                <div className="text-2xl font-bold text-white">
                   {filteredTasks.length}
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                <div className="text-sm text-white flex items-center justify-center gap-1 mt-2">
                   Total Tarefas
-                  <HelpCircle className="h-3 w-3" />
+                  <HelpCircle className="h-4 w-4" />
                 </div>
               </div>
             </TooltipTrigger>
@@ -395,11 +395,11 @@ const DelayDistributionChart: React.FC<DelayDistributionChartProps> = ({ tasks }
       )}
 
       {/* Insights */}
-      <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-        <h4 className="text-sm font-semibold text-blue-800 dark:text-blue-200 mb-2">
+      <div className="p-4 bg-card border border-border rounded-lg">
+        <h4 className="text-base font-semibold text-white mb-2">
           📊 Insights da Análise
         </h4>
-        <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+        <div className="text-sm text-white space-y-1">
           {filterType === 'all' && (
             <>
               <p>• {delayDistribution[0]?.count || 0} tarefas foram entregues no prazo</p>

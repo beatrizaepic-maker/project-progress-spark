@@ -262,11 +262,11 @@ const ModeFrequencyChart: React.FC<ModeFrequencyChartProps> = ({
       </div>
 
       {/* Explicação da moda */}
-      <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-        <h4 className="text-sm font-semibold text-blue-800 dark:text-blue-200 mb-2">
+      <div className="mt-4 p-4 bg-card border border-border rounded-lg">
+        <h4 className="text-base font-semibold text-white mb-2">
           💡 O que é a Moda?
         </h4>
-        <p className="text-xs text-blue-700 dark:text-blue-300">
+        <p className="text-sm text-white">
           A moda representa o tempo de duração mais frequente entre as tarefas. 
           Isso indica o padrão típico de tempo necessário para completar uma tarefa no projeto.
         </p>

@@ -1,74 +1,88 @@
 export interface TaskData {
   id: number;
   tarefa: string;
+  responsavel?: string;
   inicio: string;
   fim: string;
   prazo: string;
   duracaoDiasUteis: number;
   atrasoDiasUteis: number;
   atendeuPrazo: boolean;
+  status: 'backlog' | 'todo' | 'in-progress' | 'completed';
 }
 
 export const mockTaskData: TaskData[] = [
   {
     id: 1,
     tarefa: "Análise de Requisitos",
+    responsavel: "Maria Silva",
     inicio: "2024-01-15",
     fim: "2024-01-20",
     prazo: "2024-01-18",
     duracaoDiasUteis: 4,
     atrasoDiasUteis: 2,
-    atendeuPrazo: false
+    atendeuPrazo: false,
+    status: 'completed'
   },
   {
     id: 2,
     tarefa: "Design UI/UX",
+    responsavel: "João Santos",
     inicio: "2024-01-22",
     fim: "2024-01-28",
     prazo: "2024-01-30",
     duracaoDiasUteis: 5,
     atrasoDiasUteis: 0,
-    atendeuPrazo: true
+    atendeuPrazo: true,
+    status: 'completed'
   },
   {
     id: 3,
     tarefa: "Desenvolvimento Frontend",
+    responsavel: "Ana Costa",
     inicio: "2024-01-29",
     fim: "2024-02-10",
     prazo: "2024-02-08",
     duracaoDiasUteis: 10,
     atrasoDiasUteis: 2,
-    atendeuPrazo: false
+    atendeuPrazo: false,
+    status: 'in-progress'
   },
   {
     id: 4,
     tarefa: "Desenvolvimento Backend",
+    responsavel: "Pedro Lima",
     inicio: "2024-02-01",
     fim: "2024-02-12",
     prazo: "2024-02-15",
     duracaoDiasUteis: 9,
     atrasoDiasUteis: 0,
-    atendeuPrazo: true
+    atendeuPrazo: true,
+    status: 'in-progress'
   },
   {
     id: 5,
     tarefa: "Testes e QA",
+    responsavel: "Carla Oliveira",
     inicio: "2024-02-13",
     fim: "2024-02-20",
     prazo: "2024-02-18",
     duracaoDiasUteis: 6,
     atrasoDiasUteis: 2,
-    atendeuPrazo: false
+    atendeuPrazo: false,
+    status: 'todo'
   },
   {
     id: 6,
     tarefa: "Deploy e Documentação",
+    responsavel: "Roberto Alves",
     inicio: "2024-02-21",
     fim: "2024-02-25",
     prazo: "2024-02-26",
     duracaoDiasUteis: 3,
     atrasoDiasUteis: 0,
-    atendeuPrazo: true
+    atendeuPrazo: true,
+    status: 'backlog'
   }
 ];
 
