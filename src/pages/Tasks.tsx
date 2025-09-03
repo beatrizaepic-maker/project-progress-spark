@@ -53,7 +53,7 @@ const Tasks = () => {
               <h3 className="text-sm font-semibold mb-2">Filtros Rápidos</h3>
               <div className="space-y-2">
                 <button className="w-full text-left text-sm text-muted-foreground hover:text-foreground">
-                  Tarefas em Atraso
+                  Prioridade Crítica
                 </button>
                 <button className="w-full text-left text-sm text-muted-foreground hover:text-foreground">
                   Concluídas Hoje

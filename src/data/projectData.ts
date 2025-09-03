@@ -9,6 +9,7 @@ export interface TaskData {
   atrasoDiasUteis: number;
   atendeuPrazo: boolean;
   status: 'backlog' | 'todo' | 'in-progress' | 'completed';
+  prioridade: 'baixa' | 'media' | 'alta' | 'critica';
 }
 
 export const mockTaskData: TaskData[] = [
@@ -22,7 +23,8 @@ export const mockTaskData: TaskData[] = [
     duracaoDiasUteis: 4,
     atrasoDiasUteis: 2,
     atendeuPrazo: false,
-    status: 'completed'
+    status: 'completed',
+    prioridade: 'alta'
   },
   {
     id: 2,
@@ -34,7 +36,8 @@ export const mockTaskData: TaskData[] = [
     duracaoDiasUteis: 5,
     atrasoDiasUteis: 0,
     atendeuPrazo: true,
-    status: 'completed'
+    status: 'completed',
+    prioridade: 'media'
   },
   {
     id: 3,
@@ -46,7 +49,8 @@ export const mockTaskData: TaskData[] = [
     duracaoDiasUteis: 10,
     atrasoDiasUteis: 2,
     atendeuPrazo: false,
-    status: 'in-progress'
+    status: 'in-progress',
+    prioridade: 'critica'
   },
   {
     id: 4,
@@ -58,7 +62,8 @@ export const mockTaskData: TaskData[] = [
     duracaoDiasUteis: 9,
     atrasoDiasUteis: 0,
     atendeuPrazo: true,
-    status: 'in-progress'
+    status: 'in-progress',
+    prioridade: 'alta'
   },
   {
     id: 5,
@@ -70,7 +75,8 @@ export const mockTaskData: TaskData[] = [
     duracaoDiasUteis: 6,
     atrasoDiasUteis: 2,
     atendeuPrazo: false,
-    status: 'todo'
+    status: 'todo',
+    prioridade: 'media'
   },
   {
     id: 6,
@@ -82,7 +88,8 @@ export const mockTaskData: TaskData[] = [
     duracaoDiasUteis: 3,
     atrasoDiasUteis: 0,
     atendeuPrazo: true,
-    status: 'backlog'
+    status: 'backlog',
+    prioridade: 'baixa'
   }
 ];
 

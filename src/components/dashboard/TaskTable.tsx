@@ -24,7 +24,7 @@ const TaskTable = () => {
   // Estados para filtros
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [delayRangeFilter, setDelayRangeFilter] = useState<string>('all');
+  const [priorityFilter, setPriorityFilter] = useState<string>('all');
 
   // Função para formatar datas de forma consistente
   const formatDate = (dateString: string) => {
@@ -199,34 +199,21 @@ const TaskTable = () => {
       });
     }
 
-    // Filtro por faixa de atraso
-    if (delayRangeFilter !== 'all') {
+    // Filtro por prioridade
+    if (priorityFilter !== 'all') {
       filtered = filtered.filter(task => {
-        const delay = calculatePreciseDelay(task.fim, task.prazo);
-        
-        switch (delayRangeFilter) {
-          case 'no-delay':
-            return delay <= 0;
-          case '1-2-days':
-            return delay >= 1 && delay <= 2;
-          case '3-5-days':
-            return delay >= 3 && delay <= 5;
-          case '6-plus-days':
-            return delay >= 6;
-          default:
-            return true;
-        }
+        return task.prioridade === priorityFilter;
       });
     }
 
     return filtered;
-  }, [tasks, searchTerm, statusFilter, delayRangeFilter]);
+  }, [tasks, searchTerm, statusFilter, priorityFilter]);
 
   // Função para limpar todos os filtros
   const clearAllFilters = () => {
     setSearchTerm('');
     setStatusFilter('all');
-    setDelayRangeFilter('all');
+    setPriorityFilter('all');
   };
 
   // Contadores para os filtros
@@ -291,25 +278,25 @@ const TaskTable = () => {
               </Select>
             </div>
 
-            {/* Filtro por faixa de atraso */}
+            {/* Filtro por prioridade */}
             <div className={`flex items-center gap-2 ${isMobile ? 'w-full' : ''}`}>
               <Clock className="h-4 w-4 text-muted-foreground" />
-              <Select value={delayRangeFilter} onValueChange={setDelayRangeFilter}>
+              <Select value={priorityFilter} onValueChange={setPriorityFilter}>
                 <SelectTrigger className={`h-8 ${isMobile ? 'w-full' : 'w-[160px]'}`}>
-                  <SelectValue placeholder="Atraso" />
+                  <SelectValue placeholder="Prioridade" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todas as faixas</SelectItem>
-                  <SelectItem value="no-delay">Sem atraso</SelectItem>
-                  <SelectItem value="1-2-days">1-2 dias</SelectItem>
-                  <SelectItem value="3-5-days">3-5 dias</SelectItem>
-                  <SelectItem value="6-plus-days">6+ dias</SelectItem>
+                  <SelectItem value="all">Todas as prioridades</SelectItem>
+                  <SelectItem value="critica">Crítica</SelectItem>
+                  <SelectItem value="alta">Alta</SelectItem>
+                  <SelectItem value="media">Média</SelectItem>
+                  <SelectItem value="baixa">Baixa</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             {/* Botão para limpar filtros */}
-            {(searchTerm || statusFilter !== 'all' || delayRangeFilter !== 'all') && (
+            {(searchTerm || statusFilter !== 'all' || priorityFilter !== 'all') && (
               <button
                 onClick={clearAllFilters}
                 className={`flex items-center gap-1 px-3 py-1 text-xs bg-muted hover:bg-muted/80 rounded-md transition-colors ${isMobile ? 'w-full justify-center' : ''}`}
@@ -321,7 +308,7 @@ const TaskTable = () => {
           </div>
 
           {/* Indicadores de filtros ativos */}
-          {(searchTerm || statusFilter !== 'all' || delayRangeFilter !== 'all') && (
+          {(searchTerm || statusFilter !== 'all' || priorityFilter !== 'all') && (
             <div className="flex flex-wrap gap-2 text-xs">
               {searchTerm && (
                 <Badge variant="secondary" className="gap-1">
@@ -345,12 +332,12 @@ const TaskTable = () => {
                   </span>
                 </Badge>
               )}
-              {delayRangeFilter !== 'all' && (
+              {priorityFilter !== 'all' && (
                 <Badge variant="secondary" className="gap-1">
-                  Atraso: {delayRangeFilter}
+                  Prioridade: {priorityFilter}
                   <span 
                     className="cursor-pointer hover:text-destructive" 
-                    onClick={() => setDelayRangeFilter('all')}
+                    onClick={() => setPriorityFilter('all')}
                   >
                     ✕
                   </span>
@@ -457,16 +444,21 @@ const TaskTable = () => {
                     </div>
                   </div>
 
-                  {/* Duração e atraso */}
+                  {/* Duração e prioridade */}
                   <div className="grid grid-cols-2 gap-3 text-xs">
                     <div>
                       <span className="text-muted-foreground">Duração:</span>
                       <div className="font-mono">{formatDays(task.duracaoDiasUteis)}</div>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Atraso:</span>
-                      <div className={`font-mono ${task.atrasoDiasUteis > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                        {formatDays(task.atrasoDiasUteis)}
+                      <span className="text-muted-foreground">Prioridade:</span>
+                      <div className={`font-medium ${
+                        task.prioridade === 'critica' ? 'text-red-600' :
+                        task.prioridade === 'alta' ? 'text-orange-600' :
+                        task.prioridade === 'media' ? 'text-yellow-600' :
+                        'text-green-600'
+                      }`}>
+                        {task.prioridade?.charAt(0).toUpperCase() + task.prioridade?.slice(1)}
                       </div>
                     </div>
                   </div>
@@ -476,25 +468,13 @@ const TaskTable = () => {
           </div>
         ) : (
           /* Layout desktop: tabela tradicional */
-          <div className="overflow-x-auto" style={{
-            scrollbarWidth: 'thin',
-            scrollbarColor: '#a855f7 transparent'
-          }}>
-            <style jsx>{`
-              div::-webkit-scrollbar {
-                height: 8px;
-              }
-              div::-webkit-scrollbar-track {
-                background: transparent;
-              }
-              div::-webkit-scrollbar-thumb {
-                background-color: #a855f7;
-                border-radius: 0;
-              }
-              div::-webkit-scrollbar-thumb:hover {
-                background-color: #9333ea;
-              }
-            `}</style>
+          <div 
+            className="overflow-x-auto [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-purple-500 [&::-webkit-scrollbar-thumb]:rounded-none [&::-webkit-scrollbar-thumb:hover]:bg-purple-600"
+            style={{
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#a855f7 transparent'
+            }}
+          >
             <table className="w-full">
               <thead className="bg-muted/30">
                 <tr>
@@ -593,15 +573,15 @@ const TaskTable = () => {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div className="flex items-center gap-1 cursor-help justify-center">
-                        Atraso
+                        Prioridade
                         <HelpCircle className="h-3 w-3" />
                       </div>
                     </TooltipTrigger>
                     <TooltipContent>
                       <div className="text-sm max-w-xs">
-                        <p className="font-semibold">Atraso em Dias Úteis</p>
-                        <p>Diferença entre a data de conclusão e o prazo final, considerando apenas dias úteis.</p>
-                        <p className="text-xs text-muted-foreground mt-1">Valores negativos indicam antecipação.</p>
+                        <p className="font-semibold">Prioridade da Tarefa</p>
+                        <p>Nível de importância definido durante a criação ou edição da tarefa.</p>
+                        <p className="text-xs text-muted-foreground mt-1">Crítica &gt; Alta &gt; Média &gt; Baixa</p>
                       </div>
                     </TooltipContent>
                   </Tooltip>
@@ -765,57 +745,61 @@ const TaskTable = () => {
                       </WorkingDaysTooltip>
                     </td>
                     
-                    {/* Atraso */}
+                    {/* Prioridade */}
                     <td className="p-4 text-center">
-                      <DelayTooltip
-                        delay={calculatePreciseDelay(task.fim, task.prazo)}
-                        endDate={task.fim}
-                        deadlineDate={task.prazo}
-                        side="top"
-                      >
-                        <div className="cursor-help hover:bg-muted/20 rounded p-1 transition-colors">
-                          {(() => {
-                            const preciseDelay = calculatePreciseDelay(task.fim, task.prazo);
-                            
-                            if (preciseDelay === 0) {
-                              return (
-                                <Badge variant="secondary" className="text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                                  ✅ No prazo
-                                </Badge>
-                              );
-                            } else if (preciseDelay < 0) {
-                              return (
-                                <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                                  🚀 -{formatDays(Math.abs(preciseDelay), false)}d
-                                </Badge>
-                              );
-                            } else {
-                              const bgColor = preciseDelay <= 2 
-                                ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                                : preciseDelay <= 5 
-                                ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
-                                : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
-                              
-                              return (
-                                <Badge variant="destructive" className={`text-xs ${bgColor}`}>
-                                  ⚠️ +{formatDays(preciseDelay, false)}d
-                                </Badge>
-                              );
-                            }
-                          })()}
-                          <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                            {(() => {
-                              const preciseDelay = calculatePreciseDelay(task.fim, task.prazo);
-                              if (preciseDelay < 0) return 'Antecipada';
-                              if (preciseDelay === 0) return 'Pontual';
-                              if (preciseDelay <= 2) return 'Leve';
-                              if (preciseDelay <= 5) return 'Moderado';
-                              return 'Crítico';
-                            })()}
-                            <HelpCircle className="h-3 w-3" />
-                          </div>
-                        </div>
-                      </DelayTooltip>
+                      <div className="flex flex-col items-center gap-1">
+                        {(() => {
+                          const prioridade = task.prioridade;
+                          let badgeProps: { variant: any; className: string; icon: string } = {
+                            variant: 'secondary',
+                            className: '',
+                            icon: ''
+                          };
+                          
+                          switch (prioridade) {
+                            case 'critica':
+                              badgeProps = {
+                                variant: 'destructive',
+                                className: 'text-xs bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 font-semibold',
+                                icon: '🔴'
+                              };
+                              break;
+                            case 'alta':
+                              badgeProps = {
+                                variant: 'secondary',
+                                className: 'text-xs bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200 font-medium',
+                                icon: '🟠'
+                              };
+                              break;
+                            case 'media':
+                              badgeProps = {
+                                variant: 'secondary',
+                                className: 'text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+                                icon: '🟡'
+                              };
+                              break;
+                            case 'baixa':
+                              badgeProps = {
+                                variant: 'secondary',
+                                className: 'text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+                                icon: '🟢'
+                              };
+                              break;
+                            default:
+                              badgeProps = {
+                                variant: 'secondary',
+                                className: 'text-xs bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
+                                icon: '⚪'
+                              };
+                          }
+                          
+                          return (
+                            <Badge variant={badgeProps.variant} className={badgeProps.className}>
+                              {badgeProps.icon} {prioridade?.charAt(0).toUpperCase() + prioridade?.slice(1)}
+                            </Badge>
+                          );
+                        })()}
+                      </div>
                     </td>
                     
                     {/* Status */}

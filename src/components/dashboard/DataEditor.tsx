@@ -19,6 +19,7 @@ interface TaskFormData {
   inicio: string;
   fim: string;
   prazo: string;
+  prioridade: 'baixa' | 'media' | 'alta' | 'critica';
 }
 
 const TaskForm: React.FC<{
@@ -32,12 +33,13 @@ const TaskForm: React.FC<{
     status: task?.status || 'backlog',
     inicio: task?.inicio || '',
     fim: task?.fim || '',
-    prazo: task?.prazo || ''
+    prazo: task?.prazo || '',
+    prioridade: task?.prioridade || 'media'
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.tarefa || !formData.responsavel || !formData.status || !formData.inicio || !formData.fim || !formData.prazo) {
+    if (!formData.tarefa || !formData.responsavel || !formData.status || !formData.inicio || !formData.fim || !formData.prazo || !formData.prioridade) {
       toast({
         title: "Erro",
         description: "Todos os campos são obrigatórios.",
@@ -91,6 +93,21 @@ const TaskForm: React.FC<{
             <SelectItem value="todo">A Fazer</SelectItem>
             <SelectItem value="in-progress">Em Andamento</SelectItem>
             <SelectItem value="completed">Concluída</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <div>
+        <Label htmlFor="prioridade">Prioridade</Label>
+        <Select value={formData.prioridade} onValueChange={(value) => setFormData(prev => ({ ...prev, prioridade: value as any }))}>
+          <SelectTrigger>
+            <SelectValue placeholder="Selecione a prioridade" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="baixa">Baixa</SelectItem>
+            <SelectItem value="media">Média</SelectItem>
+            <SelectItem value="alta">Alta</SelectItem>
+            <SelectItem value="critica">Crítica</SelectItem>
           </SelectContent>
         </Select>
       </div>

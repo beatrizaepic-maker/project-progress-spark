@@ -189,6 +189,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, initialTas
     const newTask: TaskData = {
       ...task,
       id: newId,
+      prioridade: task.prioridade || 'media', // Valor padrão para prioridade
       duracaoDiasUteis: task.fim ? calculateWorkDays(task.inicio, task.fim) : 0,
       atrasoDiasUteis: task.fim ? calculateDelay(task.fim, task.prazo) : 0,
       atendeuPrazo: task.fim ? new Date(task.fim) <= new Date(task.prazo) : true
