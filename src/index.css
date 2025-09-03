@@ -345,3 +345,15 @@ html,
 .bg-background {
   background-color: #1A1A2E !important;
 }
+
+@font-face {
+  font-family: 'Ethnocentric';
+  src: url('./assets/fonts/ethnocentric rg.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* Classe específica para o header */
+.ethnocentric-header {
+  font-family: 'Ethnocentric', sans-serif !important;
+}

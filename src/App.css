@@ -35,9 +35,11 @@
 
 .card {
   padding: 2em;
-  border: 2px solid #ff0066; /* Alteração da cor da borda */
+  border: 2px solid hsl(var(--border)); /* Borda simples com cor padrão */
+  background-color: hsl(var(--background)); /* Fundo escuro */
+  color: hsl(var(--foreground)); /* Fonte branca */
+  border-radius: 0; /* Bordas quadradas */
   transition: transform 0.3s, background-color 0.3s; /* Suavidade no hover */
-  border-radius: 0 !important; /* Remove bordas arredondadas */
 }
 
 .card:hover {

@@ -14,7 +14,7 @@ const Settings = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Aparência */}
-              <div className="bg-card p-6 border">
+              <div className="bg-card p-6 border-2 border-purple-500 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-all duration-300">
                 <h3 className="text-lg font-semibold mb-4">Aparência</h3>
                 <div className="space-y-4">
                   <div>
@@ -37,7 +37,7 @@ const Settings = () => {
               </div>
 
               {/* Notificações */}
-              <div className="bg-card p-6 border">
+              <div className="bg-card p-6 border-2 border-purple-500 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-all duration-300">
                 <h3 className="text-lg font-semibold mb-4">Notificações</h3>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
@@ -56,7 +56,7 @@ const Settings = () => {
               </div>
 
               {/* Dados */}
-              <div className="bg-card p-6 border">
+              <div className="bg-card p-6 border-2 border-purple-500 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-all duration-300">
                 <h3 className="text-lg font-semibold mb-4">Gerenciamento de Dados</h3>
                 <div className="space-y-3">
                   <button className="w-full p-2 text-left text-sm border hover:bg-muted">
@@ -72,7 +72,7 @@ const Settings = () => {
               </div>
 
               {/* Sobre */}
-              <div className="bg-card p-6 border">
+              <div className="bg-card p-6 border-2 border-purple-500 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-all duration-300">
                 <h3 className="text-lg font-semibold mb-4">Sobre</h3>
                 <div className="space-y-2 text-sm text-muted-foreground">
                   <p>Versão: 1.0.0</p>
