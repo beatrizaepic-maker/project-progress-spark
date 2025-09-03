@@ -189,7 +189,7 @@ const KPICard: React.FC<KPICardProps> = ({
   return (
     <motion.div 
       className={cn(
-        'relative overflow-hidden border-2 transition-all duration-200 hover:shadow-lg shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50',
+        'relative overflow-visible border-2 transition-all duration-200 hover:shadow-lg shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50',
         'bg-card focus:outline-none focus:ring-4 focus:ring-purple-500/50 focus:border-purple-600',
         // Cores da borda baseadas no status e estado de foco
         isFocused ? 'border-purple-600' : 'border-purple-500',

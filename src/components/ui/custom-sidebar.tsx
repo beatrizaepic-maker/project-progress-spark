@@ -94,11 +94,11 @@ export const CustomDesktopSidebar = ({
   return (
     <motion.div
       className={cn(
-        "h-screen py-4 hidden md:flex md:flex-col bg-background border-r border-border w-[300px] flex-shrink-0 shadow-sm fixed left-0 top-0 z-20",
+        "h-screen py-4 hidden md:flex md:flex-col bg-background border-r border-border w-[220px] flex-shrink-0 shadow-sm fixed left-0 top-0 z-20",
         className
       )}
       animate={{
-        width: animate ? (open ? "300px" : "60px") : "300px",
+        width: animate ? (open ? "220px" : "60px") : "220px",
         paddingLeft: animate ? (open ? "16px" : "4px") : "16px",
         paddingRight: animate ? (open ? "16px" : "4px") : "16px",
       }}

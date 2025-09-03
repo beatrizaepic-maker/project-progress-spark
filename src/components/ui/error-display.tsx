@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle, XCircle, Info, AlertCircle, RefreshCw } from 'lucide-react';
+import { AlertTriangle, X, Info, AlertCircle, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -26,7 +26,7 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
   const getErrorIcon = (severity: ErrorSeverity) => {
     switch (severity) {
       case ErrorSeverity.CRITICAL:
-        return <XCircle className="h-4 w-4" />;
+        return <X className="h-4 w-4" />;
       case ErrorSeverity.HIGH:
         return <AlertTriangle className="h-4 w-4" />;
       case ErrorSeverity.MEDIUM:
@@ -100,7 +100,7 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
                     onClick={() => onDismiss(error.id)}
                     className="h-6 w-6 p-0"
                   >
-                    <XCircle className="h-3 w-3" />
+                    <X className="h-3 w-3" />
                   </Button>
                 )}
               </div>
@@ -181,7 +181,7 @@ export const ErrorSummary: React.FC<ErrorSummaryProps> = ({
     )}>
       <div className="flex items-center gap-2">
         {criticalErrors ? (
-          <XCircle className="h-4 w-4" />
+          <X className="h-4 w-4" />
         ) : (
           <AlertTriangle className="h-4 w-4" />
         )}

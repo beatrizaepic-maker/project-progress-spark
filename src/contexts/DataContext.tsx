@@ -86,8 +86,14 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, initialTas
   });
 
   const validateData = useCallback(() => {
-    const validation = kpiErrorHandler.validateTaskData(tasks);
-    return validation.isValid;
+    // Validação básica - verificar se todas as tarefas têm campos obrigatórios
+    const hasValidTasks = tasks.every(task => 
+      task.tarefa && 
+      task.inicio && 
+      task.prazo && 
+      task.status
+    );
+    return hasValidTasks;
   }, [tasks]);
 
   const calculateDataQuality = useCallback(() => {
@@ -130,9 +136,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, initialTas
 
     // Se não há dados suficientes, não calcula KPIs avançados
     if (!quality.hasMinimumData) {
-      kpiErrorHandler.handleInsufficientData(3, quality.completeTasks, {
-        operation: 'recalculateMetrics',
-        totalTasks: quality.totalTasks
+      console.warn('Dados insuficientes para cálculo de KPIs avançados', {
+        minimum: 3,
+        current: quality.completeTasks,
+        operation: 'recalculateMetrics'
       });
     }
 
@@ -232,12 +239,17 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, initialTas
 
   const importData = useCallback((data: TaskData[]) => {
     // Valida dados antes de importar
-    const validation = kpiErrorHandler.validateTaskData(data);
+    const hasValidData = data.every(task => 
+      task.tarefa && 
+      task.inicio && 
+      task.prazo && 
+      task.status
+    );
     
-    if (!validation.isValid) {
+    if (!hasValidData) {
       toast({
         title: "Erro na importação",
-        description: `${validation.errors.length} erro(s) encontrado(s) nos dados.`,
+        description: "Dados inválidos encontrados. Verifique se todos os campos obrigatórios estão preenchidos.",
         variant: "destructive"
       });
       return;

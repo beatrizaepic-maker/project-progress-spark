@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, Upload, Download, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, Upload, Download, CheckCircle, X } from 'lucide-react';
 import { TaskData } from '@/data/projectData';
 import { toast } from '@/hooks/use-toast';
 
