@@ -53,30 +53,30 @@ interface KanbanTaskProps {
 const statusConfig = {
   backlog: {
     title: 'Backlog',
-    color: 'bg-slate-100 border-slate-300',
-    headerColor: 'bg-slate-200',
-    icon: <span className="text-slate-600">🎯</span>,
+    color: 'bg-dark-navy border-slate-600',
+    headerColor: 'bg-dark-navy',
+    icon: <span className="text-slate-300">🎯</span>,
     taskColor: 'border-l-slate-500'
   },
   todo: {
     title: 'A Fazer',
-    color: 'bg-blue-50 border-blue-300',
-    headerColor: 'bg-blue-100',
-    icon: <Clock className="w-5 h-5 text-blue-600" />,
+    color: 'bg-dark-navy border-blue-600',
+    headerColor: 'bg-dark-navy',
+    icon: <Clock className="w-5 h-5 text-blue-400" />,
     taskColor: 'border-l-blue-500'
   },
   'in-progress': {
     title: 'Em Andamento',
-    color: 'bg-yellow-50 border-yellow-300',
-    headerColor: 'bg-yellow-100',
-    icon: <AlertTriangle className="w-5 h-5 text-yellow-600" />,
+    color: 'bg-dark-navy border-yellow-600',
+    headerColor: 'bg-dark-navy',
+    icon: <AlertTriangle className="w-5 h-5 text-yellow-400" />,
     taskColor: 'border-l-yellow-500'
   },
   completed: {
     title: 'Concluído',
-    color: 'bg-green-50 border-green-300',
-    headerColor: 'bg-green-100',
-    icon: <CheckCircle className="w-5 h-5 text-green-600" />,
+    color: 'bg-dark-navy border-green-600',
+    headerColor: 'bg-dark-navy',
+    icon: <CheckCircle className="w-5 h-5 text-green-400" />,
     taskColor: 'border-l-green-500'
   }
 };
@@ -123,7 +123,7 @@ const KanbanTask: React.FC<KanbanTaskProps> = ({ task, onEdit, onDelete }) => {
       exit={{ opacity: 0, y: -20 }}
       whileHover={{ scale: 1.02 }}
       className={`
-        bg-card border-2 rounded-lg p-4 mb-3 cursor-grab active:cursor-grabbing
+        bg-slate-800 border-2 rounded-none p-4 mb-3 cursor-grab active:cursor-grabbing
         shadow-sm hover:shadow-md transition-all duration-200
         border-l-4 ${statusInfo.taskColor}
         ${isDragging ? 'opacity-50 rotate-3 shadow-lg' : ''}
@@ -132,14 +132,14 @@ const KanbanTask: React.FC<KanbanTaskProps> = ({ task, onEdit, onDelete }) => {
     >
       {/* Header da tarefa */}
       <div className="flex justify-between items-start mb-3">
-        <h4 className="font-semibold text-sm text-foreground line-clamp-2 flex-1">
+        <h4 className="font-semibold text-sm text-white line-clamp-2 flex-1">
           {task.tarefa}
         </h4>
         <div className="flex gap-1 ml-2">
           <Button
             variant="ghost"
             size="sm"
-            className="h-6 w-6 p-0 hover:bg-blue-100"
+            className="h-6 w-6 p-0 hover:bg-slate-700"
             onClick={(e) => {
               e.stopPropagation();
               onEdit(task);
@@ -150,7 +150,7 @@ const KanbanTask: React.FC<KanbanTaskProps> = ({ task, onEdit, onDelete }) => {
           <Button
             variant="ghost"
             size="sm"
-            className="h-6 w-6 p-0 hover:bg-red-100"
+            className="h-6 w-6 p-0 hover:bg-slate-700"
             onClick={(e) => {
               e.stopPropagation();
               onDelete(task.id);
@@ -164,14 +164,14 @@ const KanbanTask: React.FC<KanbanTaskProps> = ({ task, onEdit, onDelete }) => {
       {/* Prioridade */}
       <div className="flex items-center gap-2 mb-2">
         <div className={`w-3 h-3 rounded-full ${priorityInfo.color}`}></div>
-        <span className="text-xs text-muted-foreground">{priorityInfo.label}</span>
+        <span className="text-xs text-gray-300">{priorityInfo.label}</span>
       </div>
 
       {/* Responsável */}
       {task.responsavel && (
         <div className="flex items-center gap-2 mb-2">
           👤
-          <span className="text-xs text-muted-foreground">{task.responsavel}</span>
+          <span className="text-xs text-gray-300">{task.responsavel}</span>
         </div>
       )}
 
@@ -180,7 +180,7 @@ const KanbanTask: React.FC<KanbanTaskProps> = ({ task, onEdit, onDelete }) => {
         {task.inicio && (
           <div className="flex items-center gap-2">
             📅
-            <span className="text-xs text-muted-foreground">
+            <span className="text-xs text-gray-300">
               Início: {new Date(task.inicio).toLocaleDateString('pt-BR')}
             </span>
           </div>
@@ -189,10 +189,10 @@ const KanbanTask: React.FC<KanbanTaskProps> = ({ task, onEdit, onDelete }) => {
         {task.prazo && (
           <div className="flex items-center gap-2">
             <span className={isOverdue ? 'text-red-500' : 'text-orange-500'}>🚩</span>
-            <span className={`text-xs ${isOverdue ? 'text-red-600 font-medium' : 'text-muted-foreground'}`}>
+            <span className={`text-xs ${isOverdue ? 'text-red-400 font-medium' : 'text-gray-300'}`}>
               Prazo: {new Date(task.prazo).toLocaleDateString('pt-BR')}
               {daysUntilDeadline !== null && (
-                <span className={`ml-1 ${isOverdue ? 'text-red-600' : daysUntilDeadline <= 3 ? 'text-orange-600' : 'text-muted-foreground'}`}>
+                <span className={`ml-1 ${isOverdue ? 'text-red-400' : daysUntilDeadline <= 3 ? 'text-orange-400' : 'text-gray-300'}`}>
                   ({daysUntilDeadline > 0 ? `${daysUntilDeadline}d restantes` : `${Math.abs(daysUntilDeadline)}d atrasado`})
                 </span>
               )}
@@ -203,7 +203,7 @@ const KanbanTask: React.FC<KanbanTaskProps> = ({ task, onEdit, onDelete }) => {
         {task.fim && (
           <div className="flex items-center gap-2">
             <CheckCircle className="w-3 h-3 text-green-500" />
-            <span className="text-xs text-muted-foreground">
+            <span className="text-xs text-gray-300">
               Fim: {new Date(task.fim).toLocaleDateString('pt-BR')}
             </span>
           </div>
@@ -243,25 +243,48 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
       ref={setNodeRef}
       {...attributes}
       className={`
-        flex-1 min-w-80 max-w-sm rounded-lg border-2 ${config.color}
+        flex-1 min-w-80 max-w-sm rounded-none border-2 ${config.color}
         shadow-sm hover:shadow-md transition-all duration-200
       `}
     >
       {/* Header da coluna */}
-      <div className={`${config.headerColor} p-4 rounded-t-lg border-b`}>
+      <div className={`${config.headerColor} p-4 rounded-t-none border-b`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {config.icon}
             <h3 className="font-semibold text-foreground">{title}</h3>
           </div>
-          <Badge variant="secondary" className="bg-white/80">
+          <Badge variant="secondary" className="text-purple-800 bg-white border border-gray-300 rounded-none hover:text-white">
             {tasks.length}
           </Badge>
         </div>
       </div>
 
       {/* Lista de tarefas */}
-      <div className="p-4 min-h-[400px]">
+      <div 
+        className="kanban-task-list p-4 max-h-[600px] overflow-y-auto"
+        style={{
+          scrollbarWidth: 'thin',
+          scrollbarColor: '#a855f7 transparent'
+        }}
+      >
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            .kanban-task-list::-webkit-scrollbar {
+              width: 8px;
+            }
+            .kanban-task-list::-webkit-scrollbar-track {
+              background: transparent;
+            }
+            .kanban-task-list::-webkit-scrollbar-thumb {
+              background-color: #a855f7;
+              border-radius: 0;
+            }
+            .kanban-task-list::-webkit-scrollbar-thumb:hover {
+              background-color: #9333ea;
+            }
+          `
+        }} />
         <SortableContext items={tasks.map(task => task.id)} strategy={verticalListSortingStrategy}>
           <AnimatePresence>
             {tasks.map((task) => (
@@ -279,7 +302,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex items-center justify-center h-32 border-2 border-dashed border-muted-foreground/20 rounded-lg"
+            className="flex items-center justify-center h-32 border-2 border-dashed border-muted-foreground/20 rounded-none"
           >
             <p className="text-muted-foreground text-sm">Arraste tarefas aqui</p>
           </motion.div>
@@ -343,7 +366,30 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, onEdit, onDelete }) =>
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex gap-6 overflow-x-auto pb-4">
+        <div 
+          className="kanban-board-horizontal flex gap-6 overflow-x-auto pb-4"
+          style={{
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#a855f7 transparent'
+          }}
+        >
+          <style dangerouslySetInnerHTML={{
+            __html: `
+              .kanban-board-horizontal::-webkit-scrollbar {
+                height: 8px;
+              }
+              .kanban-board-horizontal::-webkit-scrollbar-track {
+                background: transparent;
+              }
+              .kanban-board-horizontal::-webkit-scrollbar-thumb {
+                background-color: #a855f7;
+                border-radius: 0;
+              }
+              .kanban-board-horizontal::-webkit-scrollbar-thumb:hover {
+                background-color: #9333ea;
+              }
+            `
+          }} />
           {Object.entries(statusConfig).map(([statusKey, config]) => (
             <KanbanColumn
               key={statusKey}
