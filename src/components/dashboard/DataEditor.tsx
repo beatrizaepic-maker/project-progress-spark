@@ -8,17 +8,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Plus, 
-  Edit3 as Edit, 
-  Trash2, 
-  Upload, 
-  Download, 
-  CheckCircle, 
-  X 
-} from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 import { TaskData } from '@/data/projectData';
 import { toast } from '@/hooks/use-toast';
+import KanbanBoard from './KanbanBoard';
 
 interface TaskFormData {
   tarefa: string;
@@ -170,6 +164,7 @@ const DataEditor: React.FC = () => {
   const { tasks, addTask, editTask, deleteTask, importData, exportData } = useData();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<TaskData | null>(null);
+  const [viewMode, setViewMode] = useState<'table' | 'kanban'>('table');
 
   const getStatusLabel = (status: string) => {
     switch (status) {
@@ -273,12 +268,12 @@ const DataEditor: React.FC = () => {
           
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={handleImport}>
-              <Upload className="w-4 h-4 mr-2" />
+              📤
               Importar
             </Button>
             
             <Button variant="outline" size="sm" onClick={handleExport}>
-              <Download className="w-4 h-4 mr-2" />
+              📥
               Exportar
             </Button>
             
@@ -288,7 +283,7 @@ const DataEditor: React.FC = () => {
                   size="sm"
                   className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 shadow-lg shadow-pink-500/25 hover:shadow-pink-500/40 transition-all duration-200 transform hover:scale-105 border-0"
                 >
-                  <Plus className="w-4 h-4 mr-2" />
+                  ➕
                   Nova Tarefa
                 </Button>
               </DialogTrigger>
@@ -310,88 +305,116 @@ const DataEditor: React.FC = () => {
       </CardHeader>
       
       <CardContent>
-        <div 
-          className="rounded-lg border overflow-x-auto" 
-          style={{
-            scrollbarWidth: 'thin',
-            scrollbarColor: '#a855f7 transparent'
-          }}
-        >
-          <style dangerouslySetInnerHTML={{
-            __html: `
-              .rounded-lg::-webkit-scrollbar {
-                height: 8px;
-              }
-              .rounded-lg::-webkit-scrollbar-track {
-                background: transparent;
-              }
-              .rounded-lg::-webkit-scrollbar-thumb {
-                background-color: #a855f7;
-                border-radius: 0;
-              }
-              .rounded-lg::-webkit-scrollbar-thumb:hover {
-                background-color: #9333ea;
-              }
-            `
-          }} />
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Tarefa</TableHead>
-                <TableHead>Responsável</TableHead>
-                <TableHead>Início</TableHead>
-                <TableHead>Fim</TableHead>
-                <TableHead>Prazo</TableHead>
-                <TableHead>Duração</TableHead>
-                <TableHead>Atraso</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="w-24">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {tasks.map((task) => (
-                <TableRow key={task.id}>
-                  <TableCell className="font-medium">{task.tarefa}</TableCell>
-                  <TableCell>{task.responsavel || 'Não informado'}</TableCell>
-                  <TableCell>{new Date(task.inicio).toLocaleDateString('pt-BR')}</TableCell>
-                  <TableCell>{new Date(task.fim).toLocaleDateString('pt-BR')}</TableCell>
-                  <TableCell>{new Date(task.prazo).toLocaleDateString('pt-BR')}</TableCell>
-                  <TableCell>{task.duracaoDiasUteis} dias</TableCell>
-                  <TableCell>
-                    {task.atrasoDiasUteis > 0 ? (
-                      <Badge variant="destructive">{task.atrasoDiasUteis} dias</Badge>
-                    ) : (
-                      <Badge variant="secondary">No prazo</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={getStatusBadgeVariant(task.status)}>
-                      {getStatusLabel(task.status)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setEditingTask(task)}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => deleteTask(task.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+        {/* Controles de Visualização */}
+        <div className="mb-6">
+          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'table' | 'kanban')}>
+            <TabsList className="grid w-fit grid-cols-2 bg-muted">
+              <TabsTrigger value="table" className="flex items-center gap-2">
+                📊 Tabela
+              </TabsTrigger>
+              <TabsTrigger value="kanban" className="flex items-center gap-2">
+                📋 Kanban
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
+
+        {/* Visualização da Tabela */}
+        {viewMode === 'table' && (
+          <div 
+            className="rounded-lg border overflow-x-auto" 
+            style={{
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#a855f7 transparent'
+            }}
+          >
+            <style dangerouslySetInnerHTML={{
+              __html: `
+                .rounded-lg::-webkit-scrollbar {
+                  height: 8px;
+                }
+                .rounded-lg::-webkit-scrollbar-track {
+                  background: transparent;
+                }
+                .rounded-lg::-webkit-scrollbar-thumb {
+                  background-color: #a855f7;
+                  border-radius: 0;
+                }
+                .rounded-lg::-webkit-scrollbar-thumb:hover {
+                  background-color: #9333ea;
+                }
+              `
+            }} />
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Tarefa</TableHead>
+                  <TableHead>Responsável</TableHead>
+                  <TableHead>Início</TableHead>
+                  <TableHead>Fim</TableHead>
+                  <TableHead>Prazo</TableHead>
+                  <TableHead>Duração</TableHead>
+                  <TableHead>Atraso</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="w-24">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {tasks.map((task) => (
+                  <TableRow key={task.id}>
+                    <TableCell className="font-medium">{task.tarefa}</TableCell>
+                    <TableCell>{task.responsavel || 'Não informado'}</TableCell>
+                    <TableCell>{new Date(task.inicio).toLocaleDateString('pt-BR')}</TableCell>
+                    <TableCell>{task.fim ? new Date(task.fim).toLocaleDateString('pt-BR') : 'Não informado'}</TableCell>
+                    <TableCell>{new Date(task.prazo).toLocaleDateString('pt-BR')}</TableCell>
+                    <TableCell>{task.duracaoDiasUteis} dias</TableCell>
+                    <TableCell>
+                      {task.atrasoDiasUteis > 0 ? (
+                        <Badge variant="destructive">{task.atrasoDiasUteis} dias</Badge>
+                      ) : (
+                        <Badge variant="secondary">No prazo</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={getStatusBadgeVariant(task.status)}>
+                        {getStatusLabel(task.status)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditingTask(task)}
+                        >
+                          ✏️
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteTask(task.id)}
+                        >
+                          🗑️
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+
+        {/* Visualização do Kanban */}
+        {viewMode === 'kanban' && (
+          <div className="w-full">
+            <KanbanBoard
+              tasks={tasks}
+              onEdit={(task) => setEditingTask(task)}
+              onDelete={(taskId) => deleteTask(taskId)}
+            />
+          </div>
+        )}
         
         {/* Edit Dialog */}
         <Dialog open={!!editingTask} onOpenChange={() => setEditingTask(null)}>
