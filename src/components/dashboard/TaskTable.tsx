@@ -14,10 +14,18 @@ import {
 } from "lucide-react";
 import { useData } from "@/contexts/DataContext";
 import { formatDays } from "@/utils/kpiFormatters";
-import { useState, useMemo } from "react";
+import { useState, useMemo, forwardRef, useImperativeHandle } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-const TaskTable = () => {
+// Interface para os métodos expostos via ref
+export interface TaskTableRef {
+  setPriorityFilter: (filter: string) => void;
+  setStatusFilter: (filter: string) => void;
+  setSearchTerm: (term: string) => void;
+  clearFilters: () => void;
+}
+
+const TaskTable = forwardRef<TaskTableRef>((props, ref) => {
   const { tasks } = useData();
   const isMobile = useIsMobile();
   
@@ -25,6 +33,18 @@ const TaskTable = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
+
+  // Expor métodos via ref
+  useImperativeHandle(ref, () => ({
+    setPriorityFilter,
+    setStatusFilter,
+    setSearchTerm,
+    clearFilters: () => {
+      setSearchTerm('');
+      setStatusFilter('all');
+      setPriorityFilter('all');
+    }
+  }));
 
   // Função para formatar datas de forma consistente
   const formatDate = (dateString: string) => {
@@ -862,6 +882,8 @@ const TaskTable = () => {
     </Card>
     </TooltipProvider>
   );
-};
+});
+
+TaskTable.displayName = 'TaskTable';
 
 export default TaskTable;

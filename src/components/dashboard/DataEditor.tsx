@@ -8,7 +8,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, Upload, Download, CheckCircle, X } from 'lucide-react';
+import { 
+  Plus, 
+  Edit3 as Edit, 
+  Trash2, 
+  Upload, 
+  Download, 
+  CheckCircle, 
+  X 
+} from 'lucide-react';
 import { TaskData } from '@/data/projectData';
 import { toast } from '@/hooks/use-toast';
 
@@ -17,7 +25,7 @@ interface TaskFormData {
   responsavel: string;
   status: 'backlog' | 'todo' | 'in-progress' | 'completed';
   inicio: string;
-  fim: string;
+  fim?: string; // Campo opcional
   prazo: string;
   prioridade: 'baixa' | 'media' | 'alta' | 'critica';
 }
@@ -39,16 +47,18 @@ const TaskForm: React.FC<{
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.tarefa || !formData.responsavel || !formData.status || !formData.inicio || !formData.fim || !formData.prazo || !formData.prioridade) {
+    // Validação apenas para campos obrigatórios (fim é opcional)
+    if (!formData.tarefa || !formData.responsavel || !formData.status || !formData.inicio || !formData.prazo || !formData.prioridade) {
       toast({
         title: "Erro",
-        description: "Todos os campos são obrigatórios.",
+        description: "Todos os campos são obrigatórios, exceto a data de fim.",
         variant: "destructive"
       });
       return;
     }
     
-    if (new Date(formData.inicio) > new Date(formData.fim)) {
+    // Validação de datas apenas se a data de fim estiver preenchida
+    if (formData.fim && new Date(formData.inicio) > new Date(formData.fim)) {
       toast({
         title: "Erro",
         description: "A data de início deve ser anterior à data de fim.",
@@ -124,7 +134,7 @@ const TaskForm: React.FC<{
         </div>
         
         <div>
-          <Label htmlFor="fim">Data de Fim</Label>
+          <Label htmlFor="fim">Data de Fim (opcional)</Label>
           <Input
             id="fim"
             type="date"

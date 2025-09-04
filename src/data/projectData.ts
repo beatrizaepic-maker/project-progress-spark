@@ -3,7 +3,7 @@ export interface TaskData {
   tarefa: string;
   responsavel?: string;
   inicio: string;
-  fim: string;
+  fim?: string; // Campo opcional
   prazo: string;
   duracaoDiasUteis: number;
   atrasoDiasUteis: number;

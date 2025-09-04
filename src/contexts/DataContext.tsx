@@ -17,7 +17,7 @@ interface DataContextType {
     validityRate: number;
   };
   updateTasks: (newTasks: TaskData[]) => void;
-  addTask: (task: Omit<TaskData, 'id'>) => void;
+  addTask: (task: Omit<TaskData, 'id'> & { fim?: string }) => void;
   editTask: (id: number, task: Partial<TaskData>) => void;
   deleteTask: (id: number) => void;
   importData: (data: TaskData[]) => void;
@@ -181,7 +181,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, initialTas
     setTasks(updatedTasks);
   }, []);
 
-  const addTask = useCallback((task: Omit<TaskData, 'id'>) => {
+  const addTask = useCallback((task: Omit<TaskData, 'id'> & { fim?: string }) => {
     // Valida dados da nova tarefa
     if (!task.tarefa || !task.inicio || !task.prazo) {
       toast({
