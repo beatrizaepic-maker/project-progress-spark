@@ -262,34 +262,40 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
 
       {/* Lista de tarefas */}
       <div 
-        className="kanban-task-list p-4 max-h-[600px] overflow-y-auto"
+        className="kanban-task-list p-4 min-h-[200px] max-h-[700px] overflow-y-auto scroll-smooth"
         style={{
           scrollbarWidth: 'thin',
-          scrollbarColor: '#a855f7 transparent'
+          scrollbarColor: '#a855f7 rgba(255,255,255,0.1)'
         }}
       >
         <style dangerouslySetInnerHTML={{
           __html: `
             .kanban-task-list::-webkit-scrollbar {
               width: 8px;
+              background: rgba(255,255,255,0.05);
             }
             .kanban-task-list::-webkit-scrollbar-track {
-              background: transparent;
+              background: rgba(255,255,255,0.1);
+              border-radius: 4px;
             }
             .kanban-task-list::-webkit-scrollbar-thumb {
               background-color: #a855f7;
-              border-radius: 0;
+              border-radius: 4px;
+              border: 1px solid rgba(255,255,255,0.1);
             }
             .kanban-task-list::-webkit-scrollbar-thumb:hover {
               background-color: #9333ea;
             }
+            .kanban-task-list::-webkit-scrollbar-corner {
+              background: transparent;
+            }
           `
         }} />
         <SortableContext items={tasks.map(task => task.id)} strategy={verticalListSortingStrategy}>
-          <AnimatePresence>
+          <AnimatePresence mode="popLayout">
             {tasks.map((task) => (
               <KanbanTask
-                key={task.id}
+                key={`task-${task.id}`}
                 task={task}
                 onEdit={onEdit}
                 onDelete={onDelete}
@@ -302,7 +308,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex items-center justify-center h-32 border-2 border-dashed border-muted-foreground/20 rounded-none"
+            className="flex items-center justify-center h-32 border-2 border-dashed border-muted-foreground/20 rounded-none bg-slate-800/20"
           >
             <p className="text-muted-foreground text-sm">Arraste tarefas aqui</p>
           </motion.div>
@@ -332,6 +338,19 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, onEdit, onDelete }) =>
     'in-progress': tasks.filter(task => task.status === 'in-progress'),
     completed: tasks.filter(task => task.status === 'completed'),
   };
+
+  // Debug: Log para monitorar tarefas
+  React.useEffect(() => {
+    console.log('🔍 Kanban Debug:', {
+      totalTasks: tasks.length,
+      tasksByStatus: Object.fromEntries(
+        Object.entries(tasksByStatus).map(([status, statusTasks]) => [
+          status, 
+          { count: statusTasks.length, ids: statusTasks.map(t => t.id) }
+        ])
+      )
+    });
+  }, [tasks, tasksByStatus]);
 
   const handleDragStart = (event: DragStartEvent) => {
     const task = tasks.find(t => t.id === event.active.id);

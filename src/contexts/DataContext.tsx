@@ -192,7 +192,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, initialTas
       return;
     }
 
-    const newId = Math.max(...tasks.map(t => t.id), 0) + 1;
+    // Gera ID único mais robusto
+    const existingIds = tasks.map(t => t.id);
+    const maxId = existingIds.length > 0 ? Math.max(...existingIds) : 0;
+    const newId = maxId + 1;
     const newTask: TaskData = {
       ...task,
       id: newId,
