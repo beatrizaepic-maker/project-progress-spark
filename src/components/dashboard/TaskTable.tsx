@@ -767,58 +767,21 @@ const TaskTable = forwardRef<TaskTableRef>((props, ref) => {
                     
                     {/* Prioridade */}
                     <td className="p-4 text-center">
-                      <div className="flex flex-col items-center gap-1">
-                        {(() => {
-                          const prioridade = task.prioridade;
-                          let badgeProps: { variant: any; className: string; icon: string } = {
-                            variant: 'secondary',
-                            className: '',
-                            icon: ''
-                          };
-                          
-                          switch (prioridade) {
-                            case 'critica':
-                              badgeProps = {
-                                variant: 'destructive',
-                                className: 'text-xs bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 font-semibold',
-                                icon: '🔴'
-                              };
-                              break;
-                            case 'alta':
-                              badgeProps = {
-                                variant: 'secondary',
-                                className: 'text-xs bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200 font-medium',
-                                icon: '🟠'
-                              };
-                              break;
-                            case 'media':
-                              badgeProps = {
-                                variant: 'secondary',
-                                className: 'text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-                                icon: '🟡'
-                              };
-                              break;
-                            case 'baixa':
-                              badgeProps = {
-                                variant: 'secondary',
-                                className: 'text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-                                icon: '🟢'
-                              };
-                              break;
-                            default:
-                              badgeProps = {
-                                variant: 'secondary',
-                                className: 'text-xs bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
-                                icon: '⚪'
-                              };
-                          }
-                          
-                          return (
-                            <Badge variant={badgeProps.variant} className={badgeProps.className}>
-                              {badgeProps.icon} {prioridade?.charAt(0).toUpperCase() + prioridade?.slice(1)}
-                            </Badge>
-                          );
-                        })()}
+                      <div className="flex flex-col items-center">
+                        <div className="flex items-center justify-center space-x-1 mb-2">
+                          {[2, 4, 6, 8].map((height, index) => (
+                            <div
+                              key={index}
+                              className={`w-2 rounded bg-white transition-all duration-300 ${
+                                index < ['baixa', 'media', 'alta', 'critica'].indexOf(task.prioridade) + 1 ? 'opacity-100' : 'opacity-30'
+                              } hover:bg-purple-500`}
+                              style={{ height: `${height * 4}px` }}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-xs font-medium text-muted-foreground">
+                          {task.prioridade?.charAt(0).toUpperCase() + task.prioridade?.slice(1)}
+                        </span>
                       </div>
                     </td>
                     
