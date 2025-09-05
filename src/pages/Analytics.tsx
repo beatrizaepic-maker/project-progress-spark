@@ -153,44 +153,6 @@ const AnalyticsContent = () => {
               </svg>
             </div>
             <div>
-              <h3 className="kpi-title text-white text-sm">Resumo Estatístico</h3>
-              <p className="kpi-subtitle text-light-gray text-xs mt-1">Principais métricas calculadas automaticamente</p>
-            </div>
-          </div>
-
-          {/* Métricas */}
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="card-content text-light-gray text-sm">Média de Produção:</span>
-              <span className="kpi-value text-white text-lg">{analyticsKPIs.averageProduction.toFixed(1)} dias</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="card-content text-light-gray text-sm">Moda:</span>
-              <span className="kpi-value text-white text-lg">{analyticsKPIs.mode.value} dias ({analyticsKPIs.mode.frequency}x)</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="card-content text-light-gray text-sm">Mediana:</span>
-              <span className="kpi-value text-white text-lg">{analyticsKPIs.median.toFixed(1)} dias</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="card-content text-light-gray text-sm">Desvio Padrão:</span>
-              <span className="kpi-value text-white text-lg">{analyticsKPIs.standardDeviation.toFixed(1)} dias</span>
-            </div>
-          </div>
-
-          {/* Efeito de brilho sutil */}
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-        </div>
-        
-        <div className="relative overflow-hidden border-2 border-purple-500 bg-card p-6 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-all duration-200 hover:shadow-lg">
-          {/* Header com ícone e título */}
-          <div className="flex items-center space-x-3 mb-4">
-            <div className="flex items-center justify-center h-12 w-12 text-white bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg hover:text-purple-400 hover:bg-purple-500/20 transition-all duration-200">
-              <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-            </div>
-            <div>
               <h3 className="kpi-title text-white text-sm">Status do Sistema</h3>
               <p className="kpi-subtitle text-light-gray text-xs mt-1">Informações sobre o processamento dos dados</p>
             </div>

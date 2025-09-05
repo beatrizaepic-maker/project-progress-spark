@@ -1,6 +1,7 @@
 import DataEditor from "@/components/dashboard/DataEditor";
 import { DataProvider } from "@/contexts/DataContext";
 import { mockTaskData } from "@/data/projectData";
+import KPIDebugSection from "@/components/dashboard/KPIDebugSection";
 
 const DataEditorPage = () => {
   return (
@@ -35,6 +36,15 @@ const DataEditorPage = () => {
                 <li>• Datas no formato ISO (YYYY-MM-DD)</li>
               </ul>
             </div>
+          </section>
+
+          {/* Debug e Monitoramento */}
+          <section>
+            <div className="mb-6">
+              <h3 className="text-xl font-semibold text-foreground mb-2">Debug e Monitoramento</h3>
+              <p className="text-muted-foreground">Informações técnicas e métricas de performance dos KPIs</p>
+            </div>
+            <KPIDebugSection tasks={mockTaskData} />
           </section>
       </main>
     </DataProvider>
