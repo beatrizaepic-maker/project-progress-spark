@@ -610,18 +610,18 @@ const TaskTable = forwardRef<TaskTableRef>((props, ref) => {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div className="flex items-center gap-1 cursor-help justify-center">
-                        Status
+                        Risco
                         <HelpCircle className="h-3 w-3" />
                       </div>
                     </TooltipTrigger>
                     <TooltipContent>
                       <div className="text-sm max-w-xs">
-                        <p className="font-semibold">Status de Prazo</p>
+                        <p className="font-semibold">Classificação de Risco</p>
                         <p>Classificação baseada no atraso:</p>
                         <ul className="text-xs mt-1 space-y-1">
                           <li>🚀 Antecipada: Concluída antes do prazo</li>
                           <li>🎯 No Prazo: Concluída exatamente no prazo</li>
-                          <li>⚠️ Risco: 1-2 dias de atraso</li>
+                          <li>⚠️ Risco Baixo: 1-2 dias de atraso</li>
                           <li>🔶 Atrasada: 3-5 dias de atraso</li>
                           <li>🔴 Crítica: 6+ dias de atraso</li>
                         </ul>
