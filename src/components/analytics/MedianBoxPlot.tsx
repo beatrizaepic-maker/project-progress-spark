@@ -203,15 +203,15 @@ const MedianBoxPlot: React.FC<MedianBoxPlotProps> = ({
       <div className="flex items-center justify-center space-x-6 mb-6 text-sm">
         <div className="flex items-center space-x-2">
           <div className="w-4 h-4 bg-blue-200 border-2 border-blue-500 rounded"></div>
-          <span className="text-gray-600 dark:text-gray-400">Quartis (Q1-Q3)</span>
+          <span className="text-white hover:text-purple-400 transition-colors">Quartis (Q1-Q3)</span>
         </div>
         <div className="flex items-center space-x-2">
           <div className="w-4 h-1 bg-red-500"></div>
-          <span className="text-gray-600 dark:text-gray-400">Mediana</span>
+          <span className="text-white hover:text-purple-400 transition-colors">Mediana</span>
         </div>
         <div className="flex items-center space-x-2">
           <div className="w-3 h-3 bg-red-500 rounded-full opacity-70"></div>
-          <span className="text-gray-600 dark:text-gray-400">Outliers</span>
+          <span className="text-white hover:text-purple-400 transition-colors">Outliers</span>
         </div>
       </div>
 
@@ -220,11 +220,11 @@ const MedianBoxPlot: React.FC<MedianBoxPlotProps> = ({
         <TooltipProvider>
           <UITooltip>
             <TooltipTrigger asChild>
-              <div className="text-center cursor-help hover:bg-gray-50 dark:hover:bg-gray-700 rounded p-2 transition-colors">
-                <div className="text-xl font-bold text-gray-600 dark:text-gray-400">
+              <div className="text-center cursor-help hover:bg-purple-500/20 hover:text-purple-400 rounded p-2 transition-colors">
+                <div className="text-xl font-bold text-white">
                   {formatDays(stats.min)}
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                <div className="text-xs text-white flex items-center justify-center gap-1">
                   Mínimo
                   <HelpCircle className="h-3 w-3" />
                 </div>
@@ -242,11 +242,11 @@ const MedianBoxPlot: React.FC<MedianBoxPlotProps> = ({
         <TooltipProvider>
           <UITooltip>
             <TooltipTrigger asChild>
-              <div className="text-center cursor-help hover:bg-gray-50 dark:hover:bg-gray-700 rounded p-2 transition-colors">
-                <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
+              <div className="text-center cursor-help hover:bg-purple-500/20 hover:text-purple-400 rounded p-2 transition-colors">
+                <div className="text-xl font-bold text-white">
                   {formatDays(stats.q1)}
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                <div className="text-xs text-white flex items-center justify-center gap-1">
                   Q1 (25%)
                   <HelpCircle className="h-3 w-3" />
                 </div>
@@ -264,11 +264,11 @@ const MedianBoxPlot: React.FC<MedianBoxPlotProps> = ({
         <TooltipProvider>
           <UITooltip>
             <TooltipTrigger asChild>
-              <div className="text-center cursor-help hover:bg-gray-50 dark:hover:bg-gray-700 rounded p-2 transition-colors">
-                <div className="text-xl font-bold text-red-600 dark:text-red-400">
+              <div className="text-center cursor-help hover:bg-purple-500/20 hover:text-purple-400 rounded p-2 transition-colors">
+                <div className="text-xl font-bold text-white">
                   {formatDays(stats.median)}
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                <div className="text-xs text-white flex items-center justify-center gap-1">
                   Mediana
                   <HelpCircle className="h-3 w-3" />
                 </div>
@@ -286,11 +286,11 @@ const MedianBoxPlot: React.FC<MedianBoxPlotProps> = ({
         <TooltipProvider>
           <UITooltip>
             <TooltipTrigger asChild>
-              <div className="text-center cursor-help hover:bg-gray-50 dark:hover:bg-gray-700 rounded p-2 transition-colors">
-                <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
+              <div className="text-center cursor-help hover:bg-purple-500/20 hover:text-purple-400 rounded p-2 transition-colors">
+                <div className="text-xl font-bold text-white">
                   {formatDays(stats.q3)}
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                <div className="text-xs text-white flex items-center justify-center gap-1">
                   Q3 (75%)
                   <HelpCircle className="h-3 w-3" />
                 </div>
@@ -308,11 +308,11 @@ const MedianBoxPlot: React.FC<MedianBoxPlotProps> = ({
         <TooltipProvider>
           <UITooltip>
             <TooltipTrigger asChild>
-              <div className="text-center cursor-help hover:bg-gray-50 dark:hover:bg-gray-700 rounded p-2 transition-colors">
-                <div className="text-xl font-bold text-gray-600 dark:text-gray-400">
+              <div className="text-center cursor-help hover:bg-purple-500/20 hover:text-purple-400 rounded p-2 transition-colors">
+                <div className="text-xl font-bold text-white">
                   {formatDays(stats.max)}
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                <div className="text-xs text-white flex items-center justify-center gap-1">
                   Máximo
                   <HelpCircle className="h-3 w-3" />
                 </div>

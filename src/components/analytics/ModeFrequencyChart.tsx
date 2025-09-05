@@ -162,11 +162,11 @@ const ModeFrequencyChart: React.FC<ModeFrequencyChartProps> = ({
       <div className="flex items-center justify-center space-x-6 mt-4 text-sm">
         <div className="flex items-center space-x-2">
           <div className="w-4 h-4 bg-blue-500 rounded"></div>
-          <span className="text-gray-600 dark:text-gray-400">Frequência Normal</span>
+          <span className="text-white hover:text-purple-400 transition-colors">Frequência Normal</span>
         </div>
         <div className="flex items-center space-x-2">
           <div className="w-4 h-4 bg-green-500 rounded"></div>
-          <span className="text-gray-600 dark:text-gray-400">Moda (Mais Comum)</span>
+          <span className="text-white hover:text-purple-400 transition-colors">Moda (Mais Comum)</span>
         </div>
       </div>
 
@@ -175,11 +175,11 @@ const ModeFrequencyChart: React.FC<ModeFrequencyChartProps> = ({
         <TooltipProvider>
           <UITooltip>
             <TooltipTrigger asChild>
-              <div className="text-center cursor-help hover:bg-gray-50 dark:hover:bg-gray-700 rounded p-2 transition-colors">
-                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+              <div className="text-center cursor-help hover:bg-purple-500/20 hover:text-purple-400 rounded p-2 transition-colors">
+                <div className="text-2xl font-bold text-white">
                   {formatDays(modeInfo.value)}
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                <div className="text-xs text-white flex items-center justify-center gap-1">
                   Moda
                   <HelpCircle className="h-3 w-3" />
                 </div>
@@ -197,11 +197,11 @@ const ModeFrequencyChart: React.FC<ModeFrequencyChartProps> = ({
         <TooltipProvider>
           <UITooltip>
             <TooltipTrigger asChild>
-              <div className="text-center cursor-help hover:bg-gray-50 dark:hover:bg-gray-700 rounded p-2 transition-colors">
-                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+              <div className="text-center cursor-help hover:bg-purple-500/20 hover:text-purple-400 rounded p-2 transition-colors">
+                <div className="text-2xl font-bold text-white">
                   {modeInfo.frequency}
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                <div className="text-xs text-white flex items-center justify-center gap-1">
                   Ocorrências
                   <HelpCircle className="h-3 w-3" />
                 </div>
@@ -219,11 +219,11 @@ const ModeFrequencyChart: React.FC<ModeFrequencyChartProps> = ({
         <TooltipProvider>
           <UITooltip>
             <TooltipTrigger asChild>
-              <div className="text-center cursor-help hover:bg-gray-50 dark:hover:bg-gray-700 rounded p-2 transition-colors">
-                <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+              <div className="text-center cursor-help hover:bg-purple-500/20 hover:text-purple-400 rounded p-2 transition-colors">
+                <div className="text-2xl font-bold text-white">
                   {formatPercentage(modeInfo.percentage)}
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                <div className="text-xs text-white flex items-center justify-center gap-1">
                   Do Total
                   <HelpCircle className="h-3 w-3" />
                 </div>
@@ -241,11 +241,11 @@ const ModeFrequencyChart: React.FC<ModeFrequencyChartProps> = ({
         <TooltipProvider>
           <UITooltip>
             <TooltipTrigger asChild>
-              <div className="text-center cursor-help hover:bg-gray-50 dark:hover:bg-gray-700 rounded p-2 transition-colors">
-                <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+              <div className="text-center cursor-help hover:bg-purple-500/20 hover:text-purple-400 rounded p-2 transition-colors">
+                <div className="text-2xl font-bold text-white">
                   {frequencyData.length}
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1">
+                <div className="text-xs text-white flex items-center justify-center gap-1">
                   Durações Únicas
                   <HelpCircle className="h-3 w-3" />
                 </div>

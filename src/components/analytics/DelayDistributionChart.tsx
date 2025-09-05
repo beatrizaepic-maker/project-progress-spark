@@ -298,11 +298,11 @@ const DelayDistributionChart: React.FC<DelayDistributionChartProps> = ({ tasks }
         <TooltipProvider>
           <UITooltip>
             <TooltipTrigger asChild>
-              <div className="text-center p-4 bg-card border border-border rounded-lg cursor-help hover:bg-white/20 transition-colors">
-                <div className="text-2xl font-bold text-green-400">
+              <div className="text-center p-4 bg-card border border-border rounded-lg cursor-help hover:bg-purple-500/20 transition-colors">
+                <div className="text-2xl font-bold text-white hover:text-purple-400 transition-colors">
                   {delayDistribution[0]?.percentage || 0}%
                 </div>
-                <div className="text-sm text-white flex items-center justify-center gap-1 mt-2">
+                <div className="text-sm text-white hover:text-purple-400 flex items-center justify-center gap-1 mt-2 transition-colors">
                   No Prazo
                   <HelpCircle className="h-4 w-4" />
                 </div>
@@ -320,11 +320,11 @@ const DelayDistributionChart: React.FC<DelayDistributionChartProps> = ({ tasks }
         <TooltipProvider>
           <UITooltip>
             <TooltipTrigger asChild>
-              <div className="text-center p-4 bg-card border border-border rounded-lg cursor-help hover:bg-white/20 transition-colors">
-                <div className="text-2xl font-bold text-yellow-400">
+              <div className="text-center p-4 bg-card border border-border rounded-lg cursor-help hover:bg-purple-500/20 transition-colors">
+                <div className="text-2xl font-bold text-white hover:text-purple-400 transition-colors">
                   {(delayDistribution[1]?.percentage || 0) + (delayDistribution[2]?.percentage || 0)}%
                 </div>
-                <div className="text-sm text-white flex items-center justify-center gap-1 mt-2">
+                <div className="text-sm text-white hover:text-purple-400 flex items-center justify-center gap-1 mt-2 transition-colors">
                   Atraso Leve
                   <HelpCircle className="h-4 w-4" />
                 </div>
@@ -342,11 +342,11 @@ const DelayDistributionChart: React.FC<DelayDistributionChartProps> = ({ tasks }
         <TooltipProvider>
           <UITooltip>
             <TooltipTrigger asChild>
-              <div className="text-center p-4 bg-card border border-border rounded-lg cursor-help hover:bg-white/20 transition-colors">
-                <div className="text-2xl font-bold text-red-400">
+              <div className="text-center p-4 bg-card border border-border rounded-lg cursor-help hover:bg-purple-500/20 transition-colors">
+                <div className="text-2xl font-bold text-white hover:text-purple-400 transition-colors">
                   {(delayDistribution[3]?.percentage || 0) + (delayDistribution[4]?.percentage || 0)}%
                 </div>
-                <div className="text-sm text-white flex items-center justify-center gap-1 mt-2">
+                <div className="text-sm text-white hover:text-purple-400 flex items-center justify-center gap-1 mt-2 transition-colors">
                   Atraso Grave
                   <HelpCircle className="h-4 w-4" />
                 </div>
@@ -364,11 +364,11 @@ const DelayDistributionChart: React.FC<DelayDistributionChartProps> = ({ tasks }
         <TooltipProvider>
           <UITooltip>
             <TooltipTrigger asChild>
-              <div className="text-center p-4 bg-card border border-border rounded-lg cursor-help hover:bg-white/20 transition-colors">
-                <div className="text-2xl font-bold text-white">
+              <div className="text-center p-4 bg-card border border-border rounded-lg cursor-help hover:bg-purple-500/20 transition-colors">
+                <div className="text-2xl font-bold text-white hover:text-purple-400 transition-colors">
                   {filteredTasks.length}
                 </div>
-                <div className="text-sm text-white flex items-center justify-center gap-1 mt-2">
+                <div className="text-sm text-white hover:text-purple-400 flex items-center justify-center gap-1 mt-2 transition-colors">
                   Total Tarefas
                   <HelpCircle className="h-4 w-4" />
                 </div>
@@ -387,7 +387,7 @@ const DelayDistributionChart: React.FC<DelayDistributionChartProps> = ({ tasks }
       {/* Gráfico de Pizza (apenas para distribuição geral) */}
       {filterType === 'all' && (
         <div className="mb-6">
-          <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100 mb-4">
+          <h4 className="text-md font-semibold text-white hover:text-purple-400 mb-4 transition-colors">
             Distribuição Proporcional
           </h4>
           {renderPieChart()}
@@ -395,11 +395,11 @@ const DelayDistributionChart: React.FC<DelayDistributionChartProps> = ({ tasks }
       )}
 
       {/* Insights */}
-      <div className="p-4 bg-card border border-border rounded-lg">
-        <h4 className="text-base font-semibold text-white mb-2">
+      <div className="p-4 bg-card border border-border rounded-lg hover:bg-purple-500/20 transition-colors">
+        <h4 className="text-base font-semibold text-white hover:text-purple-400 mb-2 transition-colors">
           📊 Insights da Análise
         </h4>
-        <div className="text-sm text-white space-y-1">
+        <div className="text-sm text-white hover:text-purple-400 space-y-1 transition-colors">
           {filterType === 'all' && (
             <>
               <p>• {delayDistribution[0]?.count || 0} tarefas foram entregues no prazo</p>
