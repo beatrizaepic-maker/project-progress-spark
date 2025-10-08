@@ -3,7 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { TaskData } from '@/data/projectData';
 import { formatDays } from '@/utils/kpiFormatters';
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { HelpCircle, TrendingUp } from 'lucide-react';
+import { HelpCircle, BarChart3 } from 'lucide-react';
 
 interface ProductionAverageChartProps {
   tasks: TaskData[];
@@ -68,7 +68,7 @@ const ProductionAverageChart: React.FC<ProductionAverageChartProps> = ({
     <div className="relative overflow-hidden border-2 border-purple-500 bg-card p-6 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-all duration-200">
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-2">
-          <TrendingUp className="h-5 w-5 text-green-400" />
+          <BarChart3 className="h-5 w-5 text-green-400" />
           <h3 className="text-lg font-semibold text-white">
             Evolução da Média de Produção
           </h3>

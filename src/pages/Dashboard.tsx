@@ -4,8 +4,169 @@ import MetricsCards from "@/components/dashboard/MetricsCards";
 import DashboardKPIs from "@/components/dashboard/DashboardKPIs";
 import { DataProvider } from "@/contexts/DataContext";
 import { mockTaskData } from "@/data/projectData";
+import { useKPIs } from "@/hooks/useKPIs";
+import jsPDF from 'jspdf';
 
 const Dashboard = () => {
+  const kpis = useKPIs(mockTaskData);
+
+  // Função para exportar relatório em PDF
+  const exportReport = () => {
+    const currentDate = new Date().toLocaleDateString('pt-BR');
+    const currentTime = new Date().toLocaleTimeString('pt-BR');
+    
+    // Dados dos KPIs (o hook já retorna os dados diretamente)
+    const kpiData = kpis;
+    
+    // Criar documento PDF
+    const doc = new jsPDF();
+    
+    // Configurar fonte e cores
+    doc.setFontSize(20);
+    doc.setTextColor(139, 92, 246); // Roxo
+    doc.text('RELATÓRIO DE DASHBOARD', 20, 20);
+    doc.text('PROJECT PROGRESS SPARK', 20, 30);
+    
+    // Linha divisória
+    doc.setDrawColor(139, 92, 246);
+    doc.line(20, 35, 190, 35);
+    
+    // Data de geração
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Data de Geração: ${currentDate} às ${currentTime}`, 20, 45);
+    
+    let y = 60;
+    
+    // RESUMO EXECUTIVO
+    doc.setFontSize(14);
+    doc.setTextColor(139, 92, 246);
+    doc.text('RESUMO EXECUTIVO', 20, y);
+    y += 10;
+    
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Total de Tarefas: ${mockTaskData.length}`, 20, y);
+    y += 6;
+    doc.text(`Tarefas Concluídas: ${mockTaskData.filter(task => task.status === 'completed').length}`, 20, y);
+    y += 6;
+    doc.text(`Tarefas em Andamento: ${mockTaskData.filter(task => task.status === 'in-progress').length}`, 20, y);
+    y += 6;
+    doc.text(`Tarefas Pendentes: ${mockTaskData.filter(task => task.status === 'todo' || task.status === 'backlog').length}`, 20, y);
+    y += 15;
+    
+    // INDICADORES DE PERFORMANCE (KPIs)
+    doc.setFontSize(14);
+    doc.setTextColor(139, 92, 246);
+    doc.text('INDICADORES DE PERFORMANCE (KPIs)', 20, y);
+    y += 10;
+    
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Média de Produção: ${kpiData.averageProduction.toFixed(1)} dias`, 20, y);
+    y += 6;
+    doc.text(`Desvio Padrão: ${kpiData.standardDeviation.toFixed(1)} dias`, 20, y);
+    y += 6;
+    doc.text(`Mediana: ${kpiData.median.toFixed(1)} dias`, 20, y);
+    y += 6;
+    doc.text(`Moda: ${kpiData.mode.value} dias (${kpiData.mode.frequency} ocorrência${kpiData.mode.frequency !== 1 ? 's' : ''})`, 20, y);
+    y += 6;
+    doc.text(`Total de Tarefas: ${kpiData.totalTasks}`, 20, y);
+    y += 6;
+    doc.text(`Tarefas Completadas: ${kpiData.completedTasks}`, 20, y);
+    y += 6;
+    doc.text(`Percentual de Conclusão: ${kpiData.projectCompletionPercentage.toFixed(1)}%`, 20, y);
+    y += 15;
+    
+    // ANÁLISE DE ATRASOS
+    doc.setFontSize(14);
+    doc.setTextColor(139, 92, 246);
+    doc.text('ANÁLISE DE ATRASOS', 20, y);
+    y += 10;
+    
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Média de Atraso: ${kpiData.averageDelay.toFixed(1)} dias`, 20, y);
+    y += 6;
+    doc.text(`Total de Tarefas Atrasadas: ${mockTaskData.filter(task => task.atrasoDiasUteis > 0).length}`, 20, y);
+    y += 6;
+    doc.text(`Percentual de Tarefas no Prazo: ${((mockTaskData.filter(task => task.atrasoDiasUteis === 0).length / mockTaskData.length) * 100).toFixed(1)}%`, 20, y);
+    y += 15;
+    
+    // DISTRIBUIÇÃO DE PRIORIDADES
+    doc.setFontSize(14);
+    doc.setTextColor(139, 92, 246);
+    doc.text('DISTRIBUIÇÃO DE PRIORIDADES', 20, y);
+    y += 10;
+    
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Crítica: ${mockTaskData.filter(task => task.prioridade === 'critica').length} tarefas`, 20, y);
+    y += 6;
+    doc.text(`Alta: ${mockTaskData.filter(task => task.prioridade === 'alta').length} tarefas`, 20, y);
+    y += 6;
+    doc.text(`Média: ${mockTaskData.filter(task => task.prioridade === 'media').length} tarefas`, 20, y);
+    y += 6;
+    doc.text(`Baixa: ${mockTaskData.filter(task => task.prioridade === 'baixa').length} tarefas`, 20, y);
+    y += 15;
+    
+    // Verificar se precisa de nova página
+    if (y > 250) {
+      doc.addPage();
+      y = 20;
+    }
+    
+    // PRÓXIMAS ENTREGAS
+    doc.setFontSize(14);
+    doc.setTextColor(139, 92, 246);
+    doc.text('PRÓXIMAS ENTREGAS', 20, y);
+    y += 10;
+    
+    const upcomingTasks = mockTaskData
+      .filter(task => task.status !== 'completed')
+      .sort((a, b) => new Date(a.prazo).getTime() - new Date(b.prazo).getTime())
+      .slice(0, 5);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    upcomingTasks.forEach(task => {
+      const taskText = `• ${task.tarefa} - Prazo: ${new Date(task.prazo).toLocaleDateString('pt-BR')} - Prioridade: ${task.prioridade}`;
+      const lines = doc.splitTextToSize(taskText, 170);
+      doc.text(lines, 20, y);
+      y += lines.length * 6;
+    });
+    
+    y += 10;
+    
+    // OBSERVAÇÕES
+    doc.setFontSize(14);
+    doc.setTextColor(139, 92, 246);
+    doc.text('OBSERVAÇÕES', 20, y);
+    y += 10;
+    
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    const observations = [
+      '• Este relatório foi gerado automaticamente pelo sistema Project Progress Spark',
+      '• Os dados apresentados refletem o estado atual do projeto',
+      '• Recomenda-se acompanhar regularmente os indicadores para otimizar a performance'
+    ];
+    
+    observations.forEach(obs => {
+      const lines = doc.splitTextToSize(obs, 170);
+      doc.text(lines, 20, y);
+      y += lines.length * 6;
+    });
+    
+    // Rodapé
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Relatório gerado em: ${currentDate} ${currentTime}`, 20, 280);
+    
+    // Salvar PDF
+    doc.save(`relatorio-dashboard-${new Date().toISOString().split('T')[0]}.pdf`);
+  };
+
   // Componente para cards com efeito de elevação
   const SummaryCard = ({ children }: { children: React.ReactNode }) => {
     const [isHovered, setIsHovered] = useState(false);
@@ -45,6 +206,17 @@ const Dashboard = () => {
               <h2 className="text-2xl font-bold text-foreground mb-2">Dashboard</h2>
               <p className="text-muted-foreground">Visão geral das principais estatísticas de performance do projeto</p>
             </div>
+            
+            {/* Botão Exportar Relatório */}
+            <div className="flex justify-center mb-6">
+              <button
+                onClick={exportReport}
+                className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 shadow-lg shadow-pink-500/25 hover:shadow-pink-500/40 transition-all duration-200 transform hover:scale-105 rounded-md"
+              >
+                Exportar Relatório
+              </button>
+            </div>
+            
             <DashboardKPIs tasks={mockTaskData} />
           </section>
 
