@@ -331,17 +331,15 @@ const RankingPage: React.FC = () => {
       {/* Seletor de período */}
       <div className="flex gap-2 mb-6">
         <Button
-          variant={activeTab === 'weekly' ? 'default' : 'outline'}
           onClick={() => setActiveTab('weekly')}
-          className="flex items-center gap-2"
+          className={`flex items-center gap-2 bg-[#FF0066] text-white font-semibold px-4 py-2 rounded-none transition-colors hover:bg-[#FF0066]/80 ${activeTab === 'weekly' ? '' : 'opacity-60'}`}
         >
           <Calendar className="h-4 w-4" />
           Semanal
         </Button>
         <Button
-          variant={activeTab === 'monthly' ? 'default' : 'outline'}
           onClick={() => setActiveTab('monthly')}
-          className="flex items-center gap-2"
+          className={`flex items-center gap-2 bg-[#FF0066] text-white font-semibold px-4 py-2 rounded-none transition-colors hover:bg-[#FF0066]/80 ${activeTab === 'monthly' ? '' : 'opacity-60'}`}
         >
           <Calendar className="h-4 w-4" />
           Mensal

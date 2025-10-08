@@ -1,4 +1,16 @@
 [{
+	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/components/dashboard/TaskTable.tsx",
+	"owner": "typescript",
+	"code": "2614",
+	"severity": 8,
+	"message": "Module '\"lucide-react\"' has no exported member 'Settings'. Did you mean to use 'import Settings from \"lucide-react\"' instead?",
+	"source": "ts",
+	"startLineNumber": 16,
+	"startColumn": 10,
+	"endLineNumber": 16,
+	"endColumn": 18,
+	"origin": "extHost1"
+},{
 	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/components/player/NotificationsModal.tsx",
 	"owner": "typescript",
 	"code": "2614",

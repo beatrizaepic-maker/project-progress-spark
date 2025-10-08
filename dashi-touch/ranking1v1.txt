@@ -1,7 +1,7 @@
 Estrutura de Ranking v1.1:
 
 - Bônus de Consistência(Recompensa por manter histórico positivo);
-→Qual a pontuação exata a ser dada ao player?
+→Qual a pontuação exata a ser dada ao player? (Quantos XP)
 →
 
 - Missões Metas Curtas:

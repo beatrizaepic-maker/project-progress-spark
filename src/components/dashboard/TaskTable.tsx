@@ -1,21 +1,22 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { WorkingDaysTooltip, DelayTooltip, StatusTooltip, DateTooltip } from "@/components/ui/informative-tooltip";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { 
-  CheckCircle, 
-  AlertTriangle, 
-  Target, 
-  Clock, 
-  HelpCircle, 
-  Zap
-} from "lucide-react";
+import CheckCircle from "lucide-react/dist/esm/icons/check-circle";
+import AlertTriangle from "lucide-react/dist/esm/icons/alert-triangle";
+import Target from "lucide-react/dist/esm/icons/target";
+import Clock from "lucide-react/dist/esm/icons/clock";
+import HelpCircle from "lucide-react/dist/esm/icons/help-circle";
+import Zap from "lucide-react/dist/esm/icons/zap";
+import Settings from "lucide-react/dist/esm/icons/settings";
 import { useData } from "@/contexts/DataContext";
 import { formatDays } from "@/utils/kpiFormatters";
 import { useState, useMemo, forwardRef, useImperativeHandle } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useNavigate } from "react-router-dom";
 
 // Interface para os métodos expostos via ref
 export interface TaskTableRef {
@@ -28,6 +29,7 @@ export interface TaskTableRef {
 const TaskTable = forwardRef<TaskTableRef>((props, ref) => {
   const { tasks } = useData();
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   
   // Estados para filtros
   const [searchTerm, setSearchTerm] = useState('');
@@ -259,12 +261,20 @@ const TaskTable = forwardRef<TaskTableRef>((props, ref) => {
     <TooltipProvider>
       <Card className="border-2 border-purple-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm overflow-hidden">
       <CardHeader>
-        <CardTitle className="text-foreground">
-          Detalhamento das Tarefas
-          <span className="text-sm font-normal text-muted-foreground ml-2">
-            ({filteredTasks.length} de {tasks.length} tarefas)
-          </span>
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-foreground">
+            Detalhamento das Tarefas
+            <span className="text-sm font-normal text-muted-foreground ml-2">
+              ({filteredTasks.length} de {tasks.length} tarefas)
+            </span>
+          </CardTitle>
+          <Button 
+            onClick={() => navigate('/editor')}
+            className="bg-[#FF0066] text-white font-semibold px-4 py-2 rounded-none transition-colors hover:bg-[#FF0066]/80"
+          >
+            Editar
+          </Button>
+        </div>
 
         {/* Interface de Filtros */}
         <div className="mt-4 space-y-4">

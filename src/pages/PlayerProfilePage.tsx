@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Settings } from 'lucide-react';
+import Settings from 'lucide-react/dist/esm/icons/settings';
 import { 
   Dialog, 
   DialogContent, 
@@ -115,7 +115,10 @@ const PlayerProfilePage: React.FC = () => {
         </p>
         {isOwnProfile && (
           <div className="mt-4">
-            <Button variant="outline" onClick={() => setIsEditing(true)} className="flex items-center gap-2">
+            <Button 
+              onClick={() => setIsEditing(true)}
+              className="bg-[#FF0066] text-white font-semibold px-4 py-2 rounded-none transition-colors hover:bg-[#FF0066]/80 flex items-center gap-2"
+            >
               <Settings className="h-4 w-4" />
               Editar Perfil
             </Button>

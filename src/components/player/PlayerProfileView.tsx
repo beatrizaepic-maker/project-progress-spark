@@ -5,16 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { 
-  User, 
-  Award, 
-  Activity, 
-  Calendar, 
-  Settings,
-  Mail,
-  Briefcase,
-  Bell
-} from 'lucide-react';
+import User from 'lucide-react/dist/esm/icons/user';
+import Award from 'lucide-react/dist/esm/icons/award';
+import Activity from 'lucide-react/dist/esm/icons/activity';
+import Calendar from 'lucide-react/dist/esm/icons/calendar';
+import Settings from 'lucide-react/dist/esm/icons/settings';
+import Mail from 'lucide-react/dist/esm/icons/mail';
+import Briefcase from 'lucide-react/dist/esm/icons/briefcase';
+import Bell from 'lucide-react/dist/esm/icons/bell';
 import { PlayerProfile, PlayerStats } from '@/types/player';
 import PlayerStatsCard from './PlayerStatsCard';
 

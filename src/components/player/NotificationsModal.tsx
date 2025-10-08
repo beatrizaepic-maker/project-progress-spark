@@ -9,15 +9,13 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { 
-  Bell, 
-  CheckCircle, 
-  Clock, 
-  Trophy,
-  Target,
-  AlertTriangle,
-  X
-} from 'lucide-react';
+import Bell from 'lucide-react/dist/esm/icons/bell';
+import CheckCircle from 'lucide-react/dist/esm/icons/check-circle';
+import Clock from 'lucide-react/dist/esm/icons/clock';
+import Trophy from 'lucide-react/dist/esm/icons/trophy';
+import Target from 'lucide-react/dist/esm/icons/target';
+import AlertTriangle from 'lucide-react/dist/esm/icons/alert-triangle';
+import X from 'lucide-react/dist/esm/icons/x';
 
 interface Notification {
   id: string;

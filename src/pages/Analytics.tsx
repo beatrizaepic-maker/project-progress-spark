@@ -1,15 +1,64 @@
-import React from 'react';
+import React, { useState, useRef, Fragment } from 'react';
 import Charts from "@/components/dashboard/Charts";
 import { DataProvider, useData } from "@/contexts/DataContext";
 import { mockTaskData } from "@/data/projectData";
 import { useAnalyticsKPIs } from "@/hooks/useKPIs";
 import KPILoadingIndicator from "@/components/ui/kpi-loading-indicator";
-
+import { motion, AnimatePresence } from "framer-motion";
 import { KPIVersionIndicator } from "@/components/ui/kpi-version-indicator";
 import { toast } from "@/hooks/use-toast";
 
+// Componente de partículas de explosão
+function SuccessParticles({ buttonRef }: { buttonRef: React.RefObject<HTMLButtonElement> }) {
+  const rect = buttonRef.current?.getBoundingClientRect();
+  if (!rect) return null;
+
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+  const particleCount = 46;
+
+  return (
+    <AnimatePresence>
+      {Array.from({ length: particleCount }).map((_, i) => (
+        <motion.div
+          key={i}
+          className="particle"
+          style={{
+            left: centerX,
+            top: centerY,
+            position: "fixed",
+            width: "4px",
+            height: "4px",
+            borderRadius: "50%",
+            backgroundColor: "#FF0066",
+            zIndex: 9999,
+          }}
+          initial={{
+            scale: 0,
+            x: 0,
+            y: 0,
+          }}
+          animate={{
+            scale: [0, 1, 0],
+            x: [0, (Math.random() - 0.5) * 150],
+            y: [0, (Math.random() - 0.5) * 150],
+          }}
+          transition={{
+            duration: 1.8,
+            delay: i * 0.04,
+            ease: "easeOut",
+          }}
+        />
+      ))}
+    </AnimatePresence>
+  );
+}
+
 const AnalyticsContent = () => {
   const { tasks } = useData();
+  const [showParticles, setShowParticles] = useState(false);
+  const [isButtonHidden, setIsButtonHidden] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   
   const analyticsKPIs = useAnalyticsKPIs(tasks, {
     debounceMs: 500, // Maior debounce para analytics (gráficos mais pesados)
@@ -40,8 +89,26 @@ const AnalyticsContent = () => {
     }
   });
 
+  const handleRecalculoClick = () => {
+    setShowParticles(true);
+    setIsButtonHidden(true);
+    
+    analyticsKPIs.invalidateCache();
+    
+    // Partículas desaparecem em 1.6 segundos
+    setTimeout(() => {
+      setShowParticles(false);
+    }, 1600);
+    
+    // Botão reaparece após 1800ms
+    setTimeout(() => {
+      setIsButtonHidden(false);
+    }, 1800);
+  };
+
   return (
     <main className="container mx-auto px-6 py-8 space-y-8">
+      {showParticles && <SuccessParticles buttonRef={buttonRef} />}
       {/* Header com Status */}
       <section>
         <div className="flex items-center justify-between mb-6">
@@ -153,6 +220,44 @@ const AnalyticsContent = () => {
               </svg>
             </div>
             <div>
+              <h3 className="kpi-title text-white text-sm">Resumo Estatístico</h3>
+              <p className="kpi-subtitle text-light-gray text-xs mt-1">Principais métricas calculadas automaticamente</p>
+            </div>
+          </div>
+
+          {/* Métricas */}
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="card-content text-light-gray text-sm">Média de Produção:</span>
+              <span className="kpi-value text-white text-lg">{analyticsKPIs.averageProduction.toFixed(1)} dias</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="card-content text-light-gray text-sm">Moda:</span>
+              <span className="kpi-value text-white text-lg">{analyticsKPIs.mode.value} dias ({analyticsKPIs.mode.frequency}x)</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="card-content text-light-gray text-sm">Mediana:</span>
+              <span className="kpi-value text-white text-lg">{analyticsKPIs.median.toFixed(1)} dias</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="card-content text-light-gray text-sm">Desvio Padrão:</span>
+              <span className="kpi-value text-white text-lg">{analyticsKPIs.standardDeviation.toFixed(1)} dias</span>
+            </div>
+          </div>
+
+          {/* Efeito de brilho sutil */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+        </div>
+        
+        <div className="relative overflow-hidden border-2 border-purple-500 bg-card p-6 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-all duration-200 hover:shadow-lg">
+          {/* Header com ícone e título */}
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="flex items-center justify-center h-12 w-12 text-white bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg hover:text-purple-400 hover:bg-purple-500/20 transition-all duration-200">
+              <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <div>
               <h3 className="kpi-title text-white text-sm">Status do Sistema</h3>
               <p className="kpi-subtitle text-light-gray text-xs mt-1">Informações sobre o processamento dos dados</p>
             </div>
@@ -184,12 +289,15 @@ const AnalyticsContent = () => {
 
           {/* Ação */}
           <div className="pt-3 border-t border-gray-200/50 dark:border-gray-700/50">
-            <button
-              onClick={analyticsKPIs.invalidateCache}
-              className="w-full px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 shadow-lg shadow-pink-500/25 hover:shadow-pink-500/40 transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2"
-            >
-              🔄 Forçar Recálculo
-            </button>
+            {!isButtonHidden && (
+              <button
+                ref={buttonRef}
+                onClick={handleRecalculoClick}
+                className="w-full px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 shadow-lg shadow-pink-500/25 hover:shadow-pink-500/40 transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2"
+              >
+                🔄 Forçar Recálculo
+              </button>
+            )}
           </div>
 
           {/* Efeito de brilho sutil */}

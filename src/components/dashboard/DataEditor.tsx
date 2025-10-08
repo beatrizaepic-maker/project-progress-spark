@@ -286,9 +286,9 @@ const DataEditor: React.FC = () => {
               <DialogTrigger asChild>
                 <Button 
                   size="sm"
-                  className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 shadow-lg shadow-pink-500/25 hover:shadow-pink-500/40 transition-all duration-200 transform hover:scale-105 border-0"
+                  className="bg-gradient-to-r from-[#FF0066] to-[#C8008F] text-white font-semibold px-4 py-2 rounded-none transition-colors shadow-lg hover:from-[#FF0066]/80 hover:to-[#C8008F]/80 hover:shadow-xl transform hover:scale-105 border-0 flex items-center gap-2"
                 >
-                  ➕
+                  <span className="text-lg">➕</span>
                   Nova Tarefa
                 </Button>
               </DialogTrigger>

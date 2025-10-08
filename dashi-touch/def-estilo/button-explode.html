@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Exploding Button</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/framer-motion@11.0.3/dist/framer-motion.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: sans-serif;
+      background: #f9fafb;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      padding: 0.5rem 1rem;
+      height: 40px;
+      transition: transform 0.1s ease, opacity 0.3s ease;
+      cursor: pointer;
+      background-color: #3b82f6;
+      color: white;
+      border: none;
+      outline: none;
+    }
+
+    .button:hover {
+      background-color: #2563eb;
+    }
+
+    .button.scale-95 {
+      transform: scale(0.95);
+    }
+
+    .button.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .particle {
+      position: fixed;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background-color: #000;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body {
+        background: #0f172a;
+      }
+      .particle {
+        background-color: #fff;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script>
+    const { useState, useRef, forwardRef, createElement, Fragment } = React;
+    const { motion, AnimatePresence } = Motion;
+
+    const cn = (...classes) => classes.filter(Boolean).join(' ');
+
+    const buttonVariants = (variant, size) => {
+      const base = "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50";
+      
+      const variants = {
+        default: "bg-blue-600 text-white hover:bg-blue-700",
+        destructive: "bg-red-600 text-white hover:bg-red-700",
+        outline: "border border-gray-300 bg-white hover:bg-gray-100",
+        secondary: "bg-gray-200 text-gray-800 hover:bg-gray-300",
+        ghost: "hover:bg-gray-100",
+        link: "text-blue-600 underline-offset-4 hover:underline",
+      };
+      
+      const sizes = {
+        default: "h-10 px-4 py-2",
+        sm: "h-9 rounded-md px-3",
+        lg: "h-11 rounded-md px-8",
+        icon: "h-10 w-10",
+      };
+      
+      return cn(
+        base,
+        variants[variant || 'default'],
+        sizes[size || 'default']
+      );
+    };
+
+    const Button = forwardRef(({ className, variant, size, onClick, children, ...props }, ref) => {
+      return createElement(
+        "button",
+        {
+          className: cn(buttonVariants(variant, size), className),
+          ref,
+          onClick,
+          ...props,
+        },
+        children
+      );
+    });
+
+    function SuccessParticles({ buttonRef }) {
+      const rect = buttonRef.current?.getBoundingClientRect();
+      if (!rect) return null;
+
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      
+      // Increased particle count by 25%: 18 * 1.25 = 22.5 → 23
+      const particleCount = 23;
+
+      return createElement(
+        AnimatePresence,
+        null,
+        Array.from({ length: particleCount }).map((_, i) =>
+          createElement(
+            motion.div,
+            {
+              key: i,
+              className: "particle",
+              style: { left: centerX, top: centerY },
+              initial: {
+                scale: 0,
+                x: 0,
+                y: 0,
+              },
+              animate: {
+                scale: [0, 1, 0],
+                x: [0, (Math.random() - 0.5) * 150],
+                y: [0, (Math.random() - 0.5) * 150],
+              },
+              transition: {
+                // Increased speed by 25%: 2s / 1.25 = 1.6s
+                duration: 1.6,
+                delay: i * (0.03),
+                ease: "easeOut",
+              },
+            }
+          )
+        )
+      );
+    }
+
+    function ParticleButton({ children, onClick, onSuccess, className, variant, size, ...props }) {
+      const [showParticles, setShowParticles] = useState(false);
+      const [isHidden, setIsHidden] = useState(false);
+      const buttonRef = useRef(null);
+
+      const handleClick = async (e) => {
+        setShowParticles(true);
+        setIsHidden(true);
+        
+        if (onClick) onClick(e);
+        
+        // Particles dissipate in 1.6 seconds
+        setTimeout(() => {
+          setShowParticles(false);
+          if (onSuccess) onSuccess();
+        }, 1600);
+        
+        // Button reappears after exactly 3 seconds
+        setTimeout(() => {
+          setIsHidden(false);
+        }, 1800);
+      };
+
+      return createElement(
+        Fragment,
+        null,
+        showParticles && createElement(SuccessParticles, { buttonRef }),
+        !isHidden && createElement(
+          Button,
+          {
+            ref: buttonRef,
+            onClick: handleClick,
+            className: cn(
+              "relative",
+              showParticles && "scale-95",
+              "transition-transform duration-100",
+              className
+            ),
+            variant,
+            size,
+            ...props,
+          },
+          children,
+          createElement("span", { style: { marginLeft: "6px" } }, "💥")
+        )
+      );
+    }
+
+    function App() {
+      return createElement(
+        ParticleButton,
+        {
+          variant: "default",
+          size: "default",
+        },
+        "Explode Me!"
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(createElement(App));
+  </script>
+</body>
+</html>
