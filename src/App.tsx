@@ -16,11 +16,13 @@ import CheckSquare from "lucide-react/dist/esm/icons/check-square";
 import Edit3 from "lucide-react/dist/esm/icons/edit-3";
 import SettingsIcon from "lucide-react/dist/esm/icons/settings";
 import TrendingUp from "lucide-react/dist/esm/icons/trending-up";
+import Trophy from "lucide-react/dist/esm/icons/trophy";
 import Dashboard from "./pages/Dashboard";
 import Analytics from "./pages/Analytics";
 import Tasks from "./pages/Tasks";
 import DataEditorPage from "./pages/DataEditor";
 import SettingsPage from "./pages/Settings";
+import RankingPage from "./pages/Ranking";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +42,11 @@ const sidebarLinks = [
     label: "Tarefas",
     href: "/tasks",
     icon: <CheckSquare className="h-4 w-4" />,
+  },
+  {
+    label: "Ranking",
+    href: "/ranking",
+    icon: <Trophy className="h-4 w-4" />,
   },
   {
     label: "Editor",
@@ -107,6 +114,7 @@ const App = () => (
                 <Route path="/analytics" element={<Analytics />} />
                 <Route path="/tasks" element={<Tasks />} />
                 <Route path="/editor" element={<DataEditorPage />} />
+                <Route path="/ranking" element={<RankingPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
