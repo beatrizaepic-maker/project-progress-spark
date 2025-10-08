@@ -12,7 +12,8 @@ import {
   Calendar, 
   Settings,
   Mail,
-  Briefcase
+  Briefcase,
+  Bell
 } from 'lucide-react';
 import { PlayerProfile, PlayerStats } from '@/types/player';
 import PlayerStatsCard from './PlayerStatsCard';
@@ -23,6 +24,7 @@ interface PlayerProfileViewProps {
   isOwnProfile?: boolean;
   onEdit?: () => void;
   onSendMessage?: () => void;
+  onNotifications?: () => void;
   className?: string;
 }
 
@@ -32,12 +34,24 @@ const PlayerProfileView: React.FC<PlayerProfileViewProps> = ({
   isOwnProfile = false, 
   onEdit,
   onSendMessage,
+  onNotifications,
   className 
 }) => {
   return (
     <div className={`space-y-6 ${className}`}>
       {/* Cabeçalho do perfil */}
-      <Card className="bg-gradient-to-r from-primary/10 to-accent/10 border-primary/20">
+      <Card className="bg-gradient-to-r from-primary/10 to-accent/10 border-primary/20 relative">
+        {/* Ícone de notificações - apenas para o próprio perfil */}
+        {isOwnProfile && onNotifications && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onNotifications}
+            className="absolute top-4 right-4 h-10 w-10 p-0 hover:bg-primary/20"
+          >
+            <Bell className="h-5 w-5 text-primary" />
+          </Button>
+        )}
         <CardContent className="p-6 flex flex-col md:flex-row items-center gap-6">
           <Avatar className="h-24 w-24 border-2 border-primary">
             <AvatarImage src={profile.avatar} alt={profile.name} />
@@ -67,12 +81,6 @@ const PlayerProfileView: React.FC<PlayerProfileViewProps> = ({
               </div>
               
               <div className="flex gap-2 mt-2 md:mt-0">
-                {isOwnProfile && onEdit && (
-                  <Button variant="outline" onClick={onEdit} className="flex items-center gap-2">
-                    <Settings className="h-4 w-4" />
-                    Editar Perfil
-                  </Button>
-                )}
                 {!isOwnProfile && onSendMessage && (
                   <Button variant="outline" onClick={onSendMessage} className="flex items-center gap-2">
                     <Mail className="h-4 w-4" />

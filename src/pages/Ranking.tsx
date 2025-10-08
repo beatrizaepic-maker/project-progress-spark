@@ -4,17 +4,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { 
-  Trophy, 
-  User, 
-  Sparkles, 
-  TrendingUp, 
-  Calendar,
-  Award,
-  Activity,
-  Target,
-  RefreshCw
-} from 'lucide-react';
+import Trophy from 'lucide-react/dist/esm/icons/trophy';
+import User from 'lucide-react/dist/esm/icons/user';
+import Sparkles from 'lucide-react/dist/esm/icons/sparkles';
+import TrendingUp from 'lucide-react/dist/esm/icons/trending-up';
+import Calendar from 'lucide-react/dist/esm/icons/calendar';
+import Award from 'lucide-react/dist/esm/icons/award';
+import Activity from 'lucide-react/dist/esm/icons/activity';
+import Target from 'lucide-react/dist/esm/icons/target';
+import RefreshCw from 'lucide-react/dist/esm/icons/refresh-cw';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
   calculateLevelFromXp,

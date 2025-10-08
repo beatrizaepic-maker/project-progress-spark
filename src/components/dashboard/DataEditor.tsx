@@ -164,7 +164,11 @@ const DataEditor: React.FC = () => {
   const { tasks, addTask, editTask, deleteTask, importData, exportData } = useData();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<TaskData | null>(null);
-  const [viewMode, setViewMode] = useState<'table' | 'kanban'>('table');
+  const [viewMode, setViewMode] = useState<'table' | 'kanban' | 'player'>('table');
+  const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
+  
+  // Função para obter players únicos a partir das tarefas
+  const players = Array.from(new Set(tasks.map(task => task.responsavel))).filter(Boolean) as string[];
 
   const getStatusLabel = (status: string) => {
     switch (status) {
@@ -200,6 +204,7 @@ const DataEditor: React.FC = () => {
     if (editingTask) {
       editTask(editingTask.id, data);
       setEditingTask(null);
+      // Não fechamos o modal do player para que as alterações sejam vistas imediatamente
     }
   };
 
@@ -307,13 +312,16 @@ const DataEditor: React.FC = () => {
       <CardContent>
         {/* Controles de Visualização */}
         <div className="mb-6">
-          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'table' | 'kanban')}>
-            <TabsList className="grid w-fit grid-cols-2 bg-muted">
+          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'table' | 'kanban' | 'player')}>
+            <TabsList className="grid w-fit grid-cols-3 bg-muted">
               <TabsTrigger value="table" className="flex items-center gap-2">
                 📊 Tabela
               </TabsTrigger>
               <TabsTrigger value="kanban" className="flex items-center gap-2">
                 📋 Kanban
+              </TabsTrigger>
+              <TabsTrigger value="player" className="flex items-center gap-2">
+                👤 Player
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -416,6 +424,47 @@ const DataEditor: React.FC = () => {
           </div>
         )}
         
+        {/* Visualização do Player */}
+        {viewMode === 'player' && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-foreground">Players</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {players.map((player, index) => (
+                <div 
+                  key={index} 
+                  className={`p-4 border rounded-lg transition-colors cursor-pointer border-border ${
+                    selectedPlayer === player 
+                      ? 'bg-primary/10 border-primary/30 ring-2 ring-primary/20' 
+                      : 'bg-card hover:bg-accent/50'
+                  }`}
+                  onClick={() => setSelectedPlayer(player)}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
+                      selectedPlayer === player 
+                        ? 'bg-primary text-primary-foreground' 
+                        : 'bg-primary/10 text-primary'
+                    }`}>
+                      {player?.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div className="font-medium text-foreground">{player}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {tasks.filter(t => t.responsavel === player).length} tarefas
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {players.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                Nenhum player encontrado. Atribua responsáveis às tarefas para aparecerem aqui.
+              </div>
+            )}
+          </div>
+        )}
+        
         {/* Edit Dialog */}
         <Dialog open={!!editingTask} onOpenChange={() => setEditingTask(null)}>
           <DialogContent className="max-w-2xl" style={{ borderRadius: '0' }}>
@@ -432,6 +481,127 @@ const DataEditor: React.FC = () => {
                 onCancel={() => setEditingTask(null)} 
               />
             )}
+          </DialogContent>
+        </Dialog>
+        
+        {/* Player Tasks Dialog */}
+        <Dialog open={!!selectedPlayer} onOpenChange={() => setSelectedPlayer(null)}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                  {selectedPlayer?.charAt(0).toUpperCase()}
+                </div>
+                Tarefas de {selectedPlayer}
+              </DialogTitle>
+              <DialogDescription>
+                Gerencie as tarefas atribuídas a este player
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              {/* Botão para adicionar nova tarefa ao player */}
+              <div className="flex justify-end">
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button size="sm" className="flex items-center gap-2">
+                      ➕ Adicionar Nova Tarefa
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl" style={{ borderRadius: '0' }}>
+                    <DialogHeader>
+                      <DialogTitle>Adicionar Tarefa para {selectedPlayer}</DialogTitle>
+                      <DialogDescription>
+                        Preencha os dados da nova tarefa para o player.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <TaskForm 
+                      onSubmit={(data) => {
+                        // Preenche automaticamente o campo responsável com o player selecionado
+                        addTask({
+                          ...data,
+                          responsavel: selectedPlayer || '',
+                          duracaoDiasUteis: 0,
+                          atrasoDiasUteis: 0,
+                          atendeuPrazo: true
+                        });
+                      }} 
+                      onCancel={() => {}} // O cancelamento será tratado pelo fechamento do dialog
+                    />
+                  </DialogContent>
+                </Dialog>
+              </div>
+              
+              {/* Lista de tarefas do player */}
+              <div className="rounded-lg border overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Tarefa</TableHead>
+                      <TableHead>Início</TableHead>
+                      <TableHead>Fim</TableHead>
+                      <TableHead>Prazo</TableHead>
+                      <TableHead>Duração</TableHead>
+                      <TableHead>Atraso</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="w-24">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {tasks
+                      .filter(task => task.responsavel === selectedPlayer)
+                      .map((task) => (
+                        <TableRow key={task.id}>
+                          <TableCell className="font-medium">{task.tarefa}</TableCell>
+                          <TableCell>{new Date(task.inicio).toLocaleDateString('pt-BR')}</TableCell>
+                          <TableCell>{task.fim ? new Date(task.fim).toLocaleDateString('pt-BR') : 'Não informado'}</TableCell>
+                          <TableCell>{new Date(task.prazo).toLocaleDateString('pt-BR')}</TableCell>
+                          <TableCell>{task.duracaoDiasUteis} dias</TableCell>
+                          <TableCell>
+                            {task.atrasoDiasUteis > 0 ? (
+                              <Badge variant="destructive">{task.atrasoDiasUteis} dias</Badge>
+                            ) : (
+                              <Badge variant="secondary">No prazo</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={getStatusBadgeVariant(task.status)}>
+                              {getStatusLabel(task.status)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setEditingTask(task);
+                                  // Não fecha o modal do player, deixando ambos abertos
+                                }}
+                              >
+                                ✏️
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => deleteTask(task.id)}
+                              >
+                                🗑️
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              </div>
+              
+              {tasks.filter(task => task.responsavel === selectedPlayer).length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  Nenhuma tarefa atribuída a este player.
+                </div>
+              )}
+            </div>
           </DialogContent>
         </Dialog>
       </CardContent>

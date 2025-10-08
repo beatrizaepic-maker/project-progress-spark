@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Settings } from 'lucide-react';
 import { 
   Dialog, 
   DialogContent, 
@@ -12,6 +13,7 @@ import {
 import { usePlayer } from '@/contexts/PlayerContext';
 import PlayerProfileView from '@/components/player/PlayerProfileView';
 import PlayerSettings from '@/components/player/PlayerSettings';
+import NotificationsModal from '@/components/player/NotificationsModal';
 import { PlayerStats } from '@/types/player';
 import { calculatePlayerStats } from '@/services/playerService';
 
@@ -19,6 +21,45 @@ const PlayerProfilePage: React.FC = () => {
   const { playerId } = useParams<{ playerId: string }>();
   const { state, initPlayer, updatePlayer, getPlayerStats } = usePlayer();
   const [isEditing, setIsEditing] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  
+  // Mock notifications - em uma aplicação real, viria de uma API
+  const [notifications, setNotifications] = useState([
+    {
+      id: '1',
+      title: 'Tarefa concluída com sucesso!',
+      message: 'Você completou a tarefa "Análise de Requisitos" e ganhou 10 XP.',
+      type: 'task' as const,
+      isRead: false,
+      createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 horas atrás
+      xpReward: 10
+    },
+    {
+      id: '2',
+      title: 'Nova missão semanal disponível!',
+      message: 'Complete 3 tarefas esta semana para ganhar bônus de consistência.',
+      type: 'mission' as const,
+      isRead: false,
+      createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(), // 6 horas atrás
+    },
+    {
+      id: '3',
+      title: 'Conquista desbloqueada!',
+      message: 'Parabéns! Você alcançou o Nível 5 e desbloqueou a conquista "Desenvolvedor Dedicado".',
+      type: 'achievement' as const,
+      isRead: true,
+      createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 dia atrás
+      xpReward: 50
+    },
+    {
+      id: '4',
+      title: 'Tarefa com atraso',
+      message: 'A tarefa "Desenvolvimento Frontend" está com 2 dias de atraso. Considere atualizá-la.',
+      type: 'warning' as const,
+      isRead: true,
+      createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 dias atrás
+    }
+  ]);
   
   // Simular carregamento de dados do player
   useEffect(() => {
@@ -46,6 +87,23 @@ const PlayerProfilePage: React.FC = () => {
   // Verificar se é o perfil do próprio usuário
   const isOwnProfile = playerId === 'current';
 
+  // Funções para gerenciar notificações
+  const handleMarkAsRead = (notificationId: string) => {
+    setNotifications(prev => 
+      prev.map(notification => 
+        notification.id === notificationId 
+          ? { ...notification, isRead: true }
+          : notification
+      )
+    );
+  };
+
+  const handleMarkAllAsRead = () => {
+    setNotifications(prev => 
+      prev.map(notification => ({ ...notification, isRead: true }))
+    );
+  };
+
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <div className="mb-6">
@@ -55,6 +113,14 @@ const PlayerProfilePage: React.FC = () => {
         <p className="text-muted-foreground">
           Gerencie suas informações e visualize seu progresso
         </p>
+        {isOwnProfile && (
+          <div className="mt-4">
+            <Button variant="outline" onClick={() => setIsEditing(true)} className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Editar Perfil
+            </Button>
+          </div>
+        )}
       </div>
 
       <PlayerProfileView 
@@ -63,6 +129,7 @@ const PlayerProfilePage: React.FC = () => {
         isOwnProfile={isOwnProfile}
         onEdit={isOwnProfile ? () => setIsEditing(true) : undefined}
         onSendMessage={!isOwnProfile ? () => console.log('Enviar mensagem') : undefined}
+        onNotifications={isOwnProfile ? () => setIsNotificationsOpen(true) : undefined}
       />
 
       {/* Modal de edição de perfil */}
@@ -82,6 +149,15 @@ const PlayerProfilePage: React.FC = () => {
           />
         </DialogContent>
       </Dialog>
+
+      {/* Modal de notificações */}
+      <NotificationsModal
+        isOpen={isNotificationsOpen}
+        onClose={() => setIsNotificationsOpen(false)}
+        notifications={notifications}
+        onMarkAsRead={handleMarkAsRead}
+        onMarkAllAsRead={handleMarkAllAsRead}
+      />
     </div>
   );
 };
