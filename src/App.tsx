@@ -17,12 +17,14 @@ import Edit3 from "lucide-react/dist/esm/icons/edit-3";
 import SettingsIcon from "lucide-react/dist/esm/icons/settings";
 import TrendingUp from "lucide-react/dist/esm/icons/trending-up";
 import Trophy from "lucide-react/dist/esm/icons/trophy";
+import User from "lucide-react/dist/esm/icons/user";
 import Dashboard from "./pages/Dashboard";
 import Analytics from "./pages/Analytics";
 import Tasks from "./pages/Tasks";
 import DataEditorPage from "./pages/DataEditor";
 import SettingsPage from "./pages/Settings";
 import RankingPage from "./pages/Ranking";
+import PlayerProfilePage from "./pages/PlayerProfilePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +49,11 @@ const sidebarLinks = [
     label: "Ranking",
     href: "/ranking",
     icon: <Trophy className="h-4 w-4" />,
+  },
+  {
+    label: "Meu Perfil",
+    href: "/profile/current",
+    icon: <User className="h-4 w-4" />,
   },
   {
     label: "Editor",
@@ -115,6 +122,8 @@ const App = () => (
                 <Route path="/tasks" element={<Tasks />} />
                 <Route path="/editor" element={<DataEditorPage />} />
                 <Route path="/ranking" element={<RankingPage />} />
+                <Route path="/profile/:playerId" element={<PlayerProfilePage />} />
+                <Route path="/profile" element={<PlayerProfilePage />} />
                 <Route path="/settings" element={<SettingsPage />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
