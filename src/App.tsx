@@ -25,6 +25,7 @@ import DataEditorPage from "./pages/DataEditor";
 import SettingsPage from "./pages/Settings";
 import RankingPage from "./pages/Ranking";
 import PlayerProfilePage from "./pages/PlayerProfilePage";
+import LoginPage from "./pages/LoginPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -122,6 +123,7 @@ const App = () => (
                 <Route path="/tasks" element={<Tasks />} />
                 <Route path="/editor" element={<DataEditorPage />} />
                 <Route path="/ranking" element={<RankingPage />} />
+                <Route path="/login" element={<LoginPage />} />
                 <Route path="/profile/:playerId" element={<PlayerProfilePage />} />
                 <Route path="/profile" element={<PlayerProfilePage />} />
                 <Route path="/settings" element={<SettingsPage />} />

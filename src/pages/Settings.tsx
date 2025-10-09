@@ -1,17 +1,31 @@
 import { DataProvider } from "@/contexts/DataContext";
 import { mockTaskData } from "@/data/projectData";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonProps } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Save, Trophy, Target, Star, Award, Gift, Settings as SettingsIcon, Info, X } from "lucide-react";
+import Save from "lucide-react/dist/esm/icons/save";
+import Trophy from "lucide-react/dist/esm/icons/trophy";
+import Target from "lucide-react/dist/esm/icons/target";
+import Star from "lucide-react/dist/esm/icons/star";
+import Award from "lucide-react/dist/esm/icons/award";
+import Gift from "lucide-react/dist/esm/icons/gift";
+import SettingsIcon from "lucide-react/dist/esm/icons/settings";
+import Info from "lucide-react/dist/esm/icons/info";
+import X from "lucide-react/dist/esm/icons/x";
 
 // Componente para efeito de partículas no botão
-const ParticleButton = ({ children, onClick, className, variant, size, ...props }) => {
-  const [showParticles, setShowParticles] = useState(false);
-  const [buttonRef, setButtonRef] = useState(null);
+type ParticleButtonProps = ButtonProps & {
+  children: React.ReactNode;
+  onClick?: React.MouseEventHandler<HTMLButtonElement>;
+  className?: string;
+};
 
-  const handleClick = async (e) => {
+const ParticleButton = ({ children, onClick, className, variant = "default", size = "default", ...props }: ParticleButtonProps) => {
+  const [showParticles, setShowParticles] = useState(false);
+  const [buttonRef, setButtonRef] = useState<HTMLButtonElement | null>(null);
+
+  const handleClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
     setShowParticles(true);
     
     if (onClick) onClick(e);
@@ -127,6 +141,7 @@ const SelectInput = ({ label, id, options, ...props }) => {
   );
 };
 
+
 const Settings = () => {
   const [pointsPerTask, setPointsPerTask] = useState(10);
   const [bonusPercentage, setBonusPercentage] = useState(20);
@@ -156,38 +171,139 @@ const Settings = () => {
             <p className="text-[#C0C0C0]">Personalize seu sistema de gamificação e pontuação</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Sistema de Pontos */}
-            <SettingsCard title="Sistema de Pontos" icon={Star}>
-              <LabeledInput 
-                label="Pontos por tarefa concluída" 
-                id="pointsPerTask" 
-                type="number"
-                min={1}
-                max={100}
-                value={pointsPerTask}
-                onChange={(e) => setPointsPerTask(Number(e.target.value))}
-              />
-              
-              <LabeledInput 
-                label="Bônus para conclusão antecipada (%)" 
-                id="bonusPercentage" 
-                type="number"
-                min={0}
-                max={100}
-                value={bonusPercentage}
-                onChange={(e) => setBonusPercentage(Number(e.target.value))}
-              />
-              
-              <SelectInput 
-                label="Penalidade para atraso" 
-                id="penaltyType"
-                options={[
-                  { value: "none", label: "Sem penalidade" },
-                  { value: "fixed", label: "Valor fixo (-5 pontos)" },
-                  { value: "percentage", label: "Percentual (-10% por dia)" }
-                ]}
-              />
+          <div className="w-full">
+            {/* Pontos e Conquistas Especiais (agora inclui configurações de pontuação) */}
+            <SettingsCard title="Pontos e Conquistas Especiais" icon={Award}>
+              {/* Configurações de pontuação geral */}
+              <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <LabeledInput 
+                  label="Pontos por tarefa concluída" 
+                  id="pointsPerTask" 
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={pointsPerTask}
+                  onChange={(e) => setPointsPerTask(Number(e.target.value))}
+                />
+                <LabeledInput 
+                  label="Bônus por conquista (XP)" 
+                  id="bonusXP" 
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={bonusPercentage}
+                  onChange={(e) => setBonusPercentage(Number(e.target.value))}
+                />
+                <LabeledInput 
+                  label="Penalidade por atraso (XP)" 
+                  id="penaltyXP" 
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={levelThreshold} // Você pode criar um estado específico se quiser
+                  onChange={(e) => setLevelThreshold(Number(e.target.value))} // Idem
+                />
+              </div>
+              {/* Tabela de conquistas especiais */}
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm text-left rounded-xl overflow-hidden">
+                  <thead>
+                    <tr className="bg-gradient-to-r from-[#6A0DAD]/80 to-[#FF0066]/80 text-white">
+                      <th className="px-3 py-2 font-semibold">Opção</th>
+                      <th className="px-3 py-2 font-semibold">Pontuação</th>
+                      <th className="px-3 py-2 font-semibold">Ativo</th>
+                      <th className="px-3 py-2 font-semibold">Observação</th>
+                      <th className="px-3 py-2 font-semibold">Player</th>
+                      <th className="px-3 py-2 font-semibold">Ajuste Individual (XP)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-[#1A1A2E] divide-y divide-[#6A0DAD]/30">
+                    {[
+                      { label: "Entrega com antecedência" },
+                      { label: "Solucionar um problema criativo" },
+                      { label: "Ajudar um Épico" },
+                      { label: "Feedback recebido com elogio do cliente ou gestores" },
+                      { label: "Cumprir todas as tarefas da semana no prazo" },
+                      { label: "Toda a equipe entrega sem atrasos na semana" },
+                      { label: "Criar uma melhoria de processo" },
+                      { label: "Manter consistência por um mês sem atrasos" },
+                      { label: "Entrega acima da média" },
+                    ].map((item, idx) => {
+                      // Estados locais para cada linha
+                      const [selectedUser, setSelectedUser] = React.useState("");
+                      const [xpValue, setXpValue] = React.useState(0);
+                      const [saving, setSaving] = React.useState(false);
+
+                      const handleSaveXP = () => {
+                        setSaving(true);
+                        // Simulação de envio (substitua por integração real)
+                        setTimeout(() => {
+                          setSaving(false);
+                          // Aqui pode disparar um toast de sucesso
+                        }, 1000);
+                      };
+
+                      return (
+                        <tr key={item.label} className="hover:bg-[#6A0DAD]/10">
+                          <td className="px-3 py-2 text-white font-medium">{item.label}</td>
+                          <td className="px-3 py-2">
+                            <Input
+                              type="number"
+                              min={0}
+                              max={100}
+                              defaultValue={10}
+                              className="w-20 border-[#6A0DAD] bg-[#1A1A2E]/60 text-white"
+                            />
+                          </td>
+                          <td className="px-3 py-2 text-center">
+                            <input type="checkbox" className="w-4 h-4 accent-[#FF0066]" defaultChecked />
+                          </td>
+                          <td className="px-3 py-2">
+                            <Input
+                              type="text"
+                              placeholder="Observação..."
+                              className="w-full border-[#6A0DAD] bg-[#1A1A2E]/60 text-white"
+                            />
+                          </td>
+                          <td className="px-3 py-2">
+                            <select
+                              className="w-32 rounded-md border-[#FF0066] bg-[#1A1A2E]/60 text-white px-2 py-1"
+                              value={selectedUser}
+                              onChange={e => setSelectedUser(e.target.value)}
+                            >
+                              <option value="">Selecione...</option>
+                              <option value="joao">João</option>
+                              <option value="maria">Maria</option>
+                              <option value="carlos">Carlos</option>
+                              <option value="ana">Ana</option>
+                              <option value="lucas">Lucas</option>
+                            </select>
+                          </td>
+                          <td className="px-3 py-2 flex gap-2 items-center">
+                            <Input
+                              type="number"
+                              min={-100}
+                              max={100}
+                              value={xpValue}
+                              onChange={e => setXpValue(Number(e.target.value))}
+                              className="w-24 border-[#FF0066] bg-[#1A1A2E]/60 text-white"
+                              placeholder="XP +/-"
+                            />
+                            <Button
+                              size="sm"
+                              className="bg-gradient-to-r from-[#FF0066] to-[#C8008F] text-white font-semibold rounded-none shadow-lg hover:from-[#FF0066]/80 hover:to-[#C8008F]/80 hover:shadow-xl transform hover:scale-105 transition-all px-3 py-1 text-xs"
+                              disabled={!selectedUser || xpValue === 0 || saving}
+                              onClick={handleSaveXP}
+                            >
+                              {saving ? "Salvando..." : "SALVAR"}
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </SettingsCard>
 
             {/* Metas e Objetivos */}
