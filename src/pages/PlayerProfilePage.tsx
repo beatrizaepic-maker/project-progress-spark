@@ -125,6 +125,7 @@ const PlayerProfilePage: React.FC = () => {
           </div>
         )}
       </div>
+      {/* Card de tarefas agora é renderizado dentro de PlayerProfileView logo após o cabeçalho */}
 
       <PlayerProfileView 
         profile={state.profile} 
@@ -153,7 +154,7 @@ const PlayerProfilePage: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Modal de notificações */}
+      {/* Notificações modal */}
       <NotificationsModal
         isOpen={isNotificationsOpen}
         onClose={() => setIsNotificationsOpen(false)}

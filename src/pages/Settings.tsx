@@ -3,6 +3,7 @@ import { mockTaskData } from "@/data/projectData";
 import { Button, ButtonProps } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import React, { useState } from "react";
+import { toast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import Save from "lucide-react/dist/esm/icons/save";
 import Trophy from "lucide-react/dist/esm/icons/trophy";
@@ -150,6 +151,10 @@ const Settings = () => {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [rewardFrequency, setRewardFrequency] = useState("weekly");
   const [showToast, setShowToast] = useState(false);
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [modalData, setModalData] = useState({ player: "", xp: 0, item: "" });
+  const [modalJustification, setModalJustification] = useState("");
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
   const handleSave = () => {
     // Aqui iria a lógica para salvar as configurações
@@ -235,12 +240,10 @@ const Settings = () => {
                       const [saving, setSaving] = React.useState(false);
 
                       const handleSaveXP = () => {
-                        setSaving(true);
-                        // Simulação de envio (substitua por integração real)
-                        setTimeout(() => {
-                          setSaving(false);
-                          // Aqui pode disparar um toast de sucesso
-                        }, 1000);
+                        // Abrir modal de confirmação com os dados da linha
+                        setModalData({ player: selectedUser, xp: xpValue, item: item.label });
+                        setModalJustification("");
+                        setConfirmModalOpen(true);
                       };
 
                       return (
@@ -415,10 +418,10 @@ const Settings = () => {
             {/* Sobre */}
             <SettingsCard title="Sobre" icon={Info}>
               <div className="space-y-2 text-sm text-[#C0C0C0]">
-                <p>Versão: 1.3.0</p>
-                <p>Última atualização: Janeiro 2024</p>
+                <p>Versão: 1.5.0</p>
+                <p>Última atualização: Outubro 2025</p>
                 <p>Sistema de Gamificação: v2.0</p>
-                <p>Desenvolvido por DashiTecnology®</p>
+                <p>Desenvolvido por 🐰DashiTecnology®</p>
               </div>
             </SettingsCard>
 
@@ -467,6 +470,49 @@ const Settings = () => {
             </ParticleButton>
           </div>
         </section>
+
+        {/* Modal de confirmação de ajuste de XP */}
+        {confirmModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/50" onClick={() => setConfirmModalOpen(false)} />
+            <div className="relative z-50 w-full max-w-lg p-6 bg-[#1A1A2E] border border-[#6A0DAD] rounded-xl shadow-lg">
+              <h3 className="text-lg font-semibold text-white mb-2">Confirmar ajuste de XP</h3>
+              <p className="text-sm text-[#C0C0C0] mb-4">Player: <span className="font-medium text-white">{modalData.player}</span></p>
+              <p className="text-sm text-[#C0C0C0] mb-4">Ajuste: <span className="font-medium text-white">{modalData.xp > 0 ? `+${modalData.xp}` : modalData.xp} XP</span> ({modalData.xp > 0 ? 'Adição' : 'Redução'})</p>
+              <div className="mb-4">
+                <label className="block text-sm text-[#C0C0C0] mb-2">Justificativa (opcional)</label>
+                <textarea
+                  value={modalJustification}
+                  onChange={(e) => setModalJustification(e.target.value)}
+                  className="w-full h-24 p-2 rounded-md bg-[#0f172a]/30 border border-[#6A0DAD] text-white"
+                  placeholder="Motivo ou observação..."
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <button className="px-4 py-2 rounded-md bg-transparent border border-[#6A0DAD] text-white" onClick={() => setConfirmModalOpen(false)}>Cancelar</button>
+                <button
+                  className="px-4 py-2 rounded-none bg-gradient-to-r from-[#FF0066] to-[#C8008F] text-white font-semibold"
+                  onClick={async () => {
+                    setConfirmLoading(true);
+                    // Simular envio
+                    await new Promise((res) => setTimeout(res, 1000));
+                    setConfirmLoading(false);
+                    setConfirmModalOpen(false);
+                    // Toast de sucesso (estilo epic)
+                    toast({
+                      title: "Ajuste aplicado com sucesso",
+                      description: `${modalData.player} recebeu ${modalData.xp > 0 ? `+${modalData.xp}` : modalData.xp} XP.`,
+                      className: "bg-gradient-to-r from-[#6A0DAD] to-[#FF0066] border-none text-white rounded-md shadow-lg",
+                      duration: 3000,
+                    });
+                  }}
+                >
+                  {confirmLoading ? 'Enviando...' : 'Confirmar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Toast de confirmação */}
         {showToast && (

@@ -100,39 +100,46 @@ const App = () => (
           v7_relativeSplatPath: true
         }}
       >
-        <div className="min-h-screen bg-background">
-          <CustomSidebar>
-            <CustomSidebarBody className="gap-4">
-              <LogoSection />
+        <Routes>
+          {/* Rota de login sem layout (sem sidebar e header) */}
+          <Route path="/login" element={<LoginPage />} />
+          
+          {/* Todas as outras rotas com layout principal */}
+          <Route path="/*" element={
+            <div className="min-h-screen bg-background">
+              <CustomSidebar>
+                <CustomSidebarBody className="gap-4">
+                  <LogoSection />
 
-              {/* Navigation Links */}
-              <div className="flex-1 px-2">
-                {sidebarLinks.map((link) => (
-                  <CustomSidebarLink key={link.href} link={link} />
-                ))}
+                  {/* Navigation Links */}
+                  <div className="flex-1 px-2">
+                    {sidebarLinks.map((link) => (
+                      <CustomSidebarLink key={link.href} link={link} />
+                    ))}
+                  </div>
+                </CustomSidebarBody>
+              </CustomSidebar>
+
+              <div className="md:ml-[60px] transition-all duration-300">
+                <Navigation />
+                <div className="pt-20">
+                  <Routes>
+                    <Route path="/" element={<Dashboard />} />
+                    <Route path="/analytics" element={<Analytics />} />
+                    <Route path="/tasks" element={<Tasks />} />
+                    <Route path="/editor" element={<DataEditorPage />} />
+                    <Route path="/ranking" element={<RankingPage />} />
+                    <Route path="/profile/:playerId" element={<PlayerProfilePage />} />
+                    <Route path="/profile" element={<PlayerProfilePage />} />
+                    <Route path="/settings" element={<SettingsPage />} />
+                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </div>
               </div>
-            </CustomSidebarBody>
-          </CustomSidebar>
-
-          <div className="md:ml-[60px] transition-all duration-300">
-            <Navigation />
-            <div className="pt-20">
-              <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/analytics" element={<Analytics />} />
-                <Route path="/tasks" element={<Tasks />} />
-                <Route path="/editor" element={<DataEditorPage />} />
-                <Route path="/ranking" element={<RankingPage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/profile/:playerId" element={<PlayerProfilePage />} />
-                <Route path="/profile" element={<PlayerProfilePage />} />
-                <Route path="/settings" element={<SettingsPage />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
             </div>
-          </div>
-        </div>
+          } />
+        </Routes>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
