@@ -104,6 +104,40 @@ const PlayerProfilePage: React.FC = () => {
     );
   };
 
+    // Dados fictícios para Atividade Recente
+    const recentActivities = [
+      {
+        id: 'a1',
+        title: 'XP ganho',
+        description: 'Você ganhou 20 XP ao completar a tarefa "Revisão de Código".',
+        date: '2025-10-08 14:30',
+      },
+      {
+        id: 'a2',
+        title: 'Missão concluída',
+        description: 'Missão semanal "Colaborar em 3 projetos" concluída. +50 XP.',
+        date: '2025-10-07 18:10',
+      },
+      {
+        id: 'a3',
+        title: 'Novo nível',
+        description: 'Você atingiu o nível 6! Continue evoluindo.',
+        date: '2025-10-06 09:45',
+      },
+      {
+        id: 'a4',
+        title: 'Conquista desbloqueada',
+        description: 'Conquista "Primeiro Deploy" desbloqueada. +30 XP.',
+        date: '2025-10-05 16:20',
+      },
+      {
+        id: 'a5',
+        title: 'Feedback recebido',
+        description: 'Você recebeu feedback positivo do líder de projeto.',
+        date: '2025-10-04 11:00',
+      },
+    ];
+
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <div className="mb-6">
@@ -135,6 +169,28 @@ const PlayerProfilePage: React.FC = () => {
         onSendMessage={!isOwnProfile ? () => console.log('Enviar mensagem') : undefined}
         onNotifications={isOwnProfile ? () => setIsNotificationsOpen(true) : undefined}
       />
+
+        {/* Card de Atividade Recente */}
+        <div className="bg-[#181834] border border-[#7c3aed] rounded-none shadow-lg shadow-[#6A0DAD]/30 hover:shadow-[#6A0DAD]/50 transition-all duration-300 p-6 mt-8">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-[#7c3aed]">
+              <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="#7c3aed" strokeWidth="2" d="M4 12h16M12 4v16"/></svg>
+            </span>
+            <h2 className="text-2xl font-bold text-white">Atividade Recente</h2>
+          </div>
+          <p className="text-muted-foreground mb-4">Esta seção exibe o histórico recente de atividades do player.</p>
+          <ul className="space-y-3">
+            {recentActivities.map(activity => (
+              <li key={activity.id} className="bg-[#23234a] rounded-none p-4 border-l-4 border-[#7c3aed]">
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold text-white">{activity.title}</span>
+                  <span className="text-xs text-muted-foreground">{activity.date}</span>
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">{activity.description}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
 
       {/* Modal de edição de perfil */}
       <Dialog open={isEditing} onOpenChange={setIsEditing}>

@@ -122,7 +122,8 @@ const DelayDistributionChart: React.FC<DelayDistributionChartProps> = ({ tasks }
               backgroundColor: "white",
               border: "1px solid #e5e7eb",
               borderRadius: "8px",
-              boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
+              boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+              color: "#222"
             }}
             formatter={(value: number, name: string) => [
               name === 'count' ? `${value} tarefas` : `${value}%`,
@@ -160,7 +161,8 @@ const DelayDistributionChart: React.FC<DelayDistributionChartProps> = ({ tasks }
             contentStyle={{
               backgroundColor: "white",
               border: "1px solid #e5e7eb",
-              borderRadius: "8px"
+              borderRadius: "8px",
+              color: "#222"
             }}
             formatter={(value: number) => [`${value} tarefas`, 'Quantidade']}
           />
@@ -191,7 +193,8 @@ const DelayDistributionChart: React.FC<DelayDistributionChartProps> = ({ tasks }
               contentStyle={{
                 backgroundColor: "white",
                 border: "1px solid #e5e7eb",
-                borderRadius: "8px"
+                borderRadius: "8px",
+                color: "#222"
               }}
               formatter={(value: number, name: string) => [
                 name === 'avgDelay' ? formatDays(value) : `${value} tarefas`,

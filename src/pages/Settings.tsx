@@ -89,7 +89,7 @@ const ParticleButton = ({ children, onClick, className, variant = "default", siz
 // Componente de card reutilizável
 const SettingsCard = ({ title, children, icon: Icon }) => {
   return (
-    <div className="bg-[#1A1A2E] p-6 border-2 border-[#6A0DAD] rounded-xl shadow-lg shadow-[#6A0DAD]/30 hover:shadow-[#6A0DAD]/50 transition-all duration-300">
+    <div className="bg-[#1A1A2E] p-6 border-2 border-[#6A0DAD] rounded-none shadow-lg shadow-[#6A0DAD]/30 hover:shadow-[#6A0DAD]/50 transition-all duration-300">
       <div className="flex items-center gap-2 mb-4">
         <Icon className="text-[#FF0066]" size={24} />
         <h3 className="text-lg font-semibold text-white">{title}</h3>
@@ -176,7 +176,7 @@ const Settings = () => {
             <p className="text-[#C0C0C0]">Personalize seu sistema de gamificação e pontuação</p>
           </div>
 
-          <div className="w-full">
+          <div className="w-full flex flex-col" style={{ gap: '25px' }}>
             {/* Pontos e Conquistas Especiais (agora inclui configurações de pontuação) */}
             <SettingsCard title="Pontos e Conquistas Especiais" icon={Award}>
               {/* Configurações de pontuação geral */}
@@ -309,159 +309,124 @@ const Settings = () => {
               </div>
             </SettingsCard>
 
-            {/* Metas e Objetivos */}
-            <SettingsCard title="Metas e Objetivos" icon={Target}>
-              <LabeledInput 
-                label="Meta semanal (tarefas)" 
-                id="weeklyGoal" 
-                type="number"
-                min={1}
-                max={50}
-                value={weeklyGoal}
-                onChange={(e) => setWeeklyGoal(Number(e.target.value))}
-              />
-              
-              <SelectInput 
-                label="Tipo de meta prioritária" 
-                id="goalType"
-                options={[
-                  { value: "tasks", label: "Número de tarefas" },
-                  { value: "points", label: "Total de pontos" },
-                  { value: "streak", label: "Dias consecutivos" }
-                ]}
-              />
-              
-              <div className="flex items-center space-x-2 pt-2">
-                <input 
-                  type="checkbox" 
-                  id="publicGoals" 
-                  className="w-4 h-4 accent-[#FF0066]" 
-                />
-                <label htmlFor="publicGoals" className="text-white text-sm">
-                  Tornar metas visíveis para outros usuários
-                </label>
-              </div>
-            </SettingsCard>
-
-            {/* Sistema de Níveis */}
-            <SettingsCard title="Sistema de Níveis" icon={Trophy}>
-              <LabeledInput 
-                label="Pontos necessários por nível" 
-                id="levelThreshold" 
-                type="number"
-                min={50}
-                max={1000}
-                value={levelThreshold}
-                onChange={(e) => setLevelThreshold(Number(e.target.value))}
-              />
-              
-              <SelectInput 
-                label="Progresso de nível" 
-                id="levelProgress"
-                options={[
-                  { value: "linear", label: "Linear (igual para todos níveis)" },
-                  { value: "exponential", label: "Exponencial (aumenta a cada nível)" }
-                ]}
-              />
-              
-              <div className="flex items-center space-x-2 pt-2">
-                <input 
-                  type="checkbox" 
-                  id="levelNotification" 
-                  className="w-4 h-4 accent-[#FF0066]" 
-                  checked={notificationsEnabled}
-                  onChange={(e) => setNotificationsEnabled(e.target.checked)}
-                />
-                <label htmlFor="levelNotification" className="text-white text-sm">
-                  Ativar notificações para subida de nível
-                </label>
-              </div>
-            </SettingsCard>
-
-            {/* Recompensas e Prêmios */}
-            <SettingsCard title="Recompensas e Prêmios" icon={Gift}>
-              <SelectInput 
-                label="Frequência de recompensas" 
-                id="rewardFrequency"
-                value={rewardFrequency}
-                onChange={(e) => setRewardFrequency(e.target.value)}
-                options={[
-                  { value: "daily", label: "Diária" },
-                  { value: "weekly", label: "Semanal" },
-                  { value: "monthly", label: "Mensal" }
-                ]}
-              />
-              
-              <SelectInput 
-                label="Tipo de recompensa" 
-                id="rewardType"
-                options={[
-                  { value: "badge", label: "Emblemas" },
-                  { value: "title", label: "Títulos" },
-                  { value: "theme", label: "Temas personalizados" },
-                  { value: "mixed", label: "Sistema misto" }
-                ]}
-              />
-              
-              <div className="flex items-center space-x-2 pt-2">
-                <input 
-                  type="checkbox" 
-                  id="rareRewards" 
-                  className="w-4 h-4 accent-[#FF0066]" 
-                />
-                <label htmlFor="rareRewards" className="text-white text-sm">
-                  Incluir recompensas raras (probabilidade de 5%)
-                </label>
-              </div>
-            </SettingsCard>
-
-            {/* Sobre */}
-            <SettingsCard title="Sobre" icon={Info}>
-              <div className="space-y-2 text-sm text-[#C0C0C0]">
-                <p>Versão: 1.5.0</p>
-                <p>Última atualização: Outubro 2025</p>
-                <p>Sistema de Gamificação: v2.0</p>
-                <p>Desenvolvido por 🐰DashiTecnology®</p>
-              </div>
-            </SettingsCard>
-
-            {/* Configurações Avançadas */}
-            <SettingsCard title="Configurações Avançadas" icon={SettingsIcon}>
-              <div className="space-y-3">
-                <SelectInput 
-                  label="Modo de exibição do ranking" 
-                  id="rankingDisplay"
-                  options={[
-                    { value: "all", label: "Exibir todos os jogadores" },
-                    { value: "top10", label: "Apenas top 10" },
-                    { value: "department", label: "Agrupar por departamento" }
-                  ]}
-                />
-                
-                <div className="flex items-center space-x-2 pt-2">
-                  <input 
-                    type="checkbox" 
-                    id="resetMonthly" 
-                    className="w-4 h-4 accent-[#FF0066]" 
+              {/* Grid de dois em dois para os demais cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
+                {/* Sistema de Níveis */}
+                <SettingsCard title="Sistema de Níveis" icon={Trophy}>
+                  <LabeledInput 
+                    label="Pontos necessários por nível" 
+                    id="levelThreshold" 
+                    type="number"
+                    min={50}
+                    max={1000}
+                    value={levelThreshold}
+                    onChange={(e) => setLevelThreshold(Number(e.target.value))}
                   />
-                  <label htmlFor="resetMonthly" className="text-white text-sm">
-                    Reiniciar rankings mensalmente
-                  </label>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <input 
-                    type="checkbox" 
-                    id="showAchievements" 
-                    className="w-4 h-4 accent-[#FF0066]" 
-                    defaultChecked
+                  <SelectInput 
+                    label="Progresso de nível" 
+                    id="levelProgress"
+                    options={[
+                      { value: "linear", label: "Linear (igual para todos níveis)" },
+                      { value: "exponential", label: "Exponencial (aumenta a cada nível)" }
+                    ]}
                   />
-                  <label htmlFor="showAchievements" className="text-white text-sm">
-                    Exibir conquistas no perfil público
-                  </label>
-                </div>
+                  <div className="flex items-center space-x-2 pt-2">
+                    <input 
+                      type="checkbox" 
+                      id="levelNotification" 
+                      className="w-4 h-4 accent-[#FF0066]" 
+                      checked={notificationsEnabled}
+                      onChange={(e) => setNotificationsEnabled(e.target.checked)}
+                    />
+                    <label htmlFor="levelNotification" className="text-white text-sm">
+                      Ativar notificações para subida de nível
+                    </label>
+                  </div>
+                </SettingsCard>
+
+                {/* Recompensas e Prêmios */}
+                <SettingsCard title="Recompensas e Prêmios (Em análise)" icon={Gift}>
+                  <SelectInput 
+                    label="Frequência de recompensas" 
+                    id="rewardFrequency"
+                    value={rewardFrequency}
+                    onChange={(e) => setRewardFrequency(e.target.value)}
+                    options={[
+                      { value: "daily", label: "Diária" },
+                      { value: "weekly", label: "Semanal" },
+                      { value: "monthly", label: "Mensal" }
+                    ]}
+                  />
+                  <SelectInput 
+                    label="Tipo de recompensa" 
+                    id="rewardType"
+                    options={[
+                      { value: "badge", label: "Emblemas" },
+                      { value: "title", label: "Títulos" },
+                      { value: "theme", label: "Temas personalizados" },
+                      { value: "mixed", label: "Sistema misto" }
+                    ]}
+                  />
+                  <div className="flex items-center space-x-2 pt-2">
+                    <input 
+                      type="checkbox" 
+                      id="rareRewards" 
+                      className="w-4 h-4 accent-[#FF0066]" 
+                    />
+                    <label htmlFor="rareRewards" className="text-white text-sm">
+                      Incluir recompensas raras (probabilidade de 5%)
+                    </label>
+                  </div>
+                </SettingsCard>
+
+                {/* Sobre */}
+                <SettingsCard title="Sobre" icon={Info}>
+                  <div className="space-y-2 text-sm text-[#C0C0C0]">
+                    <p>Versão: 1.5.0</p>
+                    <p>Última atualização: Outubro 2025</p>
+                    <p>Sistema de Gamificação: v2.0</p>
+                    <p>Desenvolvido por 🐰DashiTecnology®</p>
+                  </div>
+                </SettingsCard>
+
+                {/* Configurações Avançadas */}
+                <SettingsCard title="Configurações Avançadas" icon={SettingsIcon}>
+                  <div className="space-y-3">
+                    <SelectInput 
+                      label="Modo de exibição do ranking" 
+                      id="rankingDisplay"
+                      options={[
+                        { value: "all", label: "Exibir todos os jogadores" },
+                        { value: "top10", label: "Apenas top 10" },
+                        { value: "department", label: "Agrupar por departamento" }
+                      ]}
+                    />
+                  
+                    <div className="flex items-center space-x-2 pt-2">
+                      <input 
+                        type="checkbox" 
+                        id="resetMonthly" 
+                        className="w-4 h-4 accent-[#FF0066]" 
+                      />
+                      <label htmlFor="resetMonthly" className="text-white text-sm">
+                        Reiniciar rankings mensalmente
+                      </label>
+                    </div>
+                  
+                    <div className="flex items-center space-x-2">
+                      <input 
+                        type="checkbox" 
+                        id="showAchievements" 
+                        className="w-4 h-4 accent-[#FF0066]" 
+                        defaultChecked
+                      />
+                      <label htmlFor="showAchievements" className="text-white text-sm">
+                        Exibir conquistas no perfil público
+                      </label>
+                    </div>
+                  </div>
+                </SettingsCard>
               </div>
-            </SettingsCard>
           </div>
 
           <div className="flex justify-end mt-8">

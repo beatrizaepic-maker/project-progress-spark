@@ -208,7 +208,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, initialTas
     setTasks(prev => [...prev, newTask]);
     toast({
       title: "Tarefa adicionada",
-      description: `${task.tarefa} foi adicionada com sucesso.`
+      description: `${task.tarefa} foi adicionada com sucesso.`,
+      className: "bg-gradient-to-r from-[#6A0DAD] to-[#FF0066] border-none text-white rounded-md shadow-lg",
+      duration: 3000
     });
   }, [tasks]);
 

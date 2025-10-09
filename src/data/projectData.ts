@@ -2,6 +2,7 @@ export interface TaskData {
   id: number;
   tarefa: string;
   responsavel?: string;
+  descricao?: string;
   inicio: string;
   fim?: string; // Campo opcional
   prazo: string;

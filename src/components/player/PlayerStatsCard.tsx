@@ -4,15 +4,12 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Trophy, 
-  Sparkles, 
-  Activity, 
-  Target, 
-  Calendar, 
-  BarChart3,
-  Zap
-} from 'lucide-react';
+import Trophy from 'lucide-react/dist/esm/icons/trophy';
+import Sparkles from 'lucide-react/dist/esm/icons/sparkles';
+import Activity from 'lucide-react/dist/esm/icons/activity';
+import Target from 'lucide-react/dist/esm/icons/target';
+import BarChart3 from 'lucide-react/dist/esm/icons/bar-chart-3';
+import Zap from 'lucide-react/dist/esm/icons/zap';
 import { PlayerStats } from '@/types/player';
 import { getLevelProgress } from '@/services/gamificationService';
 
@@ -26,7 +23,7 @@ const PlayerStatsCard: React.FC<PlayerStatsCardProps> = ({ stats, className }) =
   const levelProgress = getLevelProgress(stats.totalXp);
 
   return (
-    <Card className={`bg-gradient-to-br from-primary/5 to-accent/5 border-border ${className}`}>
+    <Card className={`bg-gradient-to-br from-primary/5 to-accent/5 border border-[#6A0DAD] rounded-none shadow-lg shadow-[#6A0DAD]/30 hover:shadow-[#6A0DAD]/50 transition-all duration-300 ${className}`}>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-foreground">
           <BarChart3 className="text-primary" />
@@ -52,7 +49,7 @@ const PlayerStatsCard: React.FC<PlayerStatsCardProps> = ({ stats, className }) =
 
         {/* Estatísticas principais */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="bg-accent/20 p-3 rounded-lg border border-border">
+          <div className="bg-accent/20 p-3 rounded-none border border-border">
             <div className="flex items-center gap-2 text-primary">
               <Trophy className="h-4 w-4" />
               <span className="text-xs font-medium">Nível</span>
@@ -60,7 +57,7 @@ const PlayerStatsCard: React.FC<PlayerStatsCardProps> = ({ stats, className }) =
             <div className="text-lg font-bold text-foreground mt-1">{stats.currentLevel}</div>
           </div>
           
-          <div className="bg-accent/20 p-3 rounded-lg border border-border">
+          <div className="bg-accent/20 p-3 rounded-none border border-border">
             <div className="flex items-center gap-2 text-secondary">
               <Sparkles className="h-4 w-4" />
               <span className="text-xs font-medium">Semanal</span>
@@ -68,7 +65,7 @@ const PlayerStatsCard: React.FC<PlayerStatsCardProps> = ({ stats, className }) =
             <div className="text-lg font-bold text-foreground mt-1">{stats.weeklyProgress}</div>
           </div>
           
-          <div className="bg-accent/20 p-3 rounded-lg border border-border">
+          <div className="bg-accent/20 p-3 rounded-none border border-border">
             <div className="flex items-center gap-2 text-accent">
               <Activity className="h-4 w-4" />
               <span className="text-xs font-medium">Sequência</span>
@@ -76,7 +73,7 @@ const PlayerStatsCard: React.FC<PlayerStatsCardProps> = ({ stats, className }) =
             <div className="text-lg font-bold text-foreground mt-1">{stats.streak}</div>
           </div>
           
-          <div className="bg-accent/20 p-3 rounded-lg border border-border">
+          <div className="bg-accent/20 p-3 rounded-none border border-border">
             <div className="flex items-center gap-2 text-primary">
               <Zap className="h-4 w-4" />
               <span className="text-xs font-medium">Missões</span>

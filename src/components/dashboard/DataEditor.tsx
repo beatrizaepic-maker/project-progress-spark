@@ -10,13 +10,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-import { TaskData } from '@/data/projectData';
+import { TaskData, mockTaskData } from '@/data/projectData';
 import { toast } from '@/hooks/use-toast';
 import KanbanBoard from './KanbanBoard';
 
 interface TaskFormData {
   tarefa: string;
   responsavel: string;
+  descricao?: string;
   status: 'backlog' | 'todo' | 'in-progress' | 'completed';
   inicio: string;
   fim?: string; // Campo opcional
@@ -24,14 +25,18 @@ interface TaskFormData {
   prioridade: 'baixa' | 'media' | 'alta' | 'critica';
 }
 
-const TaskForm: React.FC<{
+// Tipo nomeado para as props do formulário para evitar ambiguidade no parser
+type TaskFormProps = {
   task?: TaskData;
   onSubmit: (data: TaskFormData) => void;
   onCancel: () => void;
-}> = ({ task, onSubmit, onCancel }) => {
+};
+
+const TaskForm: React.FC<TaskFormProps> = ({ task, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState<TaskFormData>({
     tarefa: task?.tarefa || '',
     responsavel: task?.responsavel || '',
+    descricao: task?.descricao || '',
     status: task?.status || 'backlog',
     inicio: task?.inicio || '',
     fim: task?.fim || '',
@@ -75,15 +80,34 @@ const TaskForm: React.FC<{
           placeholder="Digite o nome da tarefa"
         />
       </div>
+      <div>
+        <Label htmlFor="descricao">Descrição</Label>
+        <textarea
+          id="descricao"
+          value={formData.descricao}
+          onChange={(e) => setFormData(prev => ({ ...prev, descricao: e.target.value }))}
+          placeholder="Digite a descrição detalhada da tarefa"
+          className="w-full bg-background border border-border rounded-md p-2 text-sm text-foreground resize-none min-h-[64px] focus:outline-none focus:ring-2 focus:ring-primary"
+        />
+      </div>
       
       <div>
         <Label htmlFor="responsavel">Responsável</Label>
-        <Input
-          id="responsavel"
-          value={formData.responsavel}
-          onChange={(e) => setFormData(prev => ({ ...prev, responsavel: e.target.value }))}
-          placeholder="Digite o nome do responsável"
-        />
+        <Select
+          value={formData.responsavel || undefined}
+          onValueChange={(value) => setFormData(prev => ({ ...prev, responsavel: value }))}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Selecione o responsável" />
+          </SelectTrigger>
+          <SelectContent>
+            {[...new Set(mockTaskData.map(t => t.responsavel))]
+              .filter((name): name is string => Boolean(name))
+              .map((name) => (
+                <SelectItem key={name} value={name}>{name}</SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
       </div>
       
       <div>
@@ -203,6 +227,18 @@ const DataEditor: React.FC = () => {
   const handleEditTask = (data: TaskFormData) => {
     if (editingTask) {
       editTask(editingTask.id, data);
+      toast({
+        title: (
+          <div className="flex items-center gap-2">
+            {/* Ícone de sucesso, pode usar lucide-react ou emoji */}
+            <span role="img" aria-label="success">✅</span>
+            Tarefa atualizada
+          </div>
+        ),
+        description: "As informações foram salvas com sucesso.",
+        className: "bg-gradient-to-r from-[#6A0DAD] to-[#FF0066] border-none text-white rounded-md shadow-lg",
+        duration: 3000,
+      });
       setEditingTask(null);
       // Não fechamos o modal do player para que as alterações sejam vistas imediatamente
     }
@@ -272,11 +308,6 @@ const DataEditor: React.FC = () => {
           </div>
           
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleImport}>
-              📤
-              Importar
-            </Button>
-            
             <Button variant="outline" size="sm" onClick={handleExport}>
               📥
               Exportar
@@ -330,7 +361,7 @@ const DataEditor: React.FC = () => {
         {/* Visualização da Tabela */}
         {viewMode === 'table' && (
           <div 
-            className="rounded-lg border overflow-x-auto" 
+            className="rounded-none border overflow-x-auto scroll-area" 
             style={{
               scrollbarWidth: 'thin',
               scrollbarColor: '#a855f7 transparent'
@@ -338,17 +369,17 @@ const DataEditor: React.FC = () => {
           >
             <style dangerouslySetInnerHTML={{
               __html: `
-                .rounded-lg::-webkit-scrollbar {
+                .scroll-area::-webkit-scrollbar {
                   height: 8px;
                 }
-                .rounded-lg::-webkit-scrollbar-track {
+                .scroll-area::-webkit-scrollbar-track {
                   background: transparent;
                 }
-                .rounded-lg::-webkit-scrollbar-thumb {
+                .scroll-area::-webkit-scrollbar-thumb {
                   background-color: #a855f7;
                   border-radius: 0;
                 }
-                .rounded-lg::-webkit-scrollbar-thumb:hover {
+                .scroll-area::-webkit-scrollbar-thumb:hover {
                   background-color: #9333ea;
                 }
               `
@@ -378,13 +409,13 @@ const DataEditor: React.FC = () => {
                     <TableCell>{task.duracaoDiasUteis} dias</TableCell>
                     <TableCell>
                       {task.atrasoDiasUteis > 0 ? (
-                        <Badge variant="destructive">{task.atrasoDiasUteis} dias</Badge>
+                        <Badge variant="destructive" className="rounded-none">{task.atrasoDiasUteis} dias</Badge>
                       ) : (
-                        <Badge variant="secondary">No prazo</Badge>
+                        <Badge variant="secondary" className="rounded-none">No prazo</Badge>
                       )}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={getStatusBadgeVariant(task.status)}>
+                      <Badge variant={getStatusBadgeVariant(task.status)} className="rounded-none">
                         {getStatusLabel(task.status)}
                       </Badge>
                     </TableCell>
@@ -432,7 +463,7 @@ const DataEditor: React.FC = () => {
               {players.map((player, index) => (
                 <div 
                   key={index} 
-                  className={`p-4 border rounded-lg transition-colors cursor-pointer border-border ${
+                  className={`p-4 border rounded-none transition-colors cursor-pointer border-border ${
                     selectedPlayer === player 
                       ? 'bg-primary/10 border-primary/30 ring-2 ring-primary/20' 
                       : 'bg-card hover:bg-accent/50'
@@ -440,7 +471,7 @@ const DataEditor: React.FC = () => {
                   onClick={() => setSelectedPlayer(player)}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
+                    <div className={`w-10 h-10 rounded-none flex items-center justify-center font-bold ${
                       selectedPlayer === player 
                         ? 'bg-primary text-primary-foreground' 
                         : 'bg-primary/10 text-primary'
@@ -486,10 +517,10 @@ const DataEditor: React.FC = () => {
         
         {/* Player Tasks Dialog */}
         <Dialog open={!!selectedPlayer} onOpenChange={() => setSelectedPlayer(null)}>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto" style={{ borderRadius: '0' }}>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                <div className="w-10 h-10 rounded-none bg-primary/10 flex items-center justify-center text-primary font-bold">
                   {selectedPlayer?.charAt(0).toUpperCase()}
                 </div>
                 Tarefas de {selectedPlayer}
@@ -533,7 +564,7 @@ const DataEditor: React.FC = () => {
               </div>
               
               {/* Lista de tarefas do player */}
-              <div className="rounded-lg border overflow-x-auto">
+              <div className="rounded-none border overflow-x-auto scroll-area">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -559,13 +590,13 @@ const DataEditor: React.FC = () => {
                           <TableCell>{task.duracaoDiasUteis} dias</TableCell>
                           <TableCell>
                             {task.atrasoDiasUteis > 0 ? (
-                              <Badge variant="destructive">{task.atrasoDiasUteis} dias</Badge>
-                            ) : (
-                              <Badge variant="secondary">No prazo</Badge>
-                            )}
+                                <Badge variant="destructive" className="rounded-none">{task.atrasoDiasUteis} dias</Badge>
+                              ) : (
+                                <Badge variant="secondary" className="rounded-none">No prazo</Badge>
+                              )}
                           </TableCell>
                           <TableCell>
-                            <Badge variant={getStatusBadgeVariant(task.status)}>
+                              <Badge variant={getStatusBadgeVariant(task.status)} className="rounded-none">
                               {getStatusLabel(task.status)}
                             </Badge>
                           </TableCell>

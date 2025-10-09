@@ -43,5 +43,21 @@ Onde usar: Pode ser usado para textos secundários ou menos importantes, como de
 - **Estilo**: Preferencialmente em formato SVG para melhor escalabilidade e consistência
 
 ### Efeitos Visuais Adicionais
-- **Sombra**: Usar uma sombra sutil como `0 4px 6px -1px rgba(26, 26, 46, 0.1), 0 2px 4px -2px rgba(26, 26, 46, 0.1)` para cards em estado normal
-- **Efeito Hover**: Aumentar levemente a intensidade da sombra e aplicar um leve efeito de glow com a cor `#FF0066` quando a interação for relevante
+
+### Efeito de Sombra Padronizado (Tailwind)
+- **Classe padrão para todos os cards:**
+  - `shadow-lg shadow-[#6A0DAD]/30 hover:shadow-[#6A0DAD]/50 transition-all duration-300`
+- **Quando usar:**
+  - Todos os cards principais da interface (perfil, tarefas, estatísticas, conquistas, histórico, etc.)
+  - Garante consistência visual, profundidade e destaque sutil sem poluir o layout
+- **Justificativa:**
+  - O uso do roxo elétrico na sombra reforça a identidade visual do sistema
+  - O efeito hover cria uma sensação de interação moderna e responsiva
+- **Exemplo de uso:**
+  ```jsx
+  <Card className="bg-[#1A1A2E] border border-[#6A0DAD] rounded-none shadow-lg shadow-[#6A0DAD]/30 hover:shadow-[#6A0DAD]/50 transition-all duration-300">
+    ...
+  </Card>
+  ```
+
+**Nunca utilizar cantos arredondados em cards, exceto se explicitamente solicitado pelo design.**

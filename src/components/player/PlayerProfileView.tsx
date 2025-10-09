@@ -1,6 +1,6 @@
 // src/components/player/PlayerProfileView.tsx
 
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,8 @@ import Mail from 'lucide-react/dist/esm/icons/mail';
 import Briefcase from 'lucide-react/dist/esm/icons/briefcase';
 import Bell from 'lucide-react/dist/esm/icons/bell';
 import { PlayerProfile, PlayerStats } from '@/types/player';
+import { mockTaskData } from '@/data/projectData';
+import TasksModal, { TaskItem } from './TasksModal';
 import PlayerStatsCard from './PlayerStatsCard';
 
 interface PlayerProfileViewProps {
@@ -35,10 +37,80 @@ const PlayerProfileView: React.FC<PlayerProfileViewProps> = ({
   onNotifications,
   className 
 }) => {
+  // Estado do modal de tarefas
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalType, setModalType] = useState<'overdue' | 'today'>('overdue');
+
+  // Mapeia os dados globais para as tarefas do usuário logado (por nome)
+  // Em uma implementação real, substituir por dados do backend + id do usuário
+  const userTasks = useMemo(() => {
+    return mockTaskData.filter(t => !t.responsavel || t.responsavel?.toLowerCase().includes(profile.name.split(' ')[0].toLowerCase()));
+  }, [profile.name]);
+
+  // Utilidades de data
+  const isToday = (isoLike: string) => {
+    const d = new Date(isoLike);
+    const now = new Date();
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+  };
+
+  const formatDate = (isoLike?: string) => {
+    if (!isoLike) return '-';
+    try {
+      return new Date(isoLike).toLocaleDateString('pt-BR');
+    } catch {
+      return isoLike;
+    }
+  };
+
+  // Filtragens
+  const overdueTasks = useMemo<TaskItem[]>(() => {
+    return userTasks
+      .filter(t => t.atrasoDiasUteis > 0 || (t.prazo && new Date(t.prazo) < new Date() && t.status !== 'completed'))
+      .map(t => ({
+        id: t.id,
+        titulo: t.tarefa,
+        prazo: formatDate(t.prazo),
+        status: 'overdue' as const,
+        detalhe: `${t.atrasoDiasUteis} dia(s) atrasado`
+      }));
+  }, [userTasks]);
+
+  const todayTasks = useMemo<TaskItem[]>(() => {
+    return userTasks
+      .filter(t => t.prazo && isToday(t.prazo))
+      .map(t => ({
+        id: t.id,
+        titulo: t.tarefa,
+        prazo: formatDate(t.prazo),
+        status: 'today' as const,
+        detalhe: 'vence hoje'
+      }));
+  }, [userTasks]);
+
+  // Fallback demonstrativo para quando não houver tarefas do usuário no mock
+  const fallbackOverdue: TaskItem[] = [
+    { id: 'f1', titulo: 'Desenvolvimento Frontend', prazo: formatDate(new Date(Date.now() - 2*24*60*60*1000).toISOString()), status: 'overdue', detalhe: '2 dias atrasado' },
+    { id: 'f2', titulo: 'Revisão de Requisitos', prazo: formatDate(new Date(Date.now() - 1*24*60*60*1000).toISOString()), status: 'overdue', detalhe: '1 dia atrasado' },
+  ];
+  const fallbackToday: TaskItem[] = [
+    { id: 'f3', titulo: 'Atualizar Documentação', prazo: formatDate(new Date().toISOString()), status: 'today', detalhe: 'vence hoje' },
+    { id: 'f4', titulo: 'Testes Unitários', prazo: formatDate(new Date().toISOString()), status: 'today', detalhe: 'vence hoje' },
+    { id: 'f5', titulo: 'Deploy de Hotfix', prazo: formatDate(new Date().toISOString()), status: 'today', detalhe: 'vence hoje' },
+  ];
+
+  const computedOverdue = overdueTasks.length ? overdueTasks : fallbackOverdue;
+  const computedToday = todayTasks.length ? todayTasks : fallbackToday;
+
+  const openModal = (type: 'overdue' | 'today') => {
+    setModalType(type);
+    setModalOpen(true);
+  };
+
   return (
     <div className={`space-y-6 ${className}`}>
       {/* Cabeçalho do perfil */}
-      <Card className="bg-gradient-to-r from-primary/10 to-accent/10 border-primary/20 relative">
+  <Card className="bg-gradient-to-r from-primary/10 to-accent/10 border border-[#6A0DAD] rounded-none relative shadow-lg shadow-[#6A0DAD]/30 hover:shadow-[#6A0DAD]/50 transition-all duration-300">
         {/* Ícone de notificações - apenas para o próprio perfil */}
         {isOwnProfile && onNotifications && (
           <Button
@@ -105,7 +177,7 @@ const PlayerProfileView: React.FC<PlayerProfileViewProps> = ({
       
       {/* Card: Tarefas do Dia / Atrasadas - logo abaixo do cabeçalho */}
       <div>
-        <div className="bg-[#1A1A2E] p-6 border-2 border-[#6A0DAD] rounded-xl shadow-lg shadow-[#6A0DAD]/30 hover:shadow-[#6A0DAD]/50 transition-all duration-300">
+        <div className="bg-[#1A1A2E] p-6 border border-[#6A0DAD] rounded-none shadow-lg shadow-[#6A0DAD]/30 hover:shadow-[#6A0DAD]/50 transition-all duration-300">
           <div className="flex items-start justify-between gap-4">
             <div>
               <h3 className="text-lg font-semibold text-white flex items-center gap-2">
@@ -115,47 +187,55 @@ const PlayerProfileView: React.FC<PlayerProfileViewProps> = ({
               <p className="text-sm text-[#C0C0C0] mt-2">Resumo rápido das suas tarefas com prioridade de atenção.</p>
             </div>
             <div className="flex items-center gap-3">
-              <a href="/tasks?filter=overdue" className="text-sm font-semibold text-[#FF0066] hover:underline">Ver atrasadas</a>
-              <a href="/tasks?filter=today" className="text-sm font-semibold text-[#FF0066] hover:underline">Ver do dia</a>
+              <button onClick={() => openModal('overdue')} className="text-sm font-semibold text-[#FF0066] hover:underline">Ver atrasadas</button>
+              <button onClick={() => openModal('today')} className="text-sm font-semibold text-[#FF0066] hover:underline">Ver do dia</button>
             </div>
           </div>
 
           <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-4 rounded-md bg-[#0f172a]/20 border border-[#6A0DAD]/20">
+            <div className="p-4 rounded-none bg-[#0f172a]/20 border border-[#6A0DAD]/20">
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-sm text-[#C0C0C0]">Atrasadas</div>
-                  <div className="text-2xl font-bold text-white">2</div>
+                  <div className="text-2xl font-bold text-white">{computedOverdue.length}</div>
                 </div>
                 <div>
-                  <button className="bg-gradient-to-r from-[#FF0066] to-[#C8008F] text-white font-semibold px-3 py-1 rounded-none shadow-lg hover:shadow-xl">Ver</button>
+                  <button onClick={() => openModal('overdue')} className="bg-gradient-to-r from-[#FF0066] to-[#C8008F] text-white font-semibold px-3 py-1 rounded-none shadow-lg hover:shadow-xl">Ver</button>
                 </div>
               </div>
               <ul className="mt-3 space-y-2 text-sm text-[#C0C0C0]">
-                <li>• Desenvolvimento Frontend — 2 dias atrasado</li>
-                <li>• Revisão de Requisitos — 1 dia atrasado</li>
+                {computedOverdue.slice(0,3).map(t => (
+                  <li key={t.id}>• {t.titulo} — {t.detalhe}</li>
+                ))}
               </ul>
             </div>
 
-            <div className="p-4 rounded-md bg-[#0f172a]/20 border border-[#6A0DAD]/20">
+            <div className="p-4 rounded-none bg-[#0f172a]/20 border border-[#6A0DAD]/20">
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-sm text-[#C0C0C0]">Vencendo Hoje</div>
-                  <div className="text-2xl font-bold text-white">3</div>
+                  <div className="text-2xl font-bold text-white">{computedToday.length}</div>
                 </div>
                 <div>
-                  <button className="bg-gradient-to-r from-[#FF0066] to-[#C8008F] text-white font-semibold px-3 py-1 rounded-none shadow-lg hover:shadow-xl">Ver</button>
+                  <button onClick={() => openModal('today')} className="bg-gradient-to-r from-[#FF0066] to-[#C8008F] text-white font-semibold px-3 py-1 rounded-none shadow-lg hover:shadow-xl">Ver</button>
                 </div>
               </div>
               <ul className="mt-3 space-y-2 text-sm text-[#C0C0C0]">
-                <li>• Atualizar Documentação — vence hoje</li>
-                <li>• Testes Unitários — vence hoje</li>
-                <li>• Deploy de Hotfix — vence hoje</li>
+                {computedToday.slice(0,3).map(t => (
+                  <li key={t.id}>• {t.titulo} — {t.detalhe}</li>
+                ))}
               </ul>
             </div>
           </div>
         </div>
       </div>
+      <TasksModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        titulo={modalType === 'overdue' ? 'Tarefas Atrasadas' : 'Tarefas que Vencem Hoje'}
+        subtitulo={`Usuário: ${profile.name}`}
+        tasks={modalType === 'overdue' ? computedOverdue : computedToday}
+      />
       
       {/* Estatísticas do jogador */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -164,7 +244,7 @@ const PlayerProfileView: React.FC<PlayerProfileViewProps> = ({
         </div>
         
         {/* Informações secundárias */}
-        <Card className="bg-accent/5 border-border">
+  <Card className="bg-accent/5 border border-[#6A0DAD] rounded-none shadow-lg shadow-[#6A0DAD]/30 hover:shadow-[#6A0DAD]/50 transition-all duration-300">
           <CardHeader>
             <CardTitle className="text-foreground flex items-center gap-2">
               <Award className="text-secondary" />
@@ -200,20 +280,6 @@ const PlayerProfileView: React.FC<PlayerProfileViewProps> = ({
       </div>
       
       {/* Histórico recente (poderia ser expandido) */}
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle className="text-foreground flex items-center gap-2">
-            <Activity className="text-accent" />
-            Atividade Recentee
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">
-            Esta seção exibiria o histórico recente de atividades do player. 
-            Em uma implementação completa, isso se conectaria ao histórico de XP e outras métricas.
-          </p>
-        </CardContent>
-      </Card>
     </div>
   );
 };

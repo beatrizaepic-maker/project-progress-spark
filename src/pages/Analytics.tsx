@@ -72,11 +72,12 @@ const AnalyticsContent = () => {
       });
     },
     onCalculationComplete: (results) => {
-      toast({
-        title: "Analytics Atualizado",
-        description: `Gráficos atualizados com dados de ${results.totalTasks} tarefas`,
-        duration: 3000
-      });
+        toast({
+          title: "Analytics Atualizado",
+          description: `Gráficos atualizados com dados de ${results.totalTasks} tarefas`,
+          duration: 3000,
+          className: "bg-gradient-to-r from-[#6A0DAD] to-[#FF0066] text-white rounded-none shadow-lg"
+        });
     },
     onError: (error) => {
       toast({
