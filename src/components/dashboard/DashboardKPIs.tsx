@@ -31,13 +31,7 @@ const DashboardKPIs: React.FC<DashboardKPIsProps> = ({ tasks }) => {
     onCalculationComplete: (results) => {
       monitoring.onCalculationComplete(results);
         toast({
-          title: (
-            <div className="flex items-center gap-2">
-              {/* Ícone de sucesso padrão EPIC */}
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2l4 -4" /></svg>
-              KPIs Atualizados
-            </div>
-          ),
+          title: "✅ KPIs Atualizados",
           description: `Dashboard atualizado com ${results.totalTasks} tarefas`,
           className:
             "bg-gradient-to-r from-[#6A0DAD] to-[#FF0066] border-none text-white rounded-md shadow-lg",
