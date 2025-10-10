@@ -22,6 +22,11 @@ declare module 'lucide-react' {
   export const HelpCircle: LucideIcon;
   export const Loader2: LucideIcon;
   export const AlertTriangle: LucideIcon;
+  export const User: LucideIcon;
+  export const LogOut: LucideIcon;
+  export const Settings: LucideIcon;
+  export const Upload: LucideIcon;
+  export const Save: LucideIcon;
   
   // Exportação padrão para todos os ícones
   const lucideReact: {

@@ -11,6 +11,7 @@ import {
   DialogTitle 
 } from '@/components/ui/dialog';
 import { usePlayer } from '@/contexts/PlayerContext';
+import { useAuth } from '@/contexts/AuthContext';
 import PlayerProfileView from '@/components/player/PlayerProfileView';
 import PlayerSettings from '@/components/player/PlayerSettings';
 import NotificationsModal from '@/components/player/NotificationsModal';
@@ -20,6 +21,7 @@ import { calculatePlayerStats } from '@/services/playerService';
 const PlayerProfilePage: React.FC = () => {
   const { playerId } = useParams<{ playerId: string }>();
   const { state, initPlayer, updatePlayer, getPlayerStats } = usePlayer();
+  const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   
@@ -63,11 +65,16 @@ const PlayerProfilePage: React.FC = () => {
   
   // Simular carregamento de dados do player
   useEffect(() => {
-    // Em uma aplicação real, buscaria os dados do usuário com base no ID
-    if (!state.profile && playerId === 'current') { // Assumindo 'current' como o ID do usuário atual
-      initPlayer('João Silva', '/avatars/user1.png', 'Desenvolvedor Sênior');
+    // Sincroniza os dados do player com o usuário autenticado
+    if (!state.profile && playerId === 'current' && user) {
+      // Usa os dados do usuário autenticado
+      const playerName = user.name || 'Usuário';
+      const playerAvatar = user.avatar || '/avatars/user1.png';
+      const playerRole = user.position || 'Membro da Equipe';
+      
+      initPlayer(playerName, playerAvatar, playerRole);
     }
-  }, [playerId, state.profile, initPlayer]);
+  }, [playerId, state.profile, initPlayer, user]);
 
   // Se o player não estiver carregado, mostrar mensagem de carregamento
   if (!state.profile) {

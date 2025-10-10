@@ -451,7 +451,7 @@ const RankingPage: React.FC = () => {
                       </div>
                     </TableCell>
                     <TableCell className="text-center">
-                      <Badge variant="secondary" className="bg-secondary/20 text-secondary">
+                      <Badge variant="secondary" className="bg-secondary/20 text-white">
                         {user.level}
                       </Badge>
                     </TableCell>
@@ -465,7 +465,7 @@ const RankingPage: React.FC = () => {
                       </div>
                     </TableCell>
                     <TableCell className="text-center">
-                      <Badge variant="outline" className="border-accent text-accent">
+                      <Badge variant="outline" className="border-accent text-white">
                         {user.missionsCompleted}
                       </Badge>
                     </TableCell>

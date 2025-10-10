@@ -14,6 +14,7 @@ import Gift from "lucide-react/dist/esm/icons/gift";
 import SettingsIcon from "lucide-react/dist/esm/icons/settings";
 import Info from "lucide-react/dist/esm/icons/info";
 import X from "lucide-react/dist/esm/icons/x";
+import UserDataDebug from "@/components/debug/UserDataDebug";
 
 // Componente para efeito de partículas no botão
 type ParticleButtonProps = ButtonProps & {
@@ -165,12 +166,7 @@ const Settings = () => {
   const applyAccessLevel = () => {
     if (!selectedUser) {
       toast({
-        title: (
-          <div className="flex items-center gap-2">
-            <span role="img" aria-label="info">ℹ️</span>
-            Selecione um usuário
-          </div>
-        ),
+        title: "ℹ️ Selecione um usuário",
         description: "Escolha um usuário para alterar o nível de acesso.",
         className: "bg-gradient-to-r from-[#6A0DAD] to-[#FF0066] border-none text-white rounded-md shadow-lg",
         duration: 3000,
@@ -180,12 +176,7 @@ const Settings = () => {
 
     setAccessLevels(prev => ({ ...prev, [selectedUser]: selectedAccess }));
     toast({
-      title: (
-        <div className="flex items-center gap-2">
-          <span role="img" aria-label="success">✅</span>
-          Nível de acesso atualizado
-        </div>
-      ),
+      title: "✅ Nível de acesso atualizado",
       description: `${selectedUser} agora é ${selectedAccess}.`,
       className: "bg-gradient-to-r from-[#6A0DAD] to-[#FF0066] border-none text-white rounded-md shadow-lg",
       duration: 3000,
@@ -558,6 +549,11 @@ const Settings = () => {
             </div>
           </div>
         )}
+
+        {/* Debug de dados do usuário */}
+        <div className="mt-8">
+          <UserDataDebug />
+        </div>
 
         {/* Toast de confirmação */}
         {showToast && (

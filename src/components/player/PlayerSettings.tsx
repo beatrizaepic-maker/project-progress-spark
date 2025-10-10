@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Upload, User, Save, SettingsIcon as Settings } from 'lucide-react';
+import { User, Upload, Save, Settings } from 'lucide-react';
 import { PlayerProfile } from '@/types/player';
 import { updatePlayerProfile } from '@/services/playerService';
 

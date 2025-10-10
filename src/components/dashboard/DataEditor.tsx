@@ -228,13 +228,7 @@ const DataEditor: React.FC = () => {
     if (editingTask) {
       editTask(editingTask.id, data);
       toast({
-        title: (
-          <div className="flex items-center gap-2">
-            {/* Ícone de sucesso, pode usar lucide-react ou emoji */}
-            <span role="img" aria-label="success">✅</span>
-            Tarefa atualizada
-          </div>
-        ),
+        title: "✅ Tarefa atualizada",
         description: "As informações foram salvas com sucesso.",
         className: "bg-gradient-to-r from-[#6A0DAD] to-[#FF0066] border-none text-white rounded-md shadow-lg",
         duration: 3000,

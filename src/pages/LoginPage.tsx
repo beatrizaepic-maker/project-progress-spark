@@ -1,31 +1,35 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import LivingNebulaShader from '@/components/effects/LivingNebulaShader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { Loader2 } from 'lucide-react';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { toast } = useToast();
+  const [rememberMe, setRememberMe] = useState(false);
+  const { login, isAuthenticated, isLoading } = useAuth();
+  const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  // Redireciona se já estiver autenticado
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulação de login - apenas para fins de demonstração
-    if (email && password) {
-      toast({
-        title: "Login realizado!",
-        description: "Você está sendo redirecionado para o dashboard.",
-      });
-    } else {
-      toast({
-        title: "Erro no login",
-        description: "Por favor, verifique seu e-mail e senha.",
-        variant: "destructive",
-      });
+    
+    const response = await login(email, password);
+    
+    if (response.success) {
+      // Redirecionamento será feito pelo useEffect acima
+      navigate('/dashboard');
     }
   };
 
@@ -41,7 +45,7 @@ const LoginPage: React.FC = () => {
       
       {/* Card de login */}
       <div className="relative z-10 w-full max-w-md px-4">
-        <Card className="w-full border-0 bg-card/90 backdrop-blur-lg shadow-2xl border border-border/50">
+        <Card className="w-full bg-card/90 backdrop-blur-lg shadow-2xl border border-border/50">
           <CardHeader className="space-y-3 text-center">
             <div className="flex justify-center">
               <div className="p-3 bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/20 rounded-lg">
@@ -58,6 +62,16 @@ const LoginPage: React.FC = () => {
             <CardDescription className="text-muted-foreground">
               Faça login para acessar sua conta
             </CardDescription>
+            
+            {/* Credenciais de teste */}
+            <div className="text-xs bg-muted/50 p-3 rounded-md border border-border/30">
+              <p className="font-medium text-muted-foreground mb-2">Credenciais de teste:</p>
+              <div className="space-y-1">
+                <p><span className="font-mono">admin@epic.com</span> / <span className="font-mono">123456</span></p>
+                <p><span className="font-mono">user@epic.com</span> / <span className="font-mono">123456</span></p>
+                <p><span className="font-mono">gabriel@epic.com</span> / <span className="font-mono">123456</span></p>
+              </div>
+            </div>
           </CardHeader>
           
           <form onSubmit={handleLogin}>
@@ -93,6 +107,8 @@ const LoginPage: React.FC = () => {
                   <input
                     id="remember"
                     type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
                     className="h-4 w-4 border-border rounded focus:ring-primary"
                   />
                   <Label htmlFor="remember" className="text-sm text-muted-foreground">
@@ -112,9 +128,17 @@ const LoginPage: React.FC = () => {
             <CardFooter className="flex flex-col space-y-3">
               <Button 
                 type="submit" 
-                className="w-full bg-gradient-to-r from-[#FF0066] to-[#C8008F] text-white font-semibold px-4 py-6 rounded-none transition-colors shadow-lg hover:from-[#FF0066]/80 hover:to-[#C8008F]/80 hover:shadow-xl transform hover:scale-105 border-0"
+                disabled={isLoading}
+                className="w-full bg-gradient-to-r from-[#FF0066] to-[#C8008F] text-white font-semibold px-4 py-6 rounded-none transition-colors shadow-lg hover:from-[#FF0066]/80 hover:to-[#C8008F]/80 hover:shadow-xl transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
               >
-                Entrar
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Entrando...
+                  </>
+                ) : (
+                  'Entrar'
+                )}
               </Button>
               
               <div className="text-center text-sm text-muted-foreground">

@@ -3,6 +3,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import Navigation from "./components/Navigation";
 import {
   CustomSidebar,
@@ -70,19 +72,47 @@ const sidebarLinks = [
 
 const LogoSection = () => {
   const { open } = useCustomSidebar();
+  const { user } = useAuth();
+
+  // Função para obter o nome de exibição com limite de caracteres
+  const getDisplayName = (name?: string, firstName?: string): string => {
+    // Prioriza o firstName se definido, senão usa o primeiro nome do name completo
+    let displayName = '';
+    
+    if (firstName && firstName.trim()) {
+      displayName = firstName;
+    } else if (name && name.trim()) {
+      displayName = name.split(' ')[0];
+    } else {
+      displayName = 'Usuário';
+    }
+    
+    // Aplica limite de caracteres
+    return displayName.length > 12 ? displayName.substring(0, 12) + '...' : displayName;
+  };
 
   return (
     <div className={`flex items-center gap-2 px-2 py-4 mt-20 border-b border-border ${open ? 'justify-start' : 'justify-center'}`}>
-      <div className="p-2 bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/20 flex-shrink-0">
-        <img
-          src="/LOGOEPIC.png"
-          alt="EPIC Logo"
-          className="h-6 w-6 object-contain"
-        />
+      <div className="p-2 bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/20 flex-shrink-0 rounded-full overflow-hidden">
+        {user?.avatar ? (
+          <img
+            src={user.avatar}
+            alt="Avatar do usuário"
+            className="h-6 w-6 object-cover rounded-full"
+            onError={(e) => {
+              // Fallback para avatar padrão se a imagem não carregar
+              e.currentTarget.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDEyYzIuMjEgMCA0LTEuNzkgNC00cy0xLjc5LTQtNC00LTQgMS43OS00IDQgMS43OSA0IDQgNHptMCAyYy0yLjY3IDAtOCAxLjM0LTggNHYyaDE2di0yYzAtMi42Ni01LjMzLTQtOC00eiIgZmlsbD0iY3VycmVudENvbG9yIi8+Cjwvc3ZnPgo=";
+            }}
+          />
+        ) : (
+          <svg className="h-6 w-6 text-foreground" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+          </svg>
+        )}
       </div>
       {open && (
         <div className="font-bold text-lg text-foreground whitespace-nowrap overflow-hidden">
-          Epic Board
+          {getDisplayName(user?.name, user?.firstName)}
         </div>
       )}
     </div>
@@ -92,9 +122,10 @@ const LogoSection = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter
+      <AuthProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter
         future={{
           v7_startTransition: true,
           v7_relativeSplatPath: true
@@ -104,43 +135,47 @@ const App = () => (
           {/* Rota de login sem layout (sem sidebar e header) */}
           <Route path="/login" element={<LoginPage />} />
           
-          {/* Todas as outras rotas com layout principal */}
+          {/* Todas as outras rotas com layout principal - Protegidas */}
           <Route path="/*" element={
-            <div className="min-h-screen bg-background">
-              <CustomSidebar>
-                <CustomSidebarBody className="gap-4">
-                  <LogoSection />
+            <ProtectedRoute>
+              <div className="min-h-screen bg-background">
+                <CustomSidebar>
+                  <CustomSidebarBody className="gap-4">
+                    <LogoSection />
 
-                  {/* Navigation Links */}
-                  <div className="flex-1 px-2">
-                    {sidebarLinks.map((link) => (
-                      <CustomSidebarLink key={link.href} link={link} />
-                    ))}
+                    {/* Navigation Links */}
+                    <div className="flex-1 px-2">
+                      {sidebarLinks.map((link) => (
+                        <CustomSidebarLink key={link.href} link={link} />
+                      ))}
+                    </div>
+                  </CustomSidebarBody>
+                </CustomSidebar>
+
+                <div className="md:ml-[60px] transition-all duration-300">
+                  <Navigation />
+                  <div className="pt-20">
+                    <Routes>
+                      <Route path="/" element={<Dashboard />} />
+                      <Route path="/dashboard" element={<Dashboard />} />
+                      <Route path="/analytics" element={<Analytics />} />
+                      <Route path="/tasks" element={<Tasks />} />
+                      <Route path="/editor" element={<DataEditorPage />} />
+                      <Route path="/ranking" element={<RankingPage />} />
+                      <Route path="/profile/:playerId" element={<PlayerProfilePage />} />
+                      <Route path="/profile" element={<PlayerProfilePage />} />
+                      <Route path="/settings" element={<SettingsPage />} />
+                      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
                   </div>
-                </CustomSidebarBody>
-              </CustomSidebar>
-
-              <div className="md:ml-[60px] transition-all duration-300">
-                <Navigation />
-                <div className="pt-20">
-                  <Routes>
-                    <Route path="/" element={<Dashboard />} />
-                    <Route path="/analytics" element={<Analytics />} />
-                    <Route path="/tasks" element={<Tasks />} />
-                    <Route path="/editor" element={<DataEditorPage />} />
-                    <Route path="/ranking" element={<RankingPage />} />
-                    <Route path="/profile/:playerId" element={<PlayerProfilePage />} />
-                    <Route path="/profile" element={<PlayerProfilePage />} />
-                    <Route path="/settings" element={<SettingsPage />} />
-                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
                 </div>
               </div>
-            </div>
+            </ProtectedRoute>
           } />
         </Routes>
       </BrowserRouter>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
