@@ -2,14 +2,23 @@ Estrutura de Ranking v1.1:
 
 - Bônus de Consistência(Recompensa por manter histórico positivo);
 →Qual a pontuação exata a ser dada ao player? (Quantos XP)
-→
 
 - Missões Metas Curtas:
-→Haverá pontuação através dessas tasks?
+→Haverão pontuações diferentes através dessas missões?
 →→Se sim, de quanto será essa pontuação?
 
 - Quem vai atribuir a conclusão dessas tasks e por consequência aplicar a pontuação?
 →Será a Beatricxe?
 →→Se sim, definir regra de acesso diferenciada para tal.
 
-- 
+
+Preciso de algo como se fosse uma tabela com essas opções para serem configuradas:
+-Entrega com antecedencia;
+-Solucionar um problmea criativo;
+-Ajudar um Épico;
+-Feedbakc recebido com elogio do cliente ou gestores;
+-Cumprir todas as tarefas da semana no prazo;
+-Toda a equipe entrega sem atrasos na semana;
+-Criar uma melhoria de Processo;
+-Manter consistência por um mês sem atrasos;
+-Entrega acima da média;

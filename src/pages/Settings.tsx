@@ -156,6 +156,42 @@ const Settings = () => {
   const [modalJustification, setModalJustification] = useState("");
   const [confirmLoading, setConfirmLoading] = useState(false);
 
+  // Usuários cadastrados (derivados dos responsáveis cadastrados nas tarefas mock)
+  const users = Array.from(new Set(mockTaskData.map(t => t.responsavel))).filter(Boolean) as string[];
+  const [selectedUser, setSelectedUser] = useState<string>("");
+  const [selectedAccess, setSelectedAccess] = useState<'Player' | 'Adm' | 'DEV'>("Player");
+  const [accessLevels, setAccessLevels] = useState<Record<string, 'Player' | 'Adm' | 'DEV'>>({});
+
+  const applyAccessLevel = () => {
+    if (!selectedUser) {
+      toast({
+        title: (
+          <div className="flex items-center gap-2">
+            <span role="img" aria-label="info">ℹ️</span>
+            Selecione um usuário
+          </div>
+        ),
+        description: "Escolha um usuário para alterar o nível de acesso.",
+        className: "bg-gradient-to-r from-[#6A0DAD] to-[#FF0066] border-none text-white rounded-md shadow-lg",
+        duration: 3000,
+      });
+      return;
+    }
+
+    setAccessLevels(prev => ({ ...prev, [selectedUser]: selectedAccess }));
+    toast({
+      title: (
+        <div className="flex items-center gap-2">
+          <span role="img" aria-label="success">✅</span>
+          Nível de acesso atualizado
+        </div>
+      ),
+      description: `${selectedUser} agora é ${selectedAccess}.`,
+      className: "bg-gradient-to-r from-[#6A0DAD] to-[#FF0066] border-none text-white rounded-md shadow-lg",
+      duration: 3000,
+    });
+  };
+
   const handleSave = () => {
     // Aqui iria a lógica para salvar as configurações
     setShowToast(true);
@@ -311,6 +347,50 @@ const Settings = () => {
 
               {/* Grid de dois em dois para os demais cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
+                {/* Nível de Acesso de Usuários */}
+                <SettingsCard title="Nível de Acesso de Usuários" icon={SettingsIcon}>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <SelectInput
+                      label="Usuário"
+                      id="accessUser"
+                      value={selectedUser}
+                      onChange={(e) => setSelectedUser(e.target.value)}
+                      options={[{ value: "", label: "Selecione..." }, ...users.map(u => ({ value: u, label: u }))]}
+                    />
+                    <SelectInput
+                      label="Nível de acesso"
+                      id="accessLevel"
+                      value={selectedAccess}
+                      onChange={(e) => setSelectedAccess(e.target.value as 'Player' | 'Adm' | 'DEV')}
+                      options={[
+                        { value: 'Player', label: 'Player' },
+                        { value: 'Adm', label: 'Adm' },
+                        { value: 'DEV', label: 'DEV' },
+                      ]}
+                    />
+                    <div className="flex items-end">
+                      <Button
+                        onClick={applyAccessLevel}
+                        className="w-full bg-gradient-to-r from-[#FF0066] to-[#C8008F] text-white font-semibold px-4 py-2 rounded-none transition-colors shadow-lg hover:from-[#FF0066]/80 hover:to-[#C8008F]/80 hover:shadow-xl transform hover:scale-105"
+                      >
+                        APLICAR
+                      </Button>
+                    </div>
+                  </div>
+
+                  {Object.keys(accessLevels).length > 0 && (
+                    <div className="mt-4">
+                      <h4 className="text-sm font-semibold text-white mb-2">Níveis aplicados nesta sessão</h4>
+                      <ul className="text-sm text-[#C0C0C0] space-y-1 list-disc pl-5">
+                        {Object.entries(accessLevels).map(([user, level]) => (
+                          <li key={user}>
+                            <span className="text-white">{user}</span> → <span className="text-[#FF0066] font-medium">{level}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </SettingsCard>
                 {/* Sistema de Níveis */}
                 <SettingsCard title="Sistema de Níveis" icon={Trophy}>
                   <LabeledInput 

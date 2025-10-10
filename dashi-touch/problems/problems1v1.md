@@ -1,493 +1,178 @@
-[{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/components/dashboard/DataEditor.tsx",
-	"owner": "typescript",
-	"code": "1131",
-	"severity": 8,
-	"message": "Property or signature expected.",
-	"source": "ts",
-	"startLineNumber": 31,
-	"startColumn": 1,
-	"endLineNumber": 31,
-	"endColumn": 9,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/components/dashboard/DataEditor.tsx",
-	"owner": "typescript",
-	"code": "2304",
-	"severity": 8,
-	"message": "Cannot find name 'task'.",
-	"source": "ts",
-	"startLineNumber": 68,
-	"startColumn": 3,
-	"endLineNumber": 68,
-	"endColumn": 7,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/components/dashboard/DataEditor.tsx",
-	"owner": "typescript",
-	"code": "1109",
-	"severity": 8,
-	"message": "Expression expected.",
-	"source": "ts",
-	"startLineNumber": 68,
-	"startColumn": 8,
-	"endLineNumber": 68,
-	"endColumn": 9,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/components/dashboard/DataEditor.tsx",
-	"owner": "typescript",
-	"code": "2693",
-	"severity": 8,
-	"message": "'TaskData' only refers to a type, but is being used as a value here.",
-	"source": "ts",
-	"startLineNumber": 68,
-	"startColumn": 10,
-	"endLineNumber": 68,
-	"endColumn": 18,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/components/dashboard/DataEditor.tsx",
-	"owner": "typescript",
-	"code": "1109",
-	"severity": 8,
-	"message": "Expression expected.",
-	"source": "ts",
-	"startLineNumber": 69,
-	"startColumn": 41,
-	"endLineNumber": 69,
-	"endColumn": 42,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/components/dashboard/DataEditor.tsx",
-	"owner": "typescript",
-	"code": "1109",
-	"severity": 8,
-	"message": "Expression expected.",
-	"source": "ts",
-	"startLineNumber": 70,
-	"startColumn": 23,
-	"endLineNumber": 70,
-	"endColumn": 24,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/components/dashboard/DataEditor.tsx",
-	"owner": "typescript",
-	"code": "1128",
-	"severity": 8,
-	"message": "Declaration or statement expected.",
-	"source": "ts",
-	"startLineNumber": 71,
-	"startColumn": 1,
-	"endLineNumber": 71,
-	"endColumn": 2,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/components/dashboard/DataEditor.tsx",
-	"owner": "typescript",
-	"code": "1109",
-	"severity": 8,
-	"message": "Expression expected.",
-	"source": "ts",
-	"startLineNumber": 71,
-	"startColumn": 2,
-	"endLineNumber": 71,
-	"endColumn": 3,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/components/dashboard/DataEditor.tsx",
-	"owner": "typescript",
-	"code": "1109",
-	"severity": 8,
-	"message": "Expression expected.",
-	"source": "ts",
-	"startLineNumber": 71,
-	"startColumn": 4,
-	"endLineNumber": 71,
-	"endColumn": 5,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/components/dashboard/DataEditor.tsx",
-	"owner": "typescript",
-	"code": "2322",
-	"severity": 8,
-	"message": "Type '{ onSubmit: (data: TaskFormData) => void; onCancel: () => void; }' is not assignable to type 'IntrinsicAttributes'.\n  Property 'onSubmit' does not exist on type 'IntrinsicAttributes'.",
-	"source": "ts",
-	"startLineNumber": 379,
-	"startColumn": 19,
-	"endLineNumber": 379,
-	"endColumn": 27,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/components/dashboard/DataEditor.tsx",
-	"owner": "typescript",
-	"code": "2322",
-	"severity": 8,
-	"message": "Type '{ task: TaskData; onSubmit: (data: TaskFormData) => void; onCancel: () => void; }' is not assignable to type 'IntrinsicAttributes'.\n  Property 'task' does not exist on type 'IntrinsicAttributes'.",
-	"source": "ts",
-	"startLineNumber": 555,
-	"startColumn": 17,
-	"endLineNumber": 555,
-	"endColumn": 21,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/components/dashboard/DataEditor.tsx",
-	"owner": "typescript",
-	"code": "2322",
-	"severity": 8,
-	"message": "Type '{ onSubmit: (data: any) => void; onCancel: () => void; }' is not assignable to type 'IntrinsicAttributes'.\n  Property 'onSubmit' does not exist on type 'IntrinsicAttributes'.",
-	"source": "ts",
-	"startLineNumber": 595,
-	"startColumn": 23,
-	"endLineNumber": 595,
-	"endColumn": 31,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/components/player/PlayerSettings.tsx",
-	"owner": "typescript",
-	"code": "2614",
-	"severity": 8,
-	"message": "Module '\"lucide-react\"' has no exported member 'Upload'. Did you mean to use 'import Upload from \"lucide-react\"' instead?",
-	"source": "ts",
-	"startLineNumber": 17,
-	"startColumn": 10,
-	"endLineNumber": 17,
-	"endColumn": 16,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/components/player/PlayerSettings.tsx",
-	"owner": "typescript",
-	"code": "2614",
-	"severity": 8,
-	"message": "Module '\"lucide-react\"' has no exported member 'User'. Did you mean to use 'import User from \"lucide-react\"' instead?",
-	"source": "ts",
-	"startLineNumber": 17,
-	"startColumn": 18,
-	"endLineNumber": 17,
-	"endColumn": 22,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/components/player/PlayerSettings.tsx",
-	"owner": "typescript",
-	"code": "2614",
-	"severity": 8,
-	"message": "Module '\"lucide-react\"' has no exported member 'Save'. Did you mean to use 'import Save from \"lucide-react\"' instead?",
-	"source": "ts",
-	"startLineNumber": 17,
-	"startColumn": 24,
-	"endLineNumber": 17,
-	"endColumn": 28,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/components/player/PlayerSettings.tsx",
-	"owner": "typescript",
-	"code": "2614",
-	"severity": 8,
-	"message": "Module '\"lucide-react\"' has no exported member 'Settings'. Did you mean to use 'import Settings from \"lucide-react\"' instead?",
-	"source": "ts",
-	"startLineNumber": 17,
-	"startColumn": 30,
-	"endLineNumber": 17,
-	"endColumn": 38,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/index.css",
-	"owner": "_generated_diagnostic_collection_name_#4",
-	"code": "unknownAtRules",
-	"severity": 4,
-	"message": "Unknown at rule @tailwind",
-	"source": "css",
-	"startLineNumber": 1,
-	"startColumn": 1,
-	"endLineNumber": 1,
-	"endColumn": 10,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/index.css",
-	"owner": "_generated_diagnostic_collection_name_#4",
-	"code": "unknownAtRules",
-	"severity": 4,
-	"message": "Unknown at rule @tailwind",
-	"source": "css",
-	"startLineNumber": 2,
-	"startColumn": 1,
-	"endLineNumber": 2,
-	"endColumn": 10,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/index.css",
-	"owner": "_generated_diagnostic_collection_name_#4",
-	"code": "unknownAtRules",
-	"severity": 4,
-	"message": "Unknown at rule @tailwind",
-	"source": "css",
-	"startLineNumber": 3,
-	"startColumn": 1,
-	"endLineNumber": 3,
-	"endColumn": 10,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/index.css",
-	"owner": "_generated_diagnostic_collection_name_#4",
-	"code": "unknownAtRules",
-	"severity": 4,
-	"message": "Unknown at rule @apply",
-	"source": "css",
-	"startLineNumber": 184,
-	"startColumn": 5,
-	"endLineNumber": 184,
-	"endColumn": 11,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/index.css",
-	"owner": "_generated_diagnostic_collection_name_#4",
-	"code": "unknownAtRules",
-	"severity": 4,
-	"message": "Unknown at rule @apply",
-	"source": "css",
-	"startLineNumber": 188,
-	"startColumn": 5,
-	"endLineNumber": 188,
-	"endColumn": 11,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/index.css",
-	"owner": "_generated_diagnostic_collection_name_#4",
-	"code": "unknownAtRules",
-	"severity": 4,
-	"message": "Unknown at rule @apply",
-	"source": "css",
-	"startLineNumber": 193,
-	"startColumn": 5,
-	"endLineNumber": 193,
-	"endColumn": 11,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/index.css",
-	"owner": "_generated_diagnostic_collection_name_#4",
-	"code": "unknownAtRules",
-	"severity": 4,
-	"message": "Unknown at rule @apply",
-	"source": "css",
-	"startLineNumber": 198,
-	"startColumn": 5,
-	"endLineNumber": 198,
-	"endColumn": 11,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/index.css",
-	"owner": "_generated_diagnostic_collection_name_#4",
-	"code": "unknownAtRules",
-	"severity": 4,
-	"message": "Unknown at rule @apply",
-	"source": "css",
-	"startLineNumber": 202,
-	"startColumn": 5,
-	"endLineNumber": 202,
-	"endColumn": 11,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/index.css",
-	"owner": "_generated_diagnostic_collection_name_#4",
-	"code": "unknownAtRules",
-	"severity": 4,
-	"message": "Unknown at rule @apply",
-	"source": "css",
-	"startLineNumber": 207,
-	"startColumn": 5,
-	"endLineNumber": 207,
-	"endColumn": 11,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/index.css",
-	"owner": "_generated_diagnostic_collection_name_#4",
-	"code": "unknownAtRules",
-	"severity": 4,
-	"message": "Unknown at rule @apply",
-	"source": "css",
-	"startLineNumber": 211,
-	"startColumn": 5,
-	"endLineNumber": 211,
-	"endColumn": 11,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/index.css",
-	"owner": "_generated_diagnostic_collection_name_#4",
-	"code": "unknownAtRules",
-	"severity": 4,
-	"message": "Unknown at rule @apply",
-	"source": "css",
-	"startLineNumber": 215,
-	"startColumn": 5,
-	"endLineNumber": 215,
-	"endColumn": 11,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/index.css",
-	"owner": "_generated_diagnostic_collection_name_#4",
-	"code": "unknownAtRules",
-	"severity": 4,
-	"message": "Unknown at rule @apply",
-	"source": "css",
-	"startLineNumber": 219,
-	"startColumn": 5,
-	"endLineNumber": 219,
-	"endColumn": 11,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/index.css",
-	"owner": "_generated_diagnostic_collection_name_#4",
-	"code": "unknownAtRules",
-	"severity": 4,
-	"message": "Unknown at rule @apply",
-	"source": "css",
-	"startLineNumber": 223,
-	"startColumn": 5,
-	"endLineNumber": 223,
-	"endColumn": 11,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/index.css",
-	"owner": "_generated_diagnostic_collection_name_#4",
-	"code": "unknownAtRules",
-	"severity": 4,
-	"message": "Unknown at rule @apply",
-	"source": "css",
-	"startLineNumber": 227,
-	"startColumn": 5,
-	"endLineNumber": 227,
-	"endColumn": 11,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/index.css",
-	"owner": "_generated_diagnostic_collection_name_#4",
-	"code": "unknownAtRules",
-	"severity": 4,
-	"message": "Unknown at rule @apply",
-	"source": "css",
-	"startLineNumber": 235,
-	"startColumn": 5,
-	"endLineNumber": 235,
-	"endColumn": 11,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/index.css",
-	"owner": "_generated_diagnostic_collection_name_#4",
-	"code": "unknownAtRules",
-	"severity": 4,
-	"message": "Unknown at rule @apply",
-	"source": "css",
-	"startLineNumber": 239,
-	"startColumn": 5,
-	"endLineNumber": 239,
-	"endColumn": 11,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/index.css",
-	"owner": "_generated_diagnostic_collection_name_#4",
-	"code": "unknownAtRules",
-	"severity": 4,
-	"message": "Unknown at rule @apply",
-	"source": "css",
-	"startLineNumber": 243,
-	"startColumn": 5,
-	"endLineNumber": 243,
-	"endColumn": 11,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/index.css",
-	"owner": "_generated_diagnostic_collection_name_#4",
-	"code": "unknownAtRules",
-	"severity": 4,
-	"message": "Unknown at rule @apply",
-	"source": "css",
-	"startLineNumber": 313,
-	"startColumn": 5,
-	"endLineNumber": 313,
-	"endColumn": 11,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/index.css",
-	"owner": "_generated_diagnostic_collection_name_#4",
-	"code": "unknownAtRules",
-	"severity": 4,
-	"message": "Unknown at rule @apply",
-	"source": "css",
-	"startLineNumber": 317,
-	"startColumn": 5,
-	"endLineNumber": 317,
-	"endColumn": 11,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/index.css",
-	"owner": "_generated_diagnostic_collection_name_#4",
-	"code": "unknownAtRules",
-	"severity": 4,
-	"message": "Unknown at rule @apply",
-	"source": "css",
-	"startLineNumber": 322,
-	"startColumn": 5,
-	"endLineNumber": 322,
-	"endColumn": 11,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/index.css",
-	"owner": "_generated_diagnostic_collection_name_#4",
-	"code": "unknownAtRules",
-	"severity": 4,
-	"message": "Unknown at rule @apply",
-	"source": "css",
-	"startLineNumber": 326,
-	"startColumn": 5,
-	"endLineNumber": 326,
-	"endColumn": 11,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/index.css",
-	"owner": "_generated_diagnostic_collection_name_#4",
-	"code": "unknownAtRules",
-	"severity": 4,
-	"message": "Unknown at rule @apply",
-	"source": "css",
-	"startLineNumber": 330,
-	"startColumn": 5,
-	"endLineNumber": 330,
-	"endColumn": 11,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/index.css",
-	"owner": "_generated_diagnostic_collection_name_#4",
-	"code": "unknownAtRules",
-	"severity": 4,
-	"message": "Unknown at rule @apply",
-	"source": "css",
-	"startLineNumber": 334,
-	"startColumn": 5,
-	"endLineNumber": 334,
-	"endColumn": 11,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/index.css",
-	"owner": "_generated_diagnostic_collection_name_#4",
-	"code": "unknownAtRules",
-	"severity": 4,
-	"message": "Unknown at rule @apply",
-	"source": "css",
-	"startLineNumber": 338,
-	"startColumn": 5,
-	"endLineNumber": 338,
-	"endColumn": 11,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/User/Documents/Gabriel - EPIC/Bea-System/project-progress-spark/src/index.css",
-	"owner": "_generated_diagnostic_collection_name_#4",
-	"code": "unknownAtRules",
-	"severity": 4,
-	"message": "Unknown at rule @apply",
-	"source": "css",
-	"startLineNumber": 342,
-	"startColumn": 5,
-	"endLineNumber": 342,
-	"endColumn": 11,
-	"origin": "extHost1"
-}]
+# Problemas 1v1 - Competição de Programação
+
+## Visão Geral
+Este documento contém uma coleção de problemas de programação para competições 1v1 no sistema Dashi-Touch. Os problemas são organizados por dificuldade e categoria, com descrições completas, exemplos e critérios de avaliação.
+
+## Estrutura dos Problemas
+Cada problema seguirá o seguinte formato:
+- Nome do problema
+- Descrição
+- Entrada
+- Saída
+- Exemplos
+- Restrições
+- Dificuldade
+- Categoria
+
+---
+
+## Problema 1: Soma Simples
+**Dificuldade:** Fácil  
+**Categoria:** Implementação
+
+### Descrição
+Dado dois números inteiros A e B, calcule e retorne a soma A + B.
+
+### Entrada
+A entrada contém dois inteiros separados por espaço: A e B (-1000 ≤ A, B ≤ 1000)
+
+### Saída
+Imprima um único número inteiro representando a soma de A e B.
+
+### Exemplo
+**Entrada:** `3 5`  
+**Saída:** `8`
+
+### Restrições
+-1000 ≤ A, B ≤ 1000
+
+---
+
+## Problema 2: Sequência de Fibonacci
+**Dificuldade:** Médio  
+**Categoria:** Matemática, Recursão
+
+### Descrição
+Dado um número inteiro N, calcule o N-ésimo número da sequência de Fibonacci. A sequência é definida como: F(0) = 0, F(1) = 1, F(n) = F(n-1) + F(n-2).
+
+### Entrada
+Um único inteiro N (0 ≤ N ≤ 45)
+
+### Saída
+O N-ésimo número da sequência de Fibonacci.
+
+### Exemplo
+**Entrada:** `6`  
+**Saída:** `8`
+
+### Restrições
+0 ≤ N ≤ 45
+
+---
+
+## Problema 3: Árvore de Busca Binária
+**Dificuldade:** Médio  
+**Categoria:** Estrutura de Dados
+
+### Descrição
+Dado uma sequência de N números inteiros, insira-os em uma árvore de busca binária (BST) na ordem dada. Em seguida, realize uma travessia em ordem e imprima os valores.
+
+### Entrada
+A primeira linha contém um inteiro N (1 ≤ N ≤ 1000), o número de elementos. A segunda linha contém N inteiros separados por espaço.
+
+### Saída
+Imprima os valores em ordem (em-ordem), separados por espaços.
+
+### Exemplo
+**Entrada:**
+```
+5
+4 2 5 1 3
+```
+
+**Saída:**
+```
+1 2 3 4 5
+```
+
+### Restrições
+- 1 ≤ N ≤ 1000
+- Elementos são inteiros entre -10000 e 10000
+
+---
+
+## Problema 4: Grafo Conectado
+**Dificuldade:** Difícil  
+**Categoria:** Grafos
+
+### Descrição
+Dado um grafo não-direcionado com N vértices e M arestas, determine se o grafo é conectado (existe um caminho entre qualquer par de vértices).
+
+### Entrada
+A primeira linha contém dois inteiros N e M (1 ≤ N ≤ 1000, 0 ≤ M ≤ N*(N-1)/2). As próximas M linhas contêm duas inteiros u e v, indicando uma aresta entre os vértices u e v.
+
+### Saída
+Imprima "SIM" se o grafo for conectado, "NAO" caso contrário.
+
+### Exemplo
+**Entrada:**
+```
+4 3
+1 2
+2 3
+3 4
+```
+
+**Saída:**
+```
+SIM
+```
+
+### Restrições
+- 1 ≤ N ≤ 1000
+- 0 ≤ M ≤ N*(N-1)/2
+- Não há arestas repetidas
+- Não há auto-laços
+
+---
+
+## Problema 5: Subsequência Crescente Mais Longa
+**Dificuldade:** Difícil  
+**Categoria:** Programação Dinâmica
+
+### Descrição
+Dado uma sequência de N números inteiros, encontre o comprimento da mais longa subsequência crescente (LIS - Longest Increasing Subsequence).
+
+### Entrada
+A primeira linha contém um inteiro N (1 ≤ N ≤ 1000). A segunda linha contém N inteiros separados por espaço.
+
+### Saída
+Imprima um único inteiro representando o comprimento da LIS.
+
+### Exemplo
+**Entrada:**
+```
+8
+10 9 2 5 3 7 101 18
+```
+
+**Saída:**
+```
+4
+```
+
+Explicação: A LIS é [2, 3, 7, 18] ou [2, 3, 7, 101].
+
+### Restrições
+- 1 ≤ N ≤ 1000
+- Elementos são inteiros entre -10000 e 10000
+
+---
+
+## Configurações da Competição 1v1
+
+### Duração
+- Cada competição dura 90 minutos
+- Os competidores recebem todos os problemas no início
+- Submissões são permitidas até o final do tempo
+
+### Sistema de Pontuação
+- Cada problema resolvido corretamente vale 1 ponto
+- Em caso de empate, o competidor que terminou primeiro vence
+- Critério de desempate secundário: penalidade por submissões incorretas
+
+### Regras
+- Cada competidor trabalha individualmente
+- É permitido consultar a documentação da linguagem de programação
+- Códigos de terceiros não são permitidos
+- Qualquer tentativa de comunicação com outros competidores resulta em desqualificação
