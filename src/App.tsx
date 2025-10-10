@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { getUserDisplayName } from "@/utils/userSync";
 import Navigation from "./components/Navigation";
 import {
   CustomSidebar,
@@ -75,18 +76,8 @@ const LogoSection = () => {
   const { user } = useAuth();
 
   // Função para obter o nome de exibição com limite de caracteres
-  const getDisplayName = (name?: string, firstName?: string): string => {
-    // Prioriza o firstName se definido, senão usa o primeiro nome do name completo
-    let displayName = '';
-    
-    if (firstName && firstName.trim()) {
-      displayName = firstName;
-    } else if (name && name.trim()) {
-      displayName = name.split(' ')[0];
-    } else {
-      displayName = 'Usuário';
-    }
-    
+  const getDisplayName = (user: any): string => {
+    const displayName = getUserDisplayName(user);
     // Aplica limite de caracteres
     return displayName.length > 12 ? displayName.substring(0, 12) + '...' : displayName;
   };
@@ -112,7 +103,7 @@ const LogoSection = () => {
       </div>
       {open && (
         <div className="font-bold text-lg text-foreground whitespace-nowrap overflow-hidden">
-          {getDisplayName(user?.name, user?.firstName)}
+          {getDisplayName(user)}
         </div>
       )}
     </div>

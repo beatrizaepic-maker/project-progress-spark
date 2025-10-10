@@ -69,8 +69,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (response.success && response.user) {
         setUser(response.user);
         toast({
-          title: "Login realizado com sucesso!",
+          title: (
+            <div className="flex items-center gap-2">
+              {/* Ícone de sucesso padrão EPIC */}
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2l4 -4" /></svg>
+              Login realizado com sucesso!
+            </div>
+          ),
           description: `Bem-vindo, ${response.user.name}!`,
+          className:
+            "bg-gradient-to-r from-[#6A0DAD] to-[#FF0066] border-none text-white rounded-md shadow-lg",
+          duration: 3000,
         });
       } else {
         toast({
@@ -161,8 +170,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (response.success && response.user) {
         setUser(response.user);
         toast({
-          title: "Perfil atualizado",
+          title: (
+            <div className="flex items-center gap-2">
+              {/* Ícone de sucesso padrão EPIC */}
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2l4 -4" /></svg>
+              Perfil atualizado
+            </div>
+          ),
           description: "Suas informações foram atualizadas com sucesso.",
+          className:
+            "bg-gradient-to-r from-[#6A0DAD] to-[#FF0066] border-none text-white rounded-md shadow-lg",
+          duration: 3000,
         });
       } else {
         toast({

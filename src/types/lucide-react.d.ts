@@ -27,6 +27,7 @@ declare module 'lucide-react' {
   export const Settings: LucideIcon;
   export const Upload: LucideIcon;
   export const Save: LucideIcon;
+  export const TestTube: LucideIcon;
   
   // Exportação padrão para todos os ícones
   const lucideReact: {

@@ -15,6 +15,7 @@ import SettingsIcon from "lucide-react/dist/esm/icons/settings";
 import Info from "lucide-react/dist/esm/icons/info";
 import X from "lucide-react/dist/esm/icons/x";
 import UserDataDebug from "@/components/debug/UserDataDebug";
+import UserSyncTester from "@/components/debug/UserSyncTester";
 
 // Componente para efeito de partículas no botão
 type ParticleButtonProps = ButtonProps & {
@@ -549,6 +550,11 @@ const Settings = () => {
             </div>
           </div>
         )}
+
+        {/* Testador de sincronização */}
+        <div className="mt-8">
+          <UserSyncTester />
+        </div>
 
         {/* Debug de dados do usuário */}
         <div className="mt-8">

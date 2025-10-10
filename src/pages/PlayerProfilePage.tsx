@@ -12,16 +12,18 @@ import {
 } from '@/components/ui/dialog';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { getUserAsProfile, validateUserSync, syncUserData } from '@/utils/userSync';
 import PlayerProfileView from '@/components/player/PlayerProfileView';
 import PlayerSettings from '@/components/player/PlayerSettings';
 import NotificationsModal from '@/components/player/NotificationsModal';
 import { PlayerStats } from '@/types/player';
 import { calculatePlayerStats } from '@/services/playerService';
+// (import duplicado removido)
 
 const PlayerProfilePage: React.FC = () => {
   const { playerId } = useParams<{ playerId: string }>();
   const { state, initPlayer, updatePlayer, getPlayerStats } = usePlayer();
-  const { user } = useAuth();
+  const { user, updateProfile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   
@@ -67,14 +69,26 @@ const PlayerProfilePage: React.FC = () => {
   useEffect(() => {
     // Sincroniza os dados do player com o usuário autenticado
     if (!state.profile && playerId === 'current' && user) {
-      // Usa os dados do usuário autenticado
-      const playerName = user.name || 'Usuário';
-      const playerAvatar = user.avatar || '/avatars/user1.png';
-      const playerRole = user.position || 'Membro da Equipe';
-      
-      initPlayer(playerName, playerAvatar, playerRole);
+      const profileData = getUserAsProfile(user);
+      initPlayer(profileData.name, profileData.avatar, profileData.role);
     }
   }, [playerId, state.profile, initPlayer, user]);
+
+  // Sincronização contínua: atualiza profile sempre que user mudar
+  useEffect(() => {
+    if (state.profile && user && playerId === 'current') {
+      // Verifica se os dados estão sincronizados
+      if (!validateUserSync(user, state.profile)) {
+        // Força sincronização com dados mais recentes
+        syncUserData(user, (syncedData) => {
+          updatePlayer({
+            ...state.profile,
+            ...syncedData
+          });
+        });
+      }
+    }
+  }, [user, state.profile, updatePlayer, playerId]);
 
   // Se o player não estiver carregado, mostrar mensagem de carregamento
   if (!state.profile) {
@@ -210,8 +224,28 @@ const PlayerProfilePage: React.FC = () => {
           <PlayerSettings 
             profile={state.profile} 
             onSave={(updatedProfile) => {
-              updatePlayer(updatedProfile);
-              setIsEditing(false);
+              // 1) Atualiza AuthContext (persistência global em localStorage)
+              const fullName = (updatedProfile.name || '').trim() || 'Usuário';
+              const firstName = fullName.split(' ')[0] || fullName;
+              const lastName = fullName.split(' ').slice(1).join(' ');
+
+              // Chama updateProfile do Auth para propagar para todo o app
+              updateProfile({
+                name: fullName,
+                firstName,
+                lastName,
+                position: updatedProfile.role || 'Membro da Equipe',
+                avatar: updatedProfile.avatar
+              }).then(() => {
+                // 2) Sincroniza PlayerContext para refletir no card de perfil já aberto
+                updatePlayer({
+                  ...updatedProfile,
+                  name: fullName,
+                  avatar: updatedProfile.avatar,
+                  role: updatedProfile.role || 'Membro da Equipe'
+                });
+                setIsEditing(false);
+              });
             }} 
           />
         </DialogContent>

@@ -27,6 +27,7 @@ import {
   processWeeklyMissions,
   ActiveMission 
 } from '@/services/missionService';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Tipos para o sistema de gameficação
 interface UserRanking {
@@ -72,6 +73,7 @@ interface PerformanceDetails {
 
 // Componente principal da página de ranking
 const RankingPage: React.FC = () => {
+  const { user } = useAuth();
   const [allUsers, setAllUsers] = useState<UserRanking[]>([]);
   const [selectedUser, setSelectedUser] = useState<PerformanceDetails | null>(null);
   const [activeTab, setActiveTab] = useState<'weekly' | 'monthly'>('weekly');
@@ -117,8 +119,8 @@ const RankingPage: React.FC = () => {
       const mockUsers: UserRanking[] = [
         {
           id: '1',
-          name: 'João Silva',
-          avatar: '/avatars/user1.png',
+          name: user?.name || 'João Silva',
+          avatar: user?.avatar || '/avatars/user1.png',
           xp: 2450,
           level: 5,
           position: 1,
@@ -197,7 +199,7 @@ const RankingPage: React.FC = () => {
       setLastUpdated(new Date().toLocaleTimeString('pt-BR'));
       setIsLoading(false);
     }, 800);
-  }, [recentTasks]);
+  }, [recentTasks, user]);
 
   // Carrega os dados iniciais
   useEffect(() => {
