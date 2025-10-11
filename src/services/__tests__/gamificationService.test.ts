@@ -1,4 +1,5 @@
 // src/services/__tests__/gamificationService.test.ts
+import { describe, it, expect } from 'vitest';
 
 import { 
   calculateXpForTask, 
@@ -170,7 +171,7 @@ describe('Gamification Service', () => {
           id: 'user1',
           name: 'User 1',
           avatar: 'avatar1',
-          xp: 100,
+          xp: 0,
           level: 2,
           weeklyXp: 0,
           monthlyXp: 0,
@@ -194,17 +195,18 @@ describe('Gamification Service', () => {
           title: 'Task 2',
           status: 'completed',
           completedDate: new Date().toISOString(),
-          dueDate: new Date().toISOString(),
+          dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
           assignedTo: 'user1',
           completedEarly: true
         }
       ];
 
       const updatedUsers = updateRanking(users, tasks);
-      
-      // Should have gained 10 (on-time) + 15 (early) = 25 XP
-      expect(updatedUsers[0].xp).toBe(125); // 100 + 25
-      expect(updatedUsers[0].level).toBe(2); // Still level 2
+
+      // Percentuais: on_time (90) e early (100) => média = 95 => XP = 950
+      expect(updatedUsers[0].xp).toBe(950);
+      // Com 950 XP, nível deve ser 4 (>=500 e <1000) segundo regras de teste
+      expect(updatedUsers[0].level).toBe(4);
     });
   });
 });

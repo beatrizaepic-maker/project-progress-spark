@@ -18,6 +18,8 @@ import PlayerSettings from '@/components/player/PlayerSettings';
 import NotificationsModal from '@/components/player/NotificationsModal';
 import { PlayerStats } from '@/types/player';
 import { calculatePlayerStats } from '@/services/playerService';
+import { fetchPlayerProfile } from '@/services/mockApi';
+import { reportUrls, download } from '@/services/reports';
 // (import duplicado removido)
 
 const PlayerProfilePage: React.FC = () => {
@@ -26,6 +28,8 @@ const PlayerProfilePage: React.FC = () => {
   const { user, updateProfile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [prodMetrics, setProdMetrics] = useState<{ averagePercent: number; totalConsidered: number } | null>(null);
+  const [deliveryDist, setDeliveryDist] = useState<{ early: number; on_time: number; late: number; refacao: number } | null>(null);
   
   // Mock notifications - em uma aplicação real, viria de uma API
   const [notifications, setNotifications] = useState([
@@ -89,6 +93,36 @@ const PlayerProfilePage: React.FC = () => {
       }
     }
   }, [user, state.profile, updatePlayer, playerId]);
+
+  // Carregar métricas de produtividade (visíveis apenas no perfil)
+  useEffect(() => {
+    const loadProd = async () => {
+      if (!user?.id) return;
+      // Tenta backend real
+      try {
+        const r = await fetch(`http://localhost:3001/api/profiles/${user.id}`);
+        if (r.ok) {
+          const dto = await r.json();
+          setProdMetrics({
+            averagePercent: dto.productivity?.averagePercent ?? 0,
+            totalConsidered: dto.productivity?.totalConsidered ?? 0,
+          });
+          if (dto.deliveryDistribution) setDeliveryDist(dto.deliveryDistribution);
+          return;
+        }
+      } catch {}
+      // Fallback mock
+      const dto = await fetchPlayerProfile(user.id);
+      if (dto) {
+        setProdMetrics({
+          averagePercent: dto.productivity.averagePercent,
+          totalConsidered: dto.productivity.totalConsidered,
+        });
+        if (dto.deliveryDistribution) setDeliveryDist(dto.deliveryDistribution as any);
+      }
+    };
+    loadProd();
+  }, [user?.id]);
 
   // Se o player não estiver carregado, mostrar mensagem de carregamento
   if (!state.profile) {
@@ -168,6 +202,14 @@ const PlayerProfilePage: React.FC = () => {
         <p className="text-muted-foreground">
           Gerencie suas informações e visualize seu progresso
         </p>
+        <div className="mt-3 flex gap-2">
+          <Button variant="outline" className="rounded-none" onClick={() => download(reportUrls.productivityCsv())}>
+            Exportar Produtividade (CSV)
+          </Button>
+          <Button variant="outline" className="rounded-none" onClick={() => download(reportUrls.incorrectCsv())}>
+            Exportar Submissões Incorretas (CSV)
+          </Button>
+        </div>
         {isOwnProfile && (
           <div className="mt-4">
             <Button 
@@ -190,6 +232,64 @@ const PlayerProfilePage: React.FC = () => {
         onSendMessage={!isOwnProfile ? () => console.log('Enviar mensagem') : undefined}
         onNotifications={isOwnProfile ? () => setIsNotificationsOpen(true) : undefined}
       />
+
+        {/* Produtividade Média (apenas no perfil) */}
+        {prodMetrics && (
+          <div className="bg-[#181834] border border-[#7c3aed] rounded-none shadow-lg shadow-[#6A0DAD]/30 hover:shadow-[#6A0DAD]/50 transition-all duration-300 p-6 mt-6">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-[#7c3aed]">
+                <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="#7c3aed" strokeWidth="2" d="M4 12h16M12 4v16"/></svg>
+              </span>
+              <h2 className="text-xl font-bold text-white">Produtividade Média</h2>
+            </div>
+            <p className="text-muted-foreground">Sua média de produtividade atual com base nas tarefas consideradas.</p>
+            <div className="mt-3 flex items-center gap-6">
+              <div>
+                <div className="text-4xl font-bold text-white">{prodMetrics.averagePercent}%</div>
+                <div className="text-sm text-muted-foreground">Média de produtividade</div>
+              </div>
+              <div>
+                <div className="text-4xl font-bold text-white">{prodMetrics.totalConsidered}</div>
+                <div className="text-sm text-muted-foreground">Tarefas consideradas</div>
+              </div>
+            </div>
+            {prodMetrics.totalConsidered === 0 && (
+              <div className="mt-4 text-sm text-muted-foreground">
+                Sem tarefas consideradas no período. Ao concluir tarefas, sua média e XP serão atualizados.
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Distribuição de entregas */}
+        {deliveryDist && (
+          <div className="bg-[#181834] border border-[#7c3aed] rounded-none shadow-lg shadow-[#6A0DAD]/30 hover:shadow-[#6A0DAD]/50 transition-all duration-300 p-6 mt-6">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-[#7c3aed]">
+                <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="#7c3aed" strokeWidth="2" d="M4 12h16M12 4v16"/></svg>
+              </span>
+              <h2 className="text-xl font-bold text-white">Distribuição de Entregas</h2>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
+              <div className="p-3 bg-[#23234a] border border-[#7c3aed]/30">
+                <div className="text-sm text-muted-foreground">Adiantadas</div>
+                <div className="text-2xl font-bold text-white">{deliveryDist.early}</div>
+              </div>
+              <div className="p-3 bg-[#23234a] border border-[#7c3aed]/30">
+                <div className="text-sm text-muted-foreground">No prazo</div>
+                <div className="text-2xl font-bold text-white">{deliveryDist.on_time}</div>
+              </div>
+              <div className="p-3 bg-[#23234a] border border-[#7c3aed]/30">
+                <div className="text-sm text-muted-foreground">Atrasadas</div>
+                <div className="text-2xl font-bold text-white">{deliveryDist.late}</div>
+              </div>
+              <div className="p-3 bg-[#23234a] border border-[#7c3aed]/30">
+                <div className="text-sm text-muted-foreground">Refação</div>
+                <div className="text-2xl font-bold text-white">{deliveryDist.refacao}</div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Card de Atividade Recente */}
         <div className="bg-[#181834] border border-[#7c3aed] rounded-none shadow-lg shadow-[#6A0DAD]/30 hover:shadow-[#6A0DAD]/50 transition-all duration-300 p-6 mt-8">

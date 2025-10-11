@@ -30,6 +30,7 @@ import RankingPage from "./pages/Ranking";
 import PlayerProfilePage from "./pages/PlayerProfilePage";
 import LoginPage from "./pages/LoginPage";
 import NotFound from "./pages/NotFound";
+import ControlPage from "./pages/Control";
 
 const queryClient = new QueryClient();
 
@@ -156,6 +157,7 @@ const App = () => (
                       <Route path="/profile/:playerId" element={<PlayerProfilePage />} />
                       <Route path="/profile" element={<PlayerProfilePage />} />
                       <Route path="/settings" element={<SettingsPage />} />
+                      <Route path="/controle" element={<ProtectedRoute requireRole="manager"><ControlPage /></ProtectedRoute>} />
                       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                       <Route path="*" element={<NotFound />} />
                     </Routes>

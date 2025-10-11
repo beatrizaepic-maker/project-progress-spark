@@ -13,6 +13,7 @@ import Award from 'lucide-react/dist/esm/icons/award';
 import Activity from 'lucide-react/dist/esm/icons/activity';
 import Target from 'lucide-react/dist/esm/icons/target';
 import RefreshCw from 'lucide-react/dist/esm/icons/refresh-cw';
+import Download from 'lucide-react/dist/esm/icons/download';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
   calculateLevelFromXp,
@@ -28,6 +29,8 @@ import {
   ActiveMission 
 } from '@/services/missionService';
 import { useAuth } from '@/contexts/AuthContext';
+// Preferir endpoints reais; mockApi fica como fallback no dev offline
+import { fetchRanking, seedMockData } from '@/services/mockApi';
 
 // Tipos para o sistema de gameficação
 interface UserRanking {
@@ -113,10 +116,21 @@ const RankingPage: React.FC = () => {
   // Função para atualizar os dados do ranking
   const updateRankingData = useCallback(() => {
     setIsLoading(true);
-    
-    // Simula carregamento de dados atualizados
-    setTimeout(() => {
-      const mockUsers: UserRanking[] = [
+    // Primeiro tenta backend real
+    fetch('http://localhost:3001/api/ranking')
+      .then(r => r.json())
+      .then((dto: any[]) => {
+        if (Array.isArray(dto) && dto.length) {
+          setAllUsers(dto.map(u => ({ ...u, position: 0 })) as unknown as UserRanking[]);
+          setLastUpdated(new Date().toLocaleTimeString('pt-BR'));
+          setIsLoading(false);
+          return;
+        }
+        throw new Error('empty');
+      })
+      .catch(() => {
+        // Simula carregamento de dados atualizados local/mocked
+        const mockUsers: UserRanking[] = [
         {
           id: '1',
           name: user?.name || 'João Silva',
@@ -182,23 +196,23 @@ const RankingPage: React.FC = () => {
           consistencyBonus: 15,
           streak: 3
         }
-      ];
-      
-      // Atualiza o ranking com base nas tarefas recentes
-      const updatedUsers = updateRanking(mockUsers as UserType[], recentTasks);
-      
-      setAllUsers(updatedUsers.map(user => ({
-        ...user,
-        weeklyXp: user.weeklyXp || 0,
-        monthlyXp: user.monthlyXp || 0,
-        missionsCompleted: user.missionsCompleted || 0,
-        consistencyBonus: user.consistencyBonus || 0,
-        streak: user.streak || 0
-      } as UserRanking)));
-      
-      setLastUpdated(new Date().toLocaleTimeString('pt-BR'));
-      setIsLoading(false);
-    }, 800);
+        ];
+        // Semeia mock API e busca via DTO para validar contratos/ordenacao por XP
+        seedMockData(mockUsers as unknown as UserType[], recentTasks);
+        fetchRanking()
+          .then(dto => {
+            setAllUsers(dto.map(u => ({ ...u, position: 0 })) as unknown as UserRanking[]);
+          })
+          .catch(() => {
+            // Fallback local caso mockApi falhe
+            const updatedUsers = updateRanking(mockUsers as UserType[], recentTasks);
+            setAllUsers(updatedUsers as unknown as UserRanking[]);
+          })
+          .finally(() => {
+            setLastUpdated(new Date().toLocaleTimeString('pt-BR'));
+            setIsLoading(false);
+          });
+      });
   }, [recentTasks, user]);
 
   // Carrega os dados iniciais
@@ -206,8 +220,15 @@ const RankingPage: React.FC = () => {
     updateRankingData();
   }, [updateRankingData]);
   
-  // Configura atualização automática a cada 5 minutos se a página estiver ativa
+  // Configura atualização automática e ouve eventos SSE do backend
   useEffect(() => {
+    // SSE
+    let evtSource: EventSource | null = null;
+    try {
+      evtSource = new EventSource('http://localhost:3001/api/events');
+      evtSource.addEventListener('ranking:update', () => updateRankingData());
+    } catch {}
+
     const interval = setInterval(() => {
       // Simula atualização automática apenas se a página estiver visível
       if (!document.hidden) {
@@ -215,7 +236,10 @@ const RankingPage: React.FC = () => {
       }
     }, 5 * 60 * 1000); // 5 minutos
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      try { evtSource?.close(); } catch {}
+    };
   }, [updateRankingData]);
 
   // Calcula o ranking baseado na aba ativa (semanal ou mensal)
@@ -318,6 +342,16 @@ const RankingPage: React.FC = () => {
             </div>
             <Button 
               variant="outline" 
+              size="sm"
+              onClick={() => window.open('http://localhost:3001/api/reports/ranking.csv', '_blank')}
+              disabled={isLoading}
+              className="flex items-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Exportar CSV
+            </Button>
+            <Button 
+              variant="outline" 
               size="sm" 
               onClick={updateRankingData}
               disabled={isLoading}
@@ -411,6 +445,10 @@ const RankingPage: React.FC = () => {
           {isLoading ? (
             <div className="p-8 text-center text-muted-foreground">
               Carregando ranking...
+            </div>
+          ) : rankingData.length === 0 ? (
+            <div className="p-8 text-center text-muted-foreground">
+              Nenhum dado de ranking disponível ainda.
             </div>
           ) : (
             <Table>

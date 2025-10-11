@@ -10,10 +10,11 @@ import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  requireRole?: 'admin' | 'manager';
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { isAuthenticated, isLoading } = useAuth();
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireRole }) => {
+  const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
 
   // Mostra loading enquanto verifica autenticação
@@ -31,6 +32,21 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   // Redireciona para login se não estiver autenticado
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (requireRole) {
+    const role = (user as any)?.role || (user as any)?.position || 'member';
+    const allowed = requireRole === 'admin' ? ['admin'] : ['admin', 'manager'];
+    if (!allowed.includes(String(role).toLowerCase())) {
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center max-w-md">
+            <h2 className="text-xl font-semibold mb-2">Acesso restrito</h2>
+            <p className="text-muted-foreground">Você não tem permissão para acessar esta página.</p>
+          </div>
+        </div>
+      );
+    }
   }
 
   return <>{children}</>;

@@ -1,10 +1,11 @@
 // src/services/gamificationService.ts
+import { getPercentageForClass } from '@/config/gamification';
 
 // Interface para representar uma tarefa
 export interface Task {
   id: string;
   title: string;
-  status: 'completed' | 'overdue' | 'pending'; // Status que afetam o XP
+  status: 'completed' | 'overdue' | 'pending' | 'refacao'; // Adicionado status de Refação
   completedDate?: string; // Data de conclusão
   dueDate: string; // Data de vencimento
   assignedTo: string; // ID do usuário responsável
@@ -102,6 +103,107 @@ export function calculateXpForTask(task: Task): number {
   
   // Não completada
   return XP_RULES.not_completed;
+}
+
+// ------------------- NOVA LÓGICA DE PRODUTIVIDADE (PERCENTUAL → XP) -------------------
+
+/**
+ * Classifica a entrega da tarefa com base nas datas e status.
+ * early = 100%, on_time = 90%, late = 50%, refacao = 40% (quando marcada como refação e reconcluída)
+ */
+export function classifyTaskDelivery(task: Task): 'early' | 'on_time' | 'late' | 'refacao' | 'ignore' {
+  // Tarefas em refação não contam até serem reconcluídas; se não há completedDate, ignorar
+  if (task.status === 'refacao') return 'ignore';
+
+  if (task.status === 'completed') {
+    if (!task.dueDate || !task.completedDate) return 'on_time';
+    const completionDate = new Date(task.completedDate);
+    const dueDate = new Date(task.dueDate);
+    if (completionDate.getTime() < dueDate.getTime()) return 'early';
+    if (completionDate.getTime() === dueDate.getTime()) return 'on_time';
+    return 'late';
+  }
+
+  // Overdue não concluída não entra no denominador
+  return 'ignore';
+}
+
+/**
+ * Retorna o percentual de produtividade por tarefa conforme a classificação.
+ */
+export function calculateProductivityPercentForTask(task: Task): number {
+  const cls = classifyTaskDelivery(task);
+  switch (cls) {
+    case 'early':
+      return getPercentageForClass('early');
+    case 'on_time':
+      return getPercentageForClass('on_time');
+    case 'late':
+      return getPercentageForClass('late');
+    case 'refacao':
+      return getPercentageForClass('refacao');
+    default:
+      return NaN; // Ignorar na média
+  }
+}
+
+/**
+ * Arredonda half-up para inteiro.
+ */
+export function roundHalfUp(value: number): number {
+  return Math.floor(value + 0.5);
+}
+
+/**
+ * Calcula o XP de ranking do usuário a partir da média percentual das tarefas
+ * XP = roundHalfUp((somaPercentuais / totalTarefas) * 10)
+ */
+export function calculateRankingXpFromTasks(tasks: Task[]): number {
+  let sum = 0;
+  let count = 0;
+  for (const t of tasks) {
+    const pct = calculateProductivityPercentForTask(t);
+    if (!Number.isNaN(pct)) {
+      // clamp 0–100
+      const clamped = Math.max(0, Math.min(100, pct));
+      sum += clamped;
+      count += 1;
+    }
+  }
+  if (count === 0) return 0;
+  const average = sum / count;
+  const xp = roundHalfUp(average * 10);
+  return Math.max(0, xp);
+}
+
+/**
+ * Calcula métricas de produtividade do usuário a partir das tarefas.
+ * Retorna total de tarefas consideradas, soma dos percentuais, média (raw) e média arredondada.
+ * Importante: ignora tarefas não concluídas, overdue não concluídas e em refação (até reconclusão).
+ */
+export function calculateUserProductivity(tasks: Task[]): {
+  totalConsidered: number;
+  sumPercent: number;
+  averagePercentRaw: number;
+  averagePercentRounded: number;
+} {
+  let sum = 0;
+  let count = 0;
+  for (const t of tasks) {
+    const pct = calculateProductivityPercentForTask(t);
+    if (!Number.isNaN(pct)) {
+      const clamped = Math.max(0, Math.min(100, pct));
+      sum += clamped;
+      count += 1;
+    }
+  }
+  const average = count > 0 ? sum / count : 0;
+  return {
+    totalConsidered: count,
+    sumPercent: sum,
+    averagePercentRaw: average,
+    averagePercentRounded: roundHalfUp(average)
+  };
 }
 
 /**
@@ -244,37 +346,29 @@ export function updateRanking(users: User[], tasks: Task[]): User[] {
     // Encontra tarefas do usuário
     const userTasks = tasks.filter(task => task.assignedTo === user.id);
     
-    // Calcula XP total baseado nas tarefas
-    let totalXp = user.xp;
-    let weeklyXp = user.weeklyXp || 0;
-    
-    // Verifica tarefas que ainda não foram pontuadas
-    for (const task of userTasks) {
-      // Aqui seria necessário ter um controle de quais tarefas já foram pontuadas
-      // Para esta implementação simplificada, assumimos que todas as tarefas
-      // concluídas devem gerar XP
-      if (task.status === 'completed' || task.status === 'overdue') {
-        const taskXp = calculateXpForTask(task);
-        totalXp += taskXp;
-        
-        // Atualiza XP semanal (lógica simplificada)
-        if (isThisWeek(task.dueDate || task.completedDate)) {
-          weeklyXp += taskXp;
-        }
-      }
-    }
-    
-    // Calcula o novo nível
-    const newLevel = calculateLevelFromXp(totalXp);
+    // Novo cálculo: XP de ranking baseado na média percentual das tarefas concluídas
+    const rankingXp = calculateRankingXpFromTasks(userTasks);
+
+  // XP semanal calculado com base apenas nas tarefas da semana
+    const weeklyTasks = userTasks.filter(t => isThisWeek(t.completedDate || t.dueDate));
+    const weeklyXp = calculateRankingXpFromTasks(weeklyTasks);
+
+  // XP mensal calculado com base nas tarefas do mês corrente
+  const monthlyTasks = userTasks.filter(t => isThisMonth(t.completedDate || t.dueDate));
+  const monthlyXp = calculateRankingXpFromTasks(monthlyTasks);
+
+    // Nível calculado a partir do XP de ranking
+    const newLevel = calculateLevelFromXp(rankingXp);
     
     // Calcula o bônus de consistência
     const consistencyBonus = calculateConsistencyBonus(user.streak);
     
     return {
       ...user,
-      xp: totalXp,
+      xp: rankingXp,
       level: newLevel,
       weeklyXp,
+      monthlyXp,
       consistencyBonus
     };
   });
@@ -285,7 +379,7 @@ export function updateRanking(users: User[], tasks: Task[]): User[] {
  * @param date Data a ser verificada
  * @returns Verdadeiro se a data estiver na semana atual
  */
-function isThisWeek(dateString: string | undefined): boolean {
+export function isThisWeek(dateString: string | undefined): boolean {
   if (!dateString) return false;
   
   const date = new Date(dateString);
@@ -300,4 +394,78 @@ function isThisWeek(dateString: string | undefined): boolean {
   lastDayOfWeek.setDate(firstDayOfWeek.getDate() + 6);
   
   return date >= firstDayOfWeek && date <= lastDayOfWeek;
+}
+
+/**
+ * Verifica se uma data está no mês atual
+ */
+export function isThisMonth(dateString: string | undefined): boolean {
+  if (!dateString) return false;
+  const date = new Date(dateString);
+  const today = new Date();
+  return date.getFullYear() === today.getFullYear() && date.getMonth() === today.getMonth();
+}
+
+// ------------------- HELPERS DE FLUXO: REFAÇÃO -------------------
+
+/**
+ * Move a tarefa para estado de refação. Remove a data de conclusão anterior (se houver)
+ * para que não seja mais considerada no cálculo até reconclusão.
+ * Idempotente: se já está em refação, não altera.
+ */
+export function enterRefacao(tasks: Task[], taskId: string): Task[] {
+  return tasks.map(t => {
+    if (t.id !== taskId) return t;
+    if (t.status === 'refacao') return t; // idempotente
+    return {
+      ...t,
+      status: 'refacao',
+      completedDate: undefined,
+    };
+  });
+}
+
+/**
+ * Reconclui uma tarefa em refação. Define nova data de conclusão e, se permitido,
+ * atualiza o prazo (política controlada pela página /controle).
+ */
+export function reconcludeTask(
+  tasks: Task[],
+  taskId: string,
+  newCompletedDate: string,
+  options?: { allowDueDateRecalc?: boolean; newDueDate?: string }
+): Task[] {
+  return tasks.map(t => {
+    if (t.id !== taskId) return t;
+    const allowDueDateRecalc = !!options?.allowDueDateRecalc;
+    const next: Task = {
+      ...t,
+      status: 'completed',
+      completedDate: newCompletedDate,
+      dueDate: allowDueDateRecalc && options?.newDueDate ? options.newDueDate : t.dueDate,
+    };
+    return next;
+  });
+}
+
+/**
+ * Retorna a distribuição de entregas (para exibição no perfil):
+ * early, on_time, late, refacao (itens em refação não contam no denominador da média, mas
+ * entram aqui apenas para indicador de estado).
+ */
+export function getDeliveryDistribution(tasks: Task[]): {
+  early: number;
+  on_time: number;
+  late: number;
+  refacao: number;
+} {
+  let early = 0, on_time = 0, late = 0, refacao = 0;
+  for (const t of tasks) {
+    if (t.status === 'refacao') { refacao++; continue; }
+    const cls = classifyTaskDelivery(t);
+    if (cls === 'early') early++;
+    else if (cls === 'on_time') on_time++;
+    else if (cls === 'late') late++;
+  }
+  return { early, on_time, late, refacao };
 }
