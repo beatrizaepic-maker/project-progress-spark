@@ -4,17 +4,11 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import Settings from 'lucide-react/dist/esm/icons/settings';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle 
-} from '@/components/ui/dialog';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { getUserAsProfile, validateUserSync, syncUserData } from '@/utils/userSync';
 import PlayerProfileView from '@/components/player/PlayerProfileView';
-import PlayerSettings from '@/components/player/PlayerSettings';
+import ProfileEditModal from '@/components/player/ProfileEditModal';
 import NotificationsModal from '@/components/player/NotificationsModal';
 import { PlayerStats } from '@/types/player';
 import { calculatePlayerStats } from '@/services/playerService';
@@ -391,43 +385,12 @@ const PlayerProfilePage: React.FC = () => {
           )}
         </div>
 
-      {/* Modal de edição de perfil */}
-      <Dialog open={isEditing} onOpenChange={setIsEditing}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              Editar Perfil
-            </DialogTitle>
-          </DialogHeader>
-          <PlayerSettings 
-            profile={state.profile} 
-            onSave={(updatedProfile) => {
-              // 1) Atualiza AuthContext (persistência global em localStorage)
-              const fullName = (updatedProfile.name || '').trim() || 'Usuário';
-              const firstName = fullName.split(' ')[0] || fullName;
-              const lastName = fullName.split(' ').slice(1).join(' ');
-
-              // Chama updateProfile do Auth para propagar para todo o app
-              updateProfile({
-                name: fullName,
-                firstName,
-                lastName,
-                position: updatedProfile.role || 'Membro da Equipe',
-                avatar: updatedProfile.avatar
-              }).then(() => {
-                // 2) Sincroniza PlayerContext para refletir no card de perfil já aberto
-                updatePlayer({
-                  ...updatedProfile,
-                  name: fullName,
-                  avatar: updatedProfile.avatar,
-                  role: updatedProfile.role || 'Membro da Equipe'
-                });
-                setIsEditing(false);
-              });
-            }} 
-          />
-        </DialogContent>
-      </Dialog>
+      {/* Modal de edição de perfil (reutilizável) */}
+      <ProfileEditModal 
+        open={isEditing}
+        onOpenChange={setIsEditing}
+        profile={state.profile}
+      />
 
       {/* Notificações modal */}
       <NotificationsModal

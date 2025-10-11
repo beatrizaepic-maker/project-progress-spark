@@ -1,3 +1,4 @@
+import React from "react";
 import logoEpic from "@/LOGOEPIC.png";
 import LivingNebulaShader from "./effects/LivingNebulaShader";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,18 +12,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "./ui/dialog";
-import UserProfileEdit from "./user/UserProfileEdit";
-import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import ProfileEditModal from "@/components/player/ProfileEditModal";
+import { usePlayer } from "@/contexts/PlayerContext";
+import type { PlayerProfile } from "@/types/player";
 
 const Navigation = () => {
   const { user, logout } = useAuth();
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const { state } = usePlayer();
+  const [openProfileModal, setOpenProfileModal] = React.useState(false);
+  const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();
@@ -61,7 +60,20 @@ const Navigation = () => {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setIsEditingProfile(true)}>
+                <DropdownMenuItem
+                  onSelect={(e) => {
+                    // Radix uses onSelect for keyboard/mouse selection. Prevent default to keep menu open logic consistent
+                    e.preventDefault();
+                  }}
+                  onClick={(e) => {
+                    if (e.shiftKey) {
+                      // Abrir modal reutilizando o mesmo do /profile/current
+                      setOpenProfileModal(true);
+                    } else {
+                      navigate('/profile/current');
+                    }
+                  }}
+                >
                   <Settings className="mr-2 h-4 w-4" />
                   <span>Editar Perfil</span>
                 </DropdownMenuItem>
@@ -75,18 +87,52 @@ const Navigation = () => {
         </div>
       </div>
 
-      {/* Modal de edição de perfil */}
-      <Dialog open={isEditingProfile} onOpenChange={setIsEditingProfile}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              Editar Perfil
-            </DialogTitle>
-          </DialogHeader>
-          <UserProfileEdit onClose={() => setIsEditingProfile(false)} />
-        </DialogContent>
-      </Dialog>
+      {/* Modal de Edição de Perfil (Shift+Click) */}
+      {(() => {
+        const fallbackProfile: PlayerProfile | null = user
+          ? {
+              id: String(user.id),
+              name: user.name || 'Usuário',
+              username: undefined,
+              avatar: user.avatar || '/avatars/user1.png',
+              role: user.position || 'Membro da Equipe',
+              department: undefined,
+              joinedDate: new Date().toISOString(),
+              isActive: true,
+              xp: 0,
+              level: 1,
+              weeklyXp: 0,
+              monthlyXp: 0,
+              streak: 0,
+              bestStreak: 0,
+              missionsCompleted: 0,
+              tasksCompleted: 0,
+              notificationPreferences: {
+                email: true,
+                inApp: true,
+                push: false,
+                weeklySummary: true,
+                missionUpdates: true,
+                taskReminders: true,
+              },
+              privacySettings: {
+                profileVisibility: 'team',
+                xpVisibility: 'team',
+                activityVisibility: 'team',
+                shareWithTeam: true,
+              },
+              theme: 'dark',
+            }
+          : null;
+        const profileToUse = state.profile || fallbackProfile;
+        return profileToUse ? (
+          <ProfileEditModal
+            open={openProfileModal}
+            onOpenChange={setOpenProfileModal}
+            profile={profileToUse}
+          />
+        ) : null;
+      })()}
     </nav>
   );
 };
