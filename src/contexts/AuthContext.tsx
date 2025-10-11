@@ -6,6 +6,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { authService, User, AuthResponse } from '@/services/authService';
 import { useToast } from '@/hooks/use-toast';
+import { addStreakAwardIfNeeded } from '@/config/streak';
 
 interface AuthContextValue {
   user: User | null;
@@ -75,6 +76,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             "bg-gradient-to-r from-[#6A0DAD] to-[#FF0066] border-none text-white rounded-md shadow-lg",
           duration: 3000,
         });
+
+        // Bônus diário de streak (uma vez por dia)
+        try {
+          const res = addStreakAwardIfNeeded(response.user.id);
+          if (res.awarded && res.xp > 0) {
+            toast({
+              title: "🔥 Streak diário!",
+              description: `Você ganhou +${res.xp} XP por seu login de hoje.`,
+              className:
+                "bg-gradient-to-r from-[#6A0DAD] to-[#FF0066] border-none text-white rounded-md shadow-lg",
+              duration: 3000,
+            });
+          }
+        } catch {}
       } else {
         toast({
           title: "Erro no login",

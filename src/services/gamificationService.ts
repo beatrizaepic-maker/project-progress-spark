@@ -1,5 +1,6 @@
 // src/services/gamificationService.ts
 import { getPercentageForClass } from '@/config/gamification';
+import { getUserStreakXpLifetime, getUserStreakXpThisMonth, getUserStreakXpThisWeek, getStreakIncludeIn } from '@/config/streak';
 
 // Interface para representar uma tarefa
 export interface Task {
@@ -343,19 +344,26 @@ export function checkWeeklyMissionCompletion(tasks: Task[], mission: Mission): b
  */
 export function updateRanking(users: User[], tasks: Task[]): User[] {
   return users.map(user => {
+    const streakInclude = getStreakIncludeIn();
     // Encontra tarefas do usuário
     const userTasks = tasks.filter(task => task.assignedTo === user.id);
     
     // Novo cálculo: XP de ranking baseado na média percentual das tarefas concluídas
-    const rankingXp = calculateRankingXpFromTasks(userTasks);
+  const rankingXpBase = calculateRankingXpFromTasks(userTasks);
+  const streakLifetime = getUserStreakXpLifetime(user.id);
+  const rankingXp = rankingXpBase + (streakInclude.total ? streakLifetime : 0);
 
   // XP semanal calculado com base apenas nas tarefas da semana
     const weeklyTasks = userTasks.filter(t => isThisWeek(t.completedDate || t.dueDate));
-    const weeklyXp = calculateRankingXpFromTasks(weeklyTasks);
+  const weeklyXpBase = calculateRankingXpFromTasks(weeklyTasks);
+  const weeklyStreak = getUserStreakXpThisWeek(user.id);
+  const weeklyXp = weeklyXpBase + (streakInclude.weekly ? weeklyStreak : 0);
 
   // XP mensal calculado com base nas tarefas do mês corrente
   const monthlyTasks = userTasks.filter(t => isThisMonth(t.completedDate || t.dueDate));
-  const monthlyXp = calculateRankingXpFromTasks(monthlyTasks);
+  const monthlyXpBase = calculateRankingXpFromTasks(monthlyTasks);
+  const monthlyStreak = getUserStreakXpThisMonth(user.id);
+  const monthlyXp = monthlyXpBase + (streakInclude.monthly ? monthlyStreak : 0);
 
     // Nível calculado a partir do XP de ranking
     const newLevel = calculateLevelFromXp(rankingXp);

@@ -16,6 +16,8 @@ import Info from "lucide-react/dist/esm/icons/info";
 import X from "lucide-react/dist/esm/icons/x";
 import UserDataDebug from "@/components/debug/UserDataDebug";
 import UserSyncTester from "@/components/debug/UserSyncTester";
+import Flame from "lucide-react/dist/esm/icons/flame";
+import { getDailyStreakBonusXp, setDailyStreakBonusXp, isStreakEnabled, setStreakEnabled, getStreakIncludeIn, setStreakIncludeIn } from "@/config/streak";
 
 // Componente para efeito de partículas no botão
 type ParticleButtonProps = ButtonProps & {
@@ -161,6 +163,9 @@ const Settings = () => {
   const [modalData, setModalData] = useState({ player: "", xp: 0, item: "" });
   const [modalJustification, setModalJustification] = useState("");
   const [confirmLoading, setConfirmLoading] = useState(false);
+  const [dailyStreakXp, setDailyStreakXp] = useState<number>(() => getDailyStreakBonusXp());
+  const [streakEnabled, setStreakEnabledState] = useState<boolean>(() => isStreakEnabled());
+  const [streakInclude, setStreakInclude] = useState<{ total: boolean; weekly: boolean; monthly: boolean }>(() => getStreakIncludeIn());
 
   // Usuários cadastrados (derivados dos responsáveis cadastrados nas tarefas mock)
   const users = Array.from(new Set(mockTaskData.map(t => t.responsavel))).filter(Boolean) as string[];
@@ -192,6 +197,48 @@ const Settings = () => {
     // Aqui iria a lógica para salvar as configurações
     setShowToast(true);
     setTimeout(() => setShowToast(false), 3000);
+  };
+
+  const applyDailyStreak = () => {
+    setDailyStreakBonusXp(dailyStreakXp);
+    toast({
+      title: "✅ Bônus diário atualizado",
+      description: `Novo valor: +${dailyStreakXp} XP por login diário`,
+      className: "bg-gradient-to-r from-[#6A0DAD] to-[#FF0066] border-none text-white rounded-md shadow-lg",
+      duration: 3000,
+    });
+  };
+
+  const applyDailyStreakConfig = () => {
+    setStreakEnabled(streakEnabled);
+    setStreakIncludeIn(streakInclude);
+    toast({
+      title: "✅ Configuração de streak salva",
+      description: `Status: ${streakEnabled ? 'Ativo' : 'Inativo'} • Inclusão: ${[
+        streakInclude.total ? 'Total' : null,
+        streakInclude.weekly ? 'Semanal' : null,
+        streakInclude.monthly ? 'Mensal' : null,
+      ].filter(Boolean).join(', ') || 'Nenhuma'}`,
+      className: "bg-gradient-to-r from-[#6A0DAD] to-[#FF0066] border-none text-white rounded-md shadow-lg",
+      duration: 3000,
+    });
+  };
+
+  // Salvar tudo do card de Streak (um único botão)
+  const saveStreakCard = () => {
+    setDailyStreakBonusXp(dailyStreakXp);
+    setStreakEnabled(streakEnabled);
+    setStreakIncludeIn(streakInclude);
+    toast({
+      title: "✅ Streak atualizado",
+      description: `Bônus diário: +${dailyStreakXp} XP • Status: ${streakEnabled ? 'Ativo' : 'Inativo'} • Inclusão: ${[
+        streakInclude.total ? 'Total' : null,
+        streakInclude.weekly ? 'Semanal' : null,
+        streakInclude.monthly ? 'Mensal' : null,
+      ].filter(Boolean).join(', ') || 'Nenhuma'}`,
+      className: "bg-gradient-to-r from-[#6A0DAD] to-[#FF0066] border-none text-white rounded-md shadow-lg",
+      duration: 3000,
+    });
   };
 
   return (
@@ -255,7 +302,7 @@ const Settings = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-[#1A1A2E] divide-y divide-[#6A0DAD]/30">
-                    {[
+                    {[ 
                       { label: "Entrega com antecedência" },
                       { label: "Solucionar um problema criativo" },
                       { label: "Ajudar um Épico" },
@@ -340,6 +387,75 @@ const Settings = () => {
                 </table>
               </div>
             </SettingsCard>
+
+            {/* Streak Diário (unificado) - posicionado logo abaixo do card anterior */}
+            <SettingsCard title="Streak Diário (Login)" icon={Flame}>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                <LabeledInput
+                  label="XP por login diário"
+                  id="dailyStreakXp"
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={dailyStreakXp}
+                  onChange={(e) => setDailyStreakXp(Math.max(0, Number(e.target.value)))}
+                />
+                <div className="md:col-span-2">
+                  <p className="text-sm text-[#C0C0C0] mb-3">
+                    O bônus é creditado no primeiro login do dia. Ele soma ao XP do ranking (total, semanal e mensal),
+                    sem afetar o cálculo percentual de produtividade das tarefas.
+                  </p>
+                </div>
+              </div>
+              <div className="mt-6 space-y-4">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="streakEnabled"
+                    className="w-4 h-4 accent-[#FF0066]"
+                    checked={streakEnabled}
+                    onChange={(e) => setStreakEnabledState(e.target.checked)}
+                  />
+                  <label htmlFor="streakEnabled" className="text-white text-sm">Ativar bônus diário de login</label>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="includeTotal"
+                      className="w-4 h-4 accent-[#FF0066]"
+                      checked={streakInclude.total}
+                      onChange={(e) => setStreakInclude(prev => ({ ...prev, total: e.target.checked }))}
+                    />
+                    <label htmlFor="includeTotal" className="text-white text-sm">Somar ao XP Total</label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="includeWeekly"
+                      className="w-4 h-4 accent-[#FF0066]"
+                      checked={streakInclude.weekly}
+                      onChange={(e) => setStreakInclude(prev => ({ ...prev, weekly: e.target.checked }))}
+                    />
+                    <label htmlFor="includeWeekly" className="text-white text-sm">Somar ao XP Semanal</label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="includeMonthly"
+                      className="w-4 h-4 accent-[#FF0066]"
+                      checked={streakInclude.monthly}
+                      onChange={(e) => setStreakInclude(prev => ({ ...prev, monthly: e.target.checked }))}
+                    />
+                    <label htmlFor="includeMonthly" className="text-white text-sm">Somar ao XP Mensal</label>
+                  </div>
+                </div>
+                <ParticleButton onClick={saveStreakCard} className="w-full md:w-auto">
+                  <Save className="mr-2 h-4 w-4" /> Salvar Streak
+                </ParticleButton>
+              </div>
+            </SettingsCard>
+            {/* Removido: duplicidade de 'Pontos e Conquistas Especiais' */}
 
               {/* Grid de dois em dois para os demais cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
