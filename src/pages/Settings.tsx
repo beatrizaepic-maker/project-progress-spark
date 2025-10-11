@@ -147,6 +147,10 @@ const SelectInput = ({ label, id, options, ...props }) => {
 
 const Settings = () => {
   const [pointsPerTask, setPointsPerTask] = useState(10);
+  const [earlyTaskPercentage, setEarlyTaskPercentage] = useState(10);
+  const [onTimeTaskPercentage, setOnTimeTaskPercentage] = useState(5);
+  const [delayedTaskPercentage, setDelayedTaskPercentage] = useState(-2);
+  const [refactoredTaskPercentage, setRefactoredTaskPercentage] = useState(15);
   const [bonusPercentage, setBonusPercentage] = useState(20);
   const [levelThreshold, setLevelThreshold] = useState(100);
   const [weeklyGoal, setWeeklyGoal] = useState(5);
@@ -496,6 +500,48 @@ const Settings = () => {
                         Exibir conquistas no perfil público
                       </label>
                     </div>
+                  </div>
+                </SettingsCard>
+
+                {/* Percentual de Ganho por Tarefa */}
+                <SettingsCard title="Percentual de Ganho por Tarefa" icon={Star}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <LabeledInput 
+                      label="Tarefa Adiantada (%)" 
+                      id="earlyTaskPercentage" 
+                      type="number"
+                      min={-100}
+                      max={200}
+                      value={earlyTaskPercentage}
+                      onChange={(e) => setEarlyTaskPercentage(Number(e.target.value))}
+                    />
+                    <LabeledInput 
+                      label="Tarefa Concluída na Data (%)" 
+                      id="onTimeTaskPercentage" 
+                      type="number"
+                      min={-100}
+                      max={200}
+                      value={onTimeTaskPercentage}
+                      onChange={(e) => setOnTimeTaskPercentage(Number(e.target.value))}
+                    />
+                    <LabeledInput 
+                      label="Tarefa Concluída com Atraso (%)" 
+                      id="delayedTaskPercentage" 
+                      type="number"
+                      min={-100}
+                      max={200}
+                      value={delayedTaskPercentage}
+                      onChange={(e) => setDelayedTaskPercentage(Number(e.target.value))}
+                    />
+                    <LabeledInput 
+                      label="Tarefa com Refatoração (%)" 
+                      id="refactoredTaskPercentage" 
+                      type="number"
+                      min={-100}
+                      max={200}
+                      value={refactoredTaskPercentage}
+                      onChange={(e) => setRefactoredTaskPercentage(Number(e.target.value))}
+                    />
                   </div>
                 </SettingsCard>
               </div>

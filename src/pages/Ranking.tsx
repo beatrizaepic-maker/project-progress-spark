@@ -29,6 +29,7 @@ import {
   ActiveMission 
 } from '@/services/missionService';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 // Preferir endpoints reais; mockApi fica como fallback no dev offline
 import { fetchRanking, seedMockData } from '@/services/mockApi';
 
@@ -77,6 +78,7 @@ interface PerformanceDetails {
 // Componente principal da página de ranking
 const RankingPage: React.FC = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [allUsers, setAllUsers] = useState<UserRanking[]>([]);
   const [selectedUser, setSelectedUser] = useState<PerformanceDetails | null>(null);
   const [activeTab, setActiveTab] = useState<'weekly' | 'monthly'>('weekly');
@@ -266,11 +268,23 @@ const RankingPage: React.FC = () => {
       }));
   }, [allUsers, activeTab]);
 
-  const handleUserClick = (user: UserRanking) => {
+  const handleUserClick = (clicked: UserRanking) => {
+    // Regra: para perfil "user/player", só pode abrir o card do próprio usuário
+    const role = String((user as any)?.role || '').toLowerCase();
+    const isPlayer = role === 'user' || role === 'player';
+    const isSelf = (user?.id ?? '') === clicked.id;
+    if (isPlayer && !isSelf) {
+      toast({
+        title: 'Acesso restrito',
+        description: 'Você só pode visualizar os seus próprios detalhes.',
+        variant: 'destructive',
+      });
+      return;
+    }
     // Simular carregamento de detalhes do usuário
     const mockDetails: PerformanceDetails = {
-      userId: user.id,
-      userName: user.name,
+      userId: clicked.id,
+      userName: clicked.name,
       xpHistory: [
         { date: '2023-05-01', xp: 10, source: 'task', description: 'Tarefa finalizada: Relatório Mensal' },
         { date: '2023-05-02', xp: 5, source: 'task', description: 'Tarefa finalizada: Análise de Dados' },
@@ -305,9 +319,9 @@ const RankingPage: React.FC = () => {
           deadline: '2023-05-15'
         }
       ],
-      consistencyBonus: user.consistencyBonus,
+      consistencyBonus: clicked.consistencyBonus,
       penalties: 5,
-      currentStreak: user.streak,
+      currentStreak: clicked.streak,
       bestStreak: 15
     };
     

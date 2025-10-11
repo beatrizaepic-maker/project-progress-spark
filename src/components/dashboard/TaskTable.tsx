@@ -669,7 +669,12 @@ const TaskTable = forwardRef<TaskTableRef>((props, ref) => {
                           }
                           return null;
                         })()}
-                        <div className="font-medium text-foreground">{task.tarefa}</div>
+                        <div className="font-medium text-foreground flex items-center gap-2">
+                          {task.tarefa}
+                          {task.status === 'refacao' && (
+                            <Badge variant="secondary" className="rounded-none">Refação</Badge>
+                          )}
+                        </div>
                       </div>
                     </td>
                     

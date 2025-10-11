@@ -20,6 +20,8 @@ import { PlayerStats } from '@/types/player';
 import { calculatePlayerStats } from '@/services/playerService';
 import { fetchPlayerProfile } from '@/services/mockApi';
 import { reportUrls, download } from '@/services/reports';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import HelpCircle from 'lucide-react/dist/esm/icons/help-circle';
 // (import duplicado removido)
 
 const PlayerProfilePage: React.FC = () => {
@@ -29,6 +31,9 @@ const PlayerProfilePage: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [prodMetrics, setProdMetrics] = useState<{ averagePercent: number; totalConsidered: number } | null>(null);
+  type TaskBreakdownItem = { id: string; title: string; classificacao: string; percent: number; completedDate: string | null };
+  const [tasksBreakdown, setTasksBreakdown] = useState<TaskBreakdownItem[] | null>(null);
+  const [seasonMetrics, setSeasonMetrics] = useState<{ averagePercent: number; totalConsidered: number; label: string } | null>(null);
   const [deliveryDist, setDeliveryDist] = useState<{ early: number; on_time: number; late: number; refacao: number } | null>(null);
   
   // Mock notifications - em uma aplicação real, viria de uma API
@@ -108,6 +113,7 @@ const PlayerProfilePage: React.FC = () => {
             totalConsidered: dto.productivity?.totalConsidered ?? 0,
           });
           if (dto.deliveryDistribution) setDeliveryDist(dto.deliveryDistribution);
+          if (dto.tasksBreakdown) setTasksBreakdown(dto.tasksBreakdown);
           return;
         }
       } catch {}
@@ -119,10 +125,29 @@ const PlayerProfilePage: React.FC = () => {
           totalConsidered: dto.productivity.totalConsidered,
         });
         if (dto.deliveryDistribution) setDeliveryDist(dto.deliveryDistribution as any);
+        if ((dto as any).tasksBreakdown) setTasksBreakdown((dto as any).tasksBreakdown as TaskBreakdownItem[]);
       }
     };
     loadProd();
   }, [user?.id]);
+
+  // Calcular produtividade da temporada em vigor (definido como mês corrente)
+  useEffect(() => {
+    if (!tasksBreakdown) return;
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth();
+    const inSeason = tasksBreakdown.filter(t => {
+      if (!t.completedDate) return false;
+      const d = new Date(t.completedDate);
+      return d.getFullYear() === y && d.getMonth() === m;
+    });
+    const count = inSeason.length;
+    const sum = inSeason.reduce((acc, t) => acc + Math.max(0, Math.min(100, Number(t.percent) || 0)), 0);
+    const avg = count ? Math.round(sum / count) : 0;
+    const label = now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    setSeasonMetrics({ averagePercent: avg, totalConsidered: count, label });
+  }, [tasksBreakdown]);
 
   // Se o player não estiver carregado, mostrar mensagem de carregamento
   if (!state.profile) {
@@ -311,6 +336,59 @@ const PlayerProfilePage: React.FC = () => {
               </li>
             ))}
           </ul>
+        </div>
+
+        {/* Card de Aproveitamento da Temporada (posicionado abaixo de Atividade Recente) */}
+        <div className="bg-[#181834] border border-[#7c3aed] rounded-none shadow-lg shadow-[#6A0DAD]/30 hover:shadow-[#6A0DAD]/50 transition-all duration-300 p-6 mt-6">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-[#7c3aed]">
+              <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="#7c3aed" strokeWidth="2" d="M4 12h16M12 4v16"/></svg>
+            </span>
+            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+              Aproveitamento da Temporada
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-sm">
+                    <div className="text-sm">
+                      <p className="font-semibold mb-1">Como calculamos</p>
+                      <p>
+                        Consideramos as tarefas <strong>concluídas</strong> na temporada atual ({seasonMetrics?.label || 'mês atual'}).
+                        Cada tarefa recebe um percentual de produtividade (ex.: adiantada = 100%, no prazo = 90%, atrasada = 50%).
+                        Tarefas em <strong>refação</strong> não entram no cálculo até serem reconcluídas.
+                      </p>
+                      <p className="mt-2">
+                        Aproveitamento = soma dos percentuais ÷ total de tarefas consideradas.
+                      </p>
+                      <p className="font-semibold mt-2 mb-1">Reflexo no ranking</p>
+                      <p>
+                        O XP exibido é a <strong>média × 10</strong> com arredondamento half-up. Ex.: média 73% → 730 XP.
+                        O ranking usa o XP convertido; percentuais detalhados aparecem apenas no perfil.
+                      </p>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </h2>
+          </div>
+          <p className="text-muted-foreground">Percentual médio das tarefas concluídas na temporada atual ({seasonMetrics?.label || '-' }).</p>
+          <div className="mt-3 flex items-center gap-6">
+            <div>
+              <div className="text-4xl font-bold text-white">{seasonMetrics?.averagePercent ?? 0}%</div>
+              <div className="text-sm text-muted-foreground">Média de produtividade</div>
+            </div>
+            <div>
+              <div className="text-4xl font-bold text-white">{seasonMetrics?.totalConsidered ?? 0}</div>
+              <div className="text-sm text-muted-foreground">Tarefas consideradas</div>
+            </div>
+          </div>
+          {(seasonMetrics?.totalConsidered ?? 0) === 0 && (
+            <div className="mt-4 text-sm text-muted-foreground">
+              Nenhuma tarefa concluída nesta temporada até o momento.
+            </div>
+          )}
         </div>
 
       {/* Modal de edição de perfil */}

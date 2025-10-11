@@ -7,7 +7,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'user' | 'dev';
   avatar?: string;
   firstName?: string;
   lastName?: string;
@@ -63,7 +63,7 @@ class AuthService {
         name: 'Gabriel Santos',
         firstName: 'Gabriel',
         lastName: 'Santos',
-        role: 'admin',
+        role: 'dev',
         position: 'Tech Lead',
         avatar: '/avatars/gabriel.png'
       }

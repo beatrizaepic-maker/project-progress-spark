@@ -120,7 +120,29 @@ Estrutura completa dos resultados de KPIs, incluindo:
 - error handling properties
 - validation result
 
-## 6. Utilização dos Dados Mock
+## 6. Dados de Autenticação - `src/services/authService.ts`
+
+### Usuários Mock
+Usuários padrão para demonstração:
+- Administrador (admin@epic.com)
+- João Silva (user@epic.com)
+- Gabriel Santos (gabriel@epic.com)
+
+### Credenciais Mock
+- Senhas padrão para testes: "123456"
+- Tokens JWT simulados
+- Estrutura de usuário completa com nome, e-mail, função, etc.
+
+## 7. Configuração de Gamificação - `src/config/gamification.ts`
+
+### ProductivityConfig
+Configuração editável dos percentuais de produtividade por classificação:
+- early: 100 (entrega antecipada)
+- on_time: 90 (entrega no prazo)
+- late: 50 (entrega atrasada)
+- refacao: 40 (entrega após refação)
+
+## 8. Utilização dos Dados Mock
 
 ### Páginas que utilizam mockTaskData:
 - Dashboard (`src/pages/Dashboard.tsx`)
@@ -143,45 +165,15 @@ Estrutura completa dos resultados de KPIs, incluindo:
 - AppStateManager (`src/services/appStateManager.ts`)
 - KPICalculator (`src/services/kpiCalculator.ts`)
 - DataValidator (`src/services/dataValidator.ts`)
+- AuthService (`src/services/authService.ts`)
 
-## 7. Estrutura de Dados
+### Componentes que utilizam dados mock:
+- VirtualScrollTable (`src/components/ui/virtual-scroll-table.tsx`)
+- DataEditor (`src/components/dashboard/DataEditor.tsx`)
+- DashboardKPIs (`src/components/dashboard/DashboardKPIs.tsx`)
+- Charts (`src/components/dashboard/Charts.tsx`)
 
-### Interface TaskData
-```typescript
-interface TaskData {
-  id: number;
-  tarefa: string;
-  responsavel?: string;
-  inicio: string; // Formato: YYYY-MM-DD
-  fim?: string;  // Formato: YYYY-MM-DD (opcional)
-  prazo: string; // Formato: YYYY-MM-DD
-  duracaoDiasUteis: number;
-  atrasoDiasUteis: number;
-  atendeuPrazo: boolean;
-  status: 'backlog' | 'todo' | 'in-progress' | 'completed';
-  prioridade: 'baixa' | 'media' | 'alta' | 'critica';
-}
-```
-
-## 9. Atualização de Dados Mock
-
-Para atualizar os dados mock:
-1. Modifique `mockTaskData` em `src/data/projectData.ts`
-2. Atualize `projectMetrics` com base nos novos dados
-3. Verifique se todos os testes ainda passam
-4. Atualize `completeProjectData` em `src/__tests__/e2e-flows.test.tsx` se necessário
-5. Atualize as configurações em `appStateManager`, `kpiCalculator` e `dataValidator` se necessário
-
-## 10. Diretrizes para Dados Mock
-
-1. Manter consistência entre todas as fontes de dados mock
-2. Usar datas realistas no formato YYYY-MM-DD
-3. Incluir casos de sucesso e falha (tarefas no prazo e atrasadas)
-4. Representar diferentes estágios de progresso (status)
-5. Cobrir diferentes níveis de prioridade
-6. Manter dados em português para consistência com o projeto
-
-## 4. Estrutura de Dados
+## 9. Estrutura de Dados
 
 ### Interface TaskData
 ```typescript
@@ -189,26 +181,53 @@ interface TaskData {
   id: number;
   tarefa: string;
   responsavel?: string;
+  descricao?: string;
   inicio: string; // Formato: YYYY-MM-DD
   fim?: string;  // Formato: YYYY-MM-DD (opcional)
   prazo: string; // Formato: YYYY-MM-DD
   duracaoDiasUteis: number;
   atrasoDiasUteis: number;
   atendeuPrazo: boolean;
-  status: 'backlog' | 'todo' | 'in-progress' | 'completed';
+  status: 'backlog' | 'todo' | 'in-progress' | 'completed' | 'refacao';
   prioridade: 'baixa' | 'media' | 'alta' | 'critica';
 }
 ```
 
-## 5. Atualização de Dados Mock
+### Interface User
+```typescript
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: 'admin' | 'user' | 'dev';
+  avatar?: string;
+  firstName?: string;
+  lastName?: string;
+  position?: string;
+}
+```
+
+### Interface ProductivityConfig
+```typescript
+interface ProductivityConfig {
+  early: number;   // 0-100
+  on_time: number; // 0-100
+  late: number;    // 0-100
+  refacao: number; // 0-100
+}
+```
+
+## 10. Atualização de Dados Mock
 
 Para atualizar os dados mock:
 1. Modifique `mockTaskData` em `src/data/projectData.ts`
 2. Atualize `projectMetrics` com base nos novos dados
 3. Verifique se todos os testes ainda passam
 4. Atualize `completeProjectData` em `src/__tests__/e2e-flows.test.tsx` se necessário
+5. Atualize as configurações em `appStateManager`, `kpiCalculator`, `dataValidator` e `authService` se necessário
+6. Atualize `ProductivityConfig` em `src/config/gamification.ts` conforme necessário
 
-## 6. Diretrizes para Dados Mock
+## 11. Diretrizes para Dados Mock
 
 1. Manter consistência entre todas as fontes de dados mock
 2. Usar datas realistas no formato YYYY-MM-DD
@@ -216,3 +235,6 @@ Para atualizar os dados mock:
 4. Representar diferentes estágios de progresso (status)
 5. Cobrir diferentes níveis de prioridade
 6. Manter dados em português para consistência com o projeto
+7. Garantir que os dados mock sejam representativos dos dados reais que serão usados em produção
+8. Manter credenciais de teste seguras e não reais
+9. Manter a configuração de gamificação flexível para ajustes futuros

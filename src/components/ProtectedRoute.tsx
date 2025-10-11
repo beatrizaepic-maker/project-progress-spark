@@ -17,6 +17,27 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireRole }
   const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
 
+  // Normaliza papel do usuário
+  const normalizedRole = String((user as any)?.role || '').toLowerCase() as 'admin' | 'dev' | 'user' | 'manager' | '';
+  const effectiveRole: 'admin' | 'dev' | 'user' | 'manager' =
+    (['admin', 'dev', 'user', 'manager'] as const).includes(normalizedRole as any)
+      ? (normalizedRole as any)
+      : 'user';
+  const pathname = location.pathname;
+
+  // Regras de acesso por papel
+  const isUserAllowedPath = (path: string) => {
+    // Usuário (player) pode acessar apenas: /tasks, /ranking, /profile/*
+    return (
+      path === '/tasks' ||
+      path.startsWith('/tasks/') ||
+      path === '/ranking' ||
+      path.startsWith('/ranking/') ||
+      path === '/profile' ||
+      path.startsWith('/profile/')
+    );
+  };
+
   // Mostra loading enquanto verifica autenticação
   if (isLoading) {
     return (
@@ -34,10 +55,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireRole }
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  // Verifica requisito explícito de papel
   if (requireRole) {
-    const role = (user as any)?.role || (user as any)?.position || 'member';
-    const allowed = requireRole === 'admin' ? ['admin'] : ['admin', 'manager'];
-    if (!allowed.includes(String(role).toLowerCase())) {
+    // 'admin' exige admin ou dev; 'manager' permite admin/dev/manager
+    const allowed = requireRole === 'admin' ? ['admin', 'dev'] : ['admin', 'dev', 'manager'];
+    if (!allowed.includes(normalizedRole)) {
       return (
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center max-w-md">
@@ -47,6 +69,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireRole }
         </div>
       );
     }
+  }
+
+  // Regras padrão: usuários comuns não podem acessar páginas fora da lista
+  if (!requireRole && effectiveRole === 'user' && !isUserAllowedPath(pathname)) {
+    return <Navigate to="/tasks" replace />;
   }
 
   return <>{children}</>;

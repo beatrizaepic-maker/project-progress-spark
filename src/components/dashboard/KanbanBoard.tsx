@@ -65,6 +65,13 @@ const statusConfig = {
     icon: <Clock className="w-5 h-5 text-blue-400" />,
     taskColor: 'border-l-blue-500'
   },
+  refacao: {
+    title: 'Refação',
+    color: 'bg-dark-navy border-purple-600',
+    headerColor: 'bg-dark-navy',
+    icon: <span className="text-purple-400">🛠️</span>,
+    taskColor: 'border-l-purple-500'
+  },
   'in-progress': {
     title: 'Em Andamento',
     color: 'bg-dark-navy border-yellow-600',
@@ -335,6 +342,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, onEdit, onDelete }) =>
   const tasksByStatus = {
     backlog: tasks.filter(task => task.status === 'backlog'),
     todo: tasks.filter(task => task.status === 'todo'),
+    refacao: tasks.filter(task => task.status === 'refacao'),
     'in-progress': tasks.filter(task => task.status === 'in-progress'),
     completed: tasks.filter(task => task.status === 'completed'),
   };

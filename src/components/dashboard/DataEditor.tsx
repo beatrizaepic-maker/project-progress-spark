@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 import { TaskData, mockTaskData } from '@/data/projectData';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { toast } from '@/hooks/use-toast';
 import KanbanBoard from './KanbanBoard';
 
@@ -18,7 +19,7 @@ interface TaskFormData {
   tarefa: string;
   responsavel: string;
   descricao?: string;
-  status: 'backlog' | 'todo' | 'in-progress' | 'completed';
+  status: 'backlog' | 'todo' | 'in-progress' | 'completed' | 'refacao';
   inicio: string;
   fim?: string; // Campo opcional
   prazo: string;
@@ -112,7 +113,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSubmit, onCancel }) => {
       
       <div>
         <Label htmlFor="status">Status</Label>
-        <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value as any }))}>
+  <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value as any }))}>
           <SelectTrigger>
             <SelectValue placeholder="Selecione o status" />
           </SelectTrigger>
@@ -121,6 +122,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSubmit, onCancel }) => {
             <SelectItem value="todo">A Fazer</SelectItem>
             <SelectItem value="in-progress">Em Andamento</SelectItem>
             <SelectItem value="completed">Concluída</SelectItem>
+            <SelectItem value="refacao">Refação</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -192,6 +194,15 @@ const DataEditor: React.FC = () => {
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
   
   // Função para obter players únicos a partir das tarefas
+  // Map de player para avatar (mock: pode ser expandido para buscar de API ou contexto de perfil)
+  const playerAvatars: Record<string, string> = {
+    'Maria Silva': '/avatars/maria.png',
+    'João Santos': '/avatars/joao.png',
+    'Ana Costa': '/avatars/ana.png',
+    'Pedro Lima': '/avatars/pedro.png',
+    'Carla Oliveira': '/avatars/carla.png',
+    'Roberto Alves': '/avatars/roberto.png',
+  };
   const players = Array.from(new Set(tasks.map(task => task.responsavel))).filter(Boolean) as string[];
 
   const getStatusLabel = (status: string) => {
@@ -200,6 +211,7 @@ const DataEditor: React.FC = () => {
       case 'todo': return 'A Fazer';
       case 'in-progress': return 'Em Andamento';
       case 'completed': return 'Concluída';
+      case 'refacao': return 'Refação';
       default: return status;
     }
   };
@@ -210,6 +222,7 @@ const DataEditor: React.FC = () => {
       case 'todo': return 'outline';
       case 'in-progress': return 'default';
       case 'completed': return 'default';
+      case 'refacao': return 'secondary';
       default: return 'secondary';
     }
   };
@@ -465,13 +478,12 @@ const DataEditor: React.FC = () => {
                   onClick={() => setSelectedPlayer(player)}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-none flex items-center justify-center font-bold ${
-                      selectedPlayer === player 
-                        ? 'bg-primary text-primary-foreground' 
-                        : 'bg-primary/10 text-primary'
-                    }`}>
-                      {player?.charAt(0).toUpperCase()}
-                    </div>
+                    <Avatar className="w-10 h-10 mr-2">
+                      <AvatarImage src={playerAvatars[player] || ''} alt={player} />
+                      <AvatarFallback className="bg-primary text-primary-foreground font-bold">
+                        {player?.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
                     <div>
                       <div className="font-medium text-foreground">{player}</div>
                       <div className="text-xs text-muted-foreground">

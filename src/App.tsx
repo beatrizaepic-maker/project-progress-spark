@@ -111,6 +111,25 @@ const LogoSection = () => {
   );
 };
 
+// Renderiza os links da sidebar com filtro por papel do usuário
+const SidebarLinks: React.FC = () => {
+  const { user } = useAuth();
+  const rawRole = String((user as any)?.role || '').toLowerCase();
+  const role: 'admin' | 'dev' | 'user' | 'manager' = (['admin','dev','user','manager'] as const).includes(rawRole as any) ? (rawRole as any) : 'user';
+  const allowedForUser = new Set(['/tasks', '/ranking', '/profile/current']);
+  const filtered = role === 'user'
+    ? sidebarLinks.filter(l => allowedForUser.has(l.href) || l.href.startsWith('/profile'))
+    : sidebarLinks; // admin/dev veem tudo
+
+  return (
+    <>
+      {filtered.map((link) => (
+        <CustomSidebarLink key={link.href} link={link} />
+      ))}
+    </>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -137,9 +156,7 @@ const App = () => (
 
                     {/* Navigation Links */}
                     <div className="flex-1 px-2">
-                      {sidebarLinks.map((link) => (
-                        <CustomSidebarLink key={link.href} link={link} />
-                      ))}
+                      <SidebarLinks />
                     </div>
                   </CustomSidebarBody>
                 </CustomSidebar>

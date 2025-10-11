@@ -9,7 +9,7 @@ export interface TaskData {
   duracaoDiasUteis: number;
   atrasoDiasUteis: number;
   atendeuPrazo: boolean;
-  status: 'backlog' | 'todo' | 'in-progress' | 'completed';
+  status: 'backlog' | 'todo' | 'in-progress' | 'completed' | 'refacao';
   prioridade: 'baixa' | 'media' | 'alta' | 'critica';
 }
 
