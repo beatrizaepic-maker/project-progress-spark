@@ -8,7 +8,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useAppState } from '@/services/appStateManager';
 import { DataProvider } from '@/contexts/DataContext';
-import { mockTaskData, TaskData } from '@/data/projectData';
+import { TaskData } from '@/data/projectData';
+import { getTasksData } from '@/services/localStorageData';
 import { useToast } from '@/hooks/use-toast';
 
 interface GlobalContextValue {
@@ -38,7 +39,8 @@ export const GlobalProvider: React.FC<GlobalProviderProps> = ({ children }) => {
   // Inicializar dados se não existirem
   useEffect(() => {
     if (state.tasks.length === 0) {
-      updateTasks(mockTaskData);
+      const taskData = getTasksData();
+      updateTasks(taskData);
     }
   }, [state.tasks.length, updateTasks]);
 
@@ -94,8 +96,8 @@ export const GlobalProvider: React.FC<GlobalProviderProps> = ({ children }) => {
       // Simular carregamento de dados (em produção seria uma API call)
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Por ora, usar dados mock, mas aqui seria onde carregaríamos dados reais
-      const freshData = [...mockTaskData];
+      // Carregar dados do localStorage
+      const freshData = [...getTasksData()];
       updateTasks(freshData);
 
       toast({

@@ -3,12 +3,13 @@ import { motion } from 'framer-motion';
 import MetricsCards from "@/components/dashboard/MetricsCards";
 import DashboardKPIs from "@/components/dashboard/DashboardKPIs";
 import { DataProvider } from "@/contexts/DataContext";
-import { mockTaskData } from "@/data/projectData";
+import { getTasksData } from "@/services/localStorageData";
 import { useKPIs } from "@/hooks/useKPIs";
 import jsPDF from 'jspdf';
 
 const Dashboard = () => {
-  const kpis = useKPIs(mockTaskData);
+  const taskData = getTasksData();
+  const kpis = useKPIs(taskData);
 
   // Função para exportar relatório em PDF
   const exportReport = () => {
@@ -46,13 +47,13 @@ const Dashboard = () => {
     
     doc.setFontSize(10);
     doc.setTextColor(0, 0, 0);
-    doc.text(`Total de Tarefas: ${mockTaskData.length}`, 20, y);
+    doc.text(`Total de Tarefas: ${taskData.length}`, 20, y);
     y += 6;
-    doc.text(`Tarefas Concluídas: ${mockTaskData.filter(task => task.status === 'completed').length}`, 20, y);
+    doc.text(`Tarefas Concluídas: ${taskData.filter(task => task.status === 'completed').length}`, 20, y);
     y += 6;
-    doc.text(`Tarefas em Andamento: ${mockTaskData.filter(task => task.status === 'in-progress').length}`, 20, y);
+    doc.text(`Tarefas em Andamento: ${taskData.filter(task => task.status === 'in-progress').length}`, 20, y);
     y += 6;
-    doc.text(`Tarefas Pendentes: ${mockTaskData.filter(task => task.status === 'todo' || task.status === 'backlog').length}`, 20, y);
+    doc.text(`Tarefas Pendentes: ${taskData.filter(task => task.status === 'todo' || task.status === 'backlog').length}`, 20, y);
     y += 15;
     
     // INDICADORES DE PERFORMANCE (KPIs)
@@ -88,9 +89,9 @@ const Dashboard = () => {
     doc.setTextColor(0, 0, 0);
     doc.text(`Média de Atraso: ${kpiData.averageDelay.toFixed(1)} dias`, 20, y);
     y += 6;
-    doc.text(`Total de Tarefas Atrasadas: ${mockTaskData.filter(task => task.atrasoDiasUteis > 0).length}`, 20, y);
+    doc.text(`Total de Tarefas Atrasadas: ${taskData.filter(task => task.atrasoDiasUteis > 0).length}`, 20, y);
     y += 6;
-    doc.text(`Percentual de Tarefas no Prazo: ${((mockTaskData.filter(task => task.atrasoDiasUteis === 0).length / mockTaskData.length) * 100).toFixed(1)}%`, 20, y);
+    doc.text(`Percentual de Tarefas no Prazo: ${((taskData.filter(task => task.atrasoDiasUteis === 0).length / taskData.length) * 100).toFixed(1)}%`, 20, y);
     y += 15;
     
     // DISTRIBUIÇÃO DE PRIORIDADES
@@ -101,13 +102,13 @@ const Dashboard = () => {
     
     doc.setFontSize(10);
     doc.setTextColor(0, 0, 0);
-    doc.text(`Crítica: ${mockTaskData.filter(task => task.prioridade === 'critica').length} tarefas`, 20, y);
+    doc.text(`Crítica: ${taskData.filter(task => task.prioridade === 'critica').length} tarefas`, 20, y);
     y += 6;
-    doc.text(`Alta: ${mockTaskData.filter(task => task.prioridade === 'alta').length} tarefas`, 20, y);
+    doc.text(`Alta: ${taskData.filter(task => task.prioridade === 'alta').length} tarefas`, 20, y);
     y += 6;
-    doc.text(`Média: ${mockTaskData.filter(task => task.prioridade === 'media').length} tarefas`, 20, y);
+    doc.text(`Média: ${taskData.filter(task => task.prioridade === 'media').length} tarefas`, 20, y);
     y += 6;
-    doc.text(`Baixa: ${mockTaskData.filter(task => task.prioridade === 'baixa').length} tarefas`, 20, y);
+    doc.text(`Baixa: ${taskData.filter(task => task.prioridade === 'baixa').length} tarefas`, 20, y);
     y += 15;
     
     // Verificar se precisa de nova página
@@ -122,7 +123,7 @@ const Dashboard = () => {
     doc.text('PRÓXIMAS ENTREGAS', 20, y);
     y += 10;
     
-    const upcomingTasks = mockTaskData
+    const upcomingTasks = taskData
       .filter(task => task.status !== 'completed')
       .sort((a, b) => new Date(a.prazo).getTime() - new Date(b.prazo).getTime())
       .slice(0, 5);
@@ -198,7 +199,7 @@ const Dashboard = () => {
   };
 
   return (
-    <DataProvider initialTasks={mockTaskData}>
+    <DataProvider initialTasks={taskData}>
       <main className="container mx-auto px-6 py-8 space-y-8">
           {/* KPIs Estatísticos Avançados */}
           <section>
@@ -217,7 +218,7 @@ const Dashboard = () => {
               </button>
             </div>
             
-            <DashboardKPIs tasks={mockTaskData} />
+            <DashboardKPIs tasks={taskData} />
           </section>
 
           {/* Métricas Originais */}
@@ -238,15 +239,26 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <SummaryCard>
                 <h3 className="text-lg font-semibold mb-2">Status Geral</h3>
-                <p className="text-muted-foreground">Acompanhe o progresso geral do projeto</p>
+                <p className="text-muted-foreground">
+                  {taskData.length === 0 ? 'Sem tarefas cadastradas' : 
+                   `${taskData.filter(task => task.status === 'completed').length} de ${taskData.length} tarefas concluídas`}
+                </p>
               </SummaryCard>
               <SummaryCard>
                 <h3 className="text-lg font-semibold mb-2">Próximas Ações</h3>
-                <p className="text-muted-foreground">Tarefas prioritárias para hoje</p>
+                <p className="text-muted-foreground">
+                  {taskData.filter(task => task.status === 'in-progress').length === 0 ? 
+                    'Sem tarefas em andamento' : 
+                    `${taskData.filter(task => task.status === 'in-progress').length} tarefas em andamento`}
+                </p>
               </SummaryCard>
               <SummaryCard>
                 <h3 className="text-lg font-semibold mb-2">Alertas</h3>
-                <p className="text-muted-foreground">Itens que precisam de atenção</p>
+                <p className="text-muted-foreground">
+                  {taskData.filter(task => !task.atendeuPrazo).length === 0 ? 
+                    'Sem tarefas atrasadas' :
+                    `${taskData.filter(task => !task.atendeuPrazo).length} tarefas com atraso`}
+                </p>
               </SummaryCard>
             </div>
           </section>
@@ -271,19 +283,19 @@ const Dashboard = () => {
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="card-content text-light-gray text-sm">Média de Produção:</span>
-                  <span className="kpi-value text-white text-lg">6.2 dias</span>
+                  <span className="kpi-value text-white text-lg">{kpis.averageProduction.toFixed(1)} dias</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="card-content text-light-gray text-sm">Moda:</span>
-                  <span className="kpi-value text-white text-lg">3 dias (1x)</span>
+                  <span className="kpi-value text-white text-lg">{kpis.mode.value} dias ({kpis.mode.frequency}x)</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="card-content text-light-gray text-sm">Mediana:</span>
-                  <span className="kpi-value text-white text-lg">5.5 dias</span>
+                  <span className="kpi-value text-white text-lg">{kpis.median.toFixed(1)} dias</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="card-content text-light-gray text-sm">Desvio Padrão:</span>
-                  <span className="kpi-value text-white text-lg">2.5 dias</span>
+                  <span className="kpi-value text-white text-lg">{kpis.standardDeviation.toFixed(1)} dias</span>
                 </div>
               </div>
 

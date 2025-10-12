@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import TaskTable, { TaskTableRef } from "@/components/dashboard/TaskTable";
 import { DataProvider, useData } from "@/contexts/DataContext";
-import { mockTaskData } from "@/data/projectData";
+import { getTasksData } from "@/services/localStorageData";
 import { toast } from "@/hooks/use-toast";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -284,8 +284,9 @@ const TasksContent = () => {
 };
 
 const Tasks = () => {
+  const taskData = getTasksData();
   return (
-    <DataProvider initialTasks={mockTaskData}>
+    <DataProvider initialTasks={taskData}>
       <TasksContent />
     </DataProvider>
   );

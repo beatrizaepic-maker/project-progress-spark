@@ -6,15 +6,16 @@
 
 import { describe, it, expect } from 'vitest';
 import { appStateManager } from '@/services/appStateManager';
-import { mockTaskData } from '@/data/projectData';
+import { getTasksData } from '@/services/localStorageData';
 
 describe('Integração End-to-End - Básica', () => {
   it('deve integrar corretamente o gerenciador de estado', () => {
     // Teste básico de integração
-    appStateManager.updateTasks(mockTaskData);
+    const taskData = getTasksData();
+    appStateManager.updateTasks(taskData);
     const state = appStateManager.getState();
     
-    expect(state.tasks.length).toBe(mockTaskData.length);
+    expect(state.tasks.length).toBe(taskData.length);
     expect(state.lastUpdate).toBeInstanceOf(Date);
   });
 
@@ -39,7 +40,8 @@ describe('Integração End-to-End - Básica', () => {
 
   it('deve resetar estado corretamente', () => {
     // Adicionar dados
-    appStateManager.updateTasks(mockTaskData);
+    const taskData2 = getTasksData();
+    appStateManager.updateTasks(taskData2);
     appStateManager.updateKPICache('test', { data: 'test' });
     
     // Reset
@@ -51,10 +53,11 @@ describe('Integração End-to-End - Básica', () => {
   });
 
   it('deve calcular métricas da aplicação', () => {
-    appStateManager.updateTasks(mockTaskData);
+    const taskData3 = getTasksData();
+    appStateManager.updateTasks(taskData3);
     const metrics = appStateManager.getAppMetrics();
     
-    expect(metrics.totalTasks).toBe(mockTaskData.length);
+    expect(metrics.totalTasks).toBe(taskData3.length);
     expect(metrics.lastUpdate).toBeInstanceOf(Date);
     expect(typeof metrics.memoryUsage).toBe('number');
   });

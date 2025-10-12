@@ -2,144 +2,25 @@ import React from 'react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { BrowserRouter } from 'react-router-dom';
-import type { TaskData } from '../data/projectData';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Dashboard from '@/pages/Dashboard';
+import Analytics from '@/pages/Analytics';
+import DataEditor from '@/pages/DataEditor';
+import { DataProvider } from '@/contexts/DataContext';
+import { TaskData } from '@/data/projectData';
+import { getTasksData } from '@/services/localStorageData';
 
-// Mock components since they don't exist yet
-const MockDashboard = () => <div data-testid="dashboard">Dashboard Component</div>;
-const MockAnalytics = () => <div data-testid="analytics">Analytics Component</div>;
-const MockDataEditor = () => <div data-testid="data-editor">Data Editor Component</div>;
+// Dados reais do projeto para testes
+const completeProjectData: TaskData[] = getTasksData();
 
-// Mock Data Context
-const MockDataProvider = ({ children, initialTasks = [] }: { 
+// Provedor de contexto real para testes
+const TestAppProvider = ({ children, initialTasks = completeProjectData }: { 
   children: React.ReactNode; 
   initialTasks?: TaskData[] 
 }) => {
-  const [tasks, setTasks] = React.useState(initialTasks);
-  
   return (
     <BrowserRouter>
-      <div data-testid="mock-data-provider">
-        {children}
-      </div>
-    </BrowserRouter>
-  );
-};
-
-// Mock completo dos dados do projeto
-const completeProjectData: TaskData[] = [
-  {
-    id: 1,
-    tarefa: 'Análise de Requisitos',
-    inicio: '2024-01-01',
-    fim: '2024-01-05',
-    prazo: '2024-01-10',
-    duracaoDiasUteis: 5,
-    atrasoDiasUteis: -3,
-    atendeuPrazo: true
-  },
-  {
-    id: 2,
-    tarefa: 'Design UI/UX',
-    inicio: '2024-01-06',
-    fim: '2024-01-15',
-    prazo: '2024-01-12',
-    duracaoDiasUteis: 8,
-    atrasoDiasUteis: 3,
-    atendeuPrazo: false
-  },
-  {
-    id: 3,
-    tarefa: 'Desenvolvimento Backend',
-    inicio: '2024-01-16',
-    fim: '2024-01-30',
-    prazo: '2024-01-25',
-    duracaoDiasUteis: 11,
-    atrasoDiasUteis: 5,
-    atendeuPrazo: false
-  },
-  {
-    id: 4,
-    tarefa: 'Desenvolvimento Frontend',
-    inicio: '2024-02-01',
-    fim: '2024-02-10',
-    prazo: '2024-02-08',
-    duracaoDiasUteis: 8,
-    atrasoDiasUteis: 2,
-    atendeuPrazo: false
-  },
-  {
-    id: 5,
-    tarefa: 'Testes Unitários',
-    inicio: '2024-02-11',
-    fim: '2024-02-15',
-    prazo: '2024-02-20',
-    duracaoDiasUteis: 5,
-    atrasoDiasUteis: -3,
-    atendeuPrazo: true
-  },
-  {
-    id: 6,
-    tarefa: 'Testes Integração',
-    inicio: '2024-02-16',
-    fim: '2024-02-25',
-    prazo: '2024-02-22',
-    duracaoDiasUteis: 8,
-    atrasoDiasUteis: 3,
-    atendeuPrazo: false
-  },
-  {
-    id: 7,
-    tarefa: 'Deploy Homologação',
-    inicio: '2024-02-26',
-    fim: '2024-02-28',
-    prazo: '2024-02-28',
-    duracaoDiasUteis: 3,
-    atrasoDiasUteis: 0,
-    atendeuPrazo: true
-  },
-  {
-    id: 8,
-    tarefa: 'Testes UAT',
-    inicio: '2024-03-01',
-    fim: '2024-03-10',
-    prazo: '2024-03-05',
-    duracaoDiasUteis: 8,
-    atrasoDiasUteis: 5,
-    atendeuPrazo: false
-  },
-  {
-    id: 9,
-    tarefa: 'Correções UAT',
-    inicio: '2024-03-11',
-    fim: '2024-03-15',
-    prazo: '2024-03-12',
-    duracaoDiasUteis: 5,
-    atrasoDiasUteis: 3,
-    atendeuPrazo: false
-  },
-  {
-    id: 10,
-    tarefa: 'Deploy Produção',
-    inicio: '2024-03-16',
-    fim: '2024-03-18',
-    prazo: '2024-03-20',
-    duracaoDiasUteis: 3,
-    atrasoDiasUteis: -2,
-    atendeuPrazo: true
-  }
-];
-
-// Mock do contexto completo
-const MockAppProvider = ({ children, initialTasks = completeProjectData }: { 
-  children: React.ReactNode; 
-  initialTasks?: TaskData[] 
-}) => {
-  const [tasks, setTasks] = React.useState(initialTasks);
-  
-  return (
-    <BrowserRouter>
-      <DataProvider value={{ tasks, updateTasks: setTasks }}>
+      <DataProvider initialTasks={initialTasks}>
         {children}
       </DataProvider>
     </BrowserRouter>
@@ -157,26 +38,26 @@ describe('End-to-End Application Flows', () => {
   describe('Dashboard Complete Workflow', () => {
     it('should display comprehensive KPIs on dashboard load', async () => {
       render(
-        <MockDataProvider>
-          <MockDashboard />
-        </MockDataProvider>
+        <TestAppProvider>
+          <Dashboard />
+        </TestAppProvider>
       );
 
       // Verifica se todos os KPIs principais estão presentes
       await waitFor(() => {
-        expect(screen.getByTestId('dashboard')).toBeInTheDocument();
+        expect(screen.getByText('Dashboard')).toBeInTheDocument();
       });
     });
 
     it('should update KPIs when filtering data', async () => {
       render(
-        <MockDataProvider>
-          <MockDashboard />
-        </MockDataProvider>
+        <TestAppProvider>
+          <Dashboard />
+        </TestAppProvider>
       );
 
       await waitFor(() => {
-        expect(screen.getByTestId('dashboard')).toBeInTheDocument();
+        expect(screen.getByText('Dashboard')).toBeInTheDocument();
       });
     });
 
@@ -188,38 +69,42 @@ describe('End-to-End Application Flows', () => {
           const newTask: TaskData = {
             id: 11,
             tarefa: 'Monitoramento Produção',
+            responsavel: 'Novo Responsável',
+            descricao: 'Tarefa de monitoramento',
             inicio: '2024-03-19',
             fim: '2024-03-20',
             prazo: '2024-03-25',
             duracaoDiasUteis: 2,
             atrasoDiasUteis: -3,
-            atendeuPrazo: true
+            atendeuPrazo: true,
+            status: 'todo',
+            prioridade: 'media'
           };
           setTasks(prev => [...prev, newTask]);
         };
 
         return (
-          <MockAppProvider initialTasks={tasks}>
+          <TestAppProvider initialTasks={tasks}>
             <button onClick={simulateNewTask} data-testid="add-task-btn">
               Simular Nova Tarefa
             </button>
             <Dashboard />
-          </MockAppProvider>
+          </TestAppProvider>
         );
       };
 
       render(<TestDashboard />);
 
       // Estado inicial
-      expect(screen.getByText('10')).toBeInTheDocument();
+      expect(screen.getByText('6')).toBeInTheDocument(); // Total tasks
 
       // Simula chegada de nova tarefa
       await user.click(screen.getByTestId('add-task-btn'));
 
       await waitFor(() => {
-        expect(screen.getByText('11')).toBeInTheDocument();
-        // Taxa de cumprimento deve ter melhorado (5 de 11 = ~45%)
-        expect(screen.getByText(/45%|46%/)).toBeInTheDocument();
+        expect(screen.getByText('7')).toBeInTheDocument(); // Total tasks + 1
+        // Taxa de cumprimento deve ter melhorado (3 de 7 tarefas completadas agora)
+        expect(screen.getByText(/42%|43%/)).toBeInTheDocument();
       });
     });
   });
@@ -227,9 +112,9 @@ describe('End-to-End Application Flows', () => {
   describe('Analytics Deep Dive Workflow', () => {
     it('should navigate from dashboard to detailed analytics', async () => {
       render(
-        <MockAppProvider>
+        <TestAppProvider>
           <Dashboard />
-        </MockAppProvider>
+        </TestAppProvider>
       );
 
       // Clica em um KPI para ver detalhes
@@ -244,9 +129,9 @@ describe('End-to-End Application Flows', () => {
 
     it('should display comprehensive analytics charts', async () => {
       render(
-        <MockAppProvider>
+        <TestAppProvider>
           <Analytics />
-        </MockAppProvider>
+        </TestAppProvider>
       );
 
       await waitFor(() => {
@@ -264,9 +149,9 @@ describe('End-to-End Application Flows', () => {
 
     it('should allow interactive chart exploration', async () => {
       render(
-        <MockAppProvider>
+        <TestAppProvider>
           <Analytics />
-        </MockAppProvider>
+        </TestAppProvider>
       );
 
       // Interage com gráfico de distribuição
@@ -293,9 +178,9 @@ describe('End-to-End Application Flows', () => {
   describe('Data Editor Complete Workflow', () => {
     it('should allow editing task data and see immediate updates', async () => {
       render(
-        <MockAppProvider>
+        <TestAppProvider>
           <DataEditor />
-        </MockAppProvider>
+        </TestAppProvider>
       );
 
       // Encontra tarefa para editar
@@ -331,9 +216,9 @@ describe('End-to-End Application Flows', () => {
 
     it('should validate data integrity during editing', async () => {
       render(
-        <MockAppProvider>
+        <TestAppProvider>
           <DataEditor />
-        </MockAppProvider>
+        </TestAppProvider>
       );
 
       const editButton = screen.getByTestId('edit-task-1');
@@ -364,9 +249,9 @@ describe('End-to-End Application Flows', () => {
 
     it('should bulk edit multiple tasks', async () => {
       render(
-        <MockAppProvider>
+        <TestAppProvider>
           <DataEditor />
-        </MockAppProvider>
+        </TestAppProvider>
       );
 
       // Seleciona múltiplas tarefas
@@ -407,7 +292,7 @@ describe('End-to-End Application Flows', () => {
         const [currentPage, setCurrentPage] = React.useState('dashboard');
         
         return (
-          <MockAppProvider>
+          <TestAppProvider>
             <nav>
               <button onClick={() => setCurrentPage('dashboard')}>Dashboard</button>
               <button onClick={() => setCurrentPage('analytics')}>Analytics</button>
@@ -417,14 +302,14 @@ describe('End-to-End Application Flows', () => {
             {currentPage === 'dashboard' && <Dashboard />}
             {currentPage === 'analytics' && <Analytics />}
             {currentPage === 'editor' && <DataEditor />}
-          </MockAppProvider>
+          </TestAppProvider>
         );
       };
 
       render(<TestApp />);
 
       // Verifica dados no dashboard
-      expect(screen.getByText('10')).toBeInTheDocument(); // Total tasks
+      expect(screen.getByText('6')).toBeInTheDocument(); // Total tasks
 
       // Navega para analytics
       await user.click(screen.getByRole('button', { name: /analytics/i }));
@@ -444,7 +329,7 @@ describe('End-to-End Application Flows', () => {
       await user.click(screen.getByRole('button', { name: /dashboard/i }));
       
       await waitFor(() => {
-        expect(screen.getByText('10')).toBeInTheDocument(); // Ainda 10 tasks
+        expect(screen.getByText('6')).toBeInTheDocument(); // Ainda 6 tasks
       });
     });
 
@@ -457,18 +342,22 @@ describe('End-to-End Application Flows', () => {
           const newTask: TaskData = {
             id: 11,
             tarefa: 'Nova Tarefa Cross-Page',
+            responsavel: 'Novo Responsável',
+            descricao: 'Tarefa criada via interface',
             inicio: '2024-03-19',
             fim: '2024-03-21',
             prazo: '2024-03-20',
             duracaoDiasUteis: 3,
             atrasoDiasUteis: 1,
-            atendeuPrazo: false
+            atendeuPrazo: false,
+            status: 'todo',
+            prioridade: 'media'
           };
           setTasks(prev => [...prev, newTask]);
         };
 
         return (
-          <MockAppProvider initialTasks={tasks}>
+          <TestAppProvider initialTasks={tasks}>
             <nav>
               <button onClick={() => setCurrentPage('dashboard')}>Dashboard</button>
               <button onClick={() => setCurrentPage('analytics')}>Analytics</button>
@@ -482,7 +371,7 @@ describe('End-to-End Application Flows', () => {
             {currentPage === 'dashboard' && <Dashboard />}
             {currentPage === 'analytics' && <Analytics />}
             {currentPage === 'editor' && <DataEditor />}
-          </MockAppProvider>
+          </TestAppProvider>
         );
       };
 
@@ -499,7 +388,7 @@ describe('End-to-End Application Flows', () => {
       await user.click(screen.getByRole('button', { name: /dashboard/i }));
 
       await waitFor(() => {
-        expect(screen.getByText('11')).toBeInTheDocument(); // Total atualizado
+        expect(screen.getByText('7')).toBeInTheDocument(); // Total atualizado
       });
 
       // Navega para analytics - gráficos devem incluir nova tarefa
@@ -527,7 +416,7 @@ describe('End-to-End Application Flows', () => {
           );
         }
         
-        return <MockAppProvider>{children}</MockAppProvider>;
+        return <TestAppProvider>{children}</TestAppProvider>;
       };
 
       render(
@@ -554,19 +443,23 @@ describe('End-to-End Application Flows', () => {
         {
           id: 1,
           tarefa: 'Tarefa Corrompida',
+          responsavel: 'Responsável Teste',
+          descricao: 'Tarefa com dados inválidos',
           inicio: 'invalid-date',
           fim: null as any,
           prazo: '2024-01-10',
           duracaoDiasUteis: null as any,
           atrasoDiasUteis: 'not-a-number' as any,
-          atendeuPrazo: 'maybe' as any
+          atendeuPrazo: 'maybe' as any,
+          status: 'todo',
+          prioridade: 'media'
         }
       ];
 
       render(
-        <MockAppProvider initialTasks={corruptedTasks}>
+        <TestAppProvider initialTasks={corruptedTasks}>
           <Dashboard />
-        </MockAppProvider>
+        </TestAppProvider>
       );
 
       await waitFor(() => {
@@ -585,20 +478,24 @@ describe('End-to-End Application Flows', () => {
       const largeTasks = Array.from({ length: 1000 }, (_, i) => ({
         id: i + 1,
         tarefa: `Tarefa ${i + 1}`,
+        responsavel: `Responsável ${i + 1}`,
+        descricao: `Descrição da tarefa ${i + 1}`,
         inicio: '2024-01-01',
         fim: '2024-01-10',
         prazo: '2024-01-08',
         duracaoDiasUteis: 8,
         atrasoDiasUteis: Math.floor(Math.random() * 10) - 2,
-        atendeuPrazo: Math.random() > 0.3
+        atendeuPrazo: Math.random() > 0.3,
+        status: Math.random() > 0.5 ? 'completed' : 'todo',
+        prioridade: ['baixa', 'media', 'alta', 'critica'][Math.floor(Math.random() * 4)] as 'baixa' | 'media' | 'alta' | 'critica'
       }));
 
       const startTime = performance.now();
 
       render(
-        <MockAppProvider initialTasks={largeTasks}>
+        <TestAppProvider initialTasks={largeTasks}>
           <Dashboard />
-        </MockAppProvider>
+        </TestAppProvider>
       );
 
       await waitFor(() => {
@@ -622,7 +519,7 @@ describe('End-to-End Application Flows', () => {
         };
 
         return (
-          <MockAppProvider>
+          <TestAppProvider>
             <button 
               onClick={triggerHeavyCalculation}
               data-testid="heavy-calc-btn"
@@ -631,7 +528,7 @@ describe('End-to-End Application Flows', () => {
             </button>
             {isCalculating && <div data-testid="calculating">Calculando...</div>}
             <Dashboard />
-          </MockAppProvider>
+          </TestAppProvider>
         );
       };
 

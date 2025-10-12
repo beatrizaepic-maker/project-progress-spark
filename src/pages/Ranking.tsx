@@ -14,6 +14,9 @@ import Activity from 'lucide-react/dist/esm/icons/activity';
 import Target from 'lucide-react/dist/esm/icons/target';
 import RefreshCw from 'lucide-react/dist/esm/icons/refresh-cw';
 import Download from 'lucide-react/dist/esm/icons/download';
+import FileText from 'lucide-react/dist/esm/icons/file-text';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
   calculateLevelFromXp,
@@ -30,8 +33,8 @@ import {
 } from '@/services/missionService';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-// Preferir endpoints reais; mockApi fica como fallback no dev offline
-import { fetchRanking, seedMockData } from '@/services/mockApi';
+// Usando localStorage para persistência dos dados
+import { fetchRanking } from '@/services/localStorageData';
 
 // Tipos para o sistema de gameficação
 interface UserRanking {
@@ -73,6 +76,7 @@ interface PerformanceDetails {
   penalties: number;
   currentStreak: number;
   bestStreak: number;
+  totalXp?: number; // Campo opcional para XP total calculado
 }
 
 // Componente principal da página de ranking
@@ -85,35 +89,7 @@ const RankingPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<string>('');
 
-  // Simula dados de tarefas recentes (em uma aplicação real, isso viria de uma API)
-  const [recentTasks, setRecentTasks] = useState<Task[]>([
-    {
-      id: 't1',
-      title: 'Relatório Mensal',
-      status: 'completed',
-      completedDate: new Date(Date.now() - 86400000).toISOString(), // Ontem
-      dueDate: new Date(Date.now() - 86400000).toISOString(),
-      assignedTo: '1',
-      completedEarly: true
-    },
-    {
-      id: 't2',
-      title: 'Reunião de Planejamento',
-      status: 'completed',
-      completedDate: new Date().toISOString(), // Hoje
-      dueDate: new Date(Date.now() + 86400000).toISOString(),
-      assignedTo: '2'
-    },
-    {
-      id: 't3',
-      title: 'Revisão de Tarefa de Ana',
-      status: 'completed',
-      completedDate: new Date(Date.now() - 172800000).toISOString(), // Anteontem
-      dueDate: new Date(Date.now() - 86400000).toISOString(),
-      assignedTo: '3',
-      completedEarly: true
-    }
-  ]);
+  const [recentTasks, setRecentTasks] = useState<Task[]>([]);
 
   // Função para atualizar os dados do ranking
   const updateRankingData = useCallback(() => {
@@ -131,83 +107,15 @@ const RankingPage: React.FC = () => {
         throw new Error('empty');
       })
       .catch(() => {
-        // Simula carregamento de dados atualizados local/mocked
-        const mockUsers: UserRanking[] = [
-        {
-          id: '1',
-          name: user?.name || 'João Silva',
-          avatar: user?.avatar || '/avatars/user1.png',
-          xp: 2450,
-          level: 5,
-          position: 1,
-          weeklyXp: 340,
-          monthlyXp: 1200,
-          missionsCompleted: 8,
-          consistencyBonus: 50,
-          streak: 12
-        },
-        {
-          id: '2',
-          name: 'Maria Oliveira',
-          avatar: '/avatars/user2.png',
-          xp: 2100,
-          level: 4,
-          position: 2,
-          weeklyXp: 290,
-          monthlyXp: 980,
-          missionsCompleted: 6,
-          consistencyBonus: 30,
-          streak: 8
-        },
-        {
-          id: '3',
-          name: 'Carlos Souza',
-          avatar: '/avatars/user3.png',
-          xp: 1950,
-          level: 4,
-          position: 3,
-          weeklyXp: 270,
-          monthlyXp: 870,
-          missionsCompleted: 7,
-          consistencyBonus: 40,
-          streak: 10
-        },
-        {
-          id: '4',
-          name: 'Ana Costa',
-          avatar: '/avatars/user4.png',
-          xp: 1750,
-          level: 3,
-          position: 4,
-          weeklyXp: 210,
-          monthlyXp: 750,
-          missionsCompleted: 5,
-          consistencyBonus: 20,
-          streak: 5
-        },
-        {
-          id: '5',
-          name: 'Pedro Santos',
-          avatar: '/avatars/user5.png',
-          xp: 1600,
-          level: 3,
-          position: 5,
-          weeklyXp: 190,
-          monthlyXp: 680,
-          missionsCompleted: 4,
-          consistencyBonus: 15,
-          streak: 3
-        }
-        ];
-        // Semeia mock API e busca via DTO para validar contratos/ordenacao por XP
-        seedMockData(mockUsers as unknown as UserType[], recentTasks);
+        // Busca dados do ranking via localStorage
         fetchRanking()
           .then(dto => {
             setAllUsers(dto.map(u => ({ ...u, position: 0 })) as unknown as UserRanking[]);
           })
           .catch(() => {
-            // Fallback local caso mockApi falhe
-            const updatedUsers = updateRanking(mockUsers as UserType[], recentTasks);
+            // Fallback caso haja algum problema com o localStorage
+            // Usando array vazio como fallback seguro, já que updateRanking pode lidar com array vazio
+            const updatedUsers = updateRanking([], recentTasks);
             setAllUsers(updatedUsers as unknown as UserRanking[]);
           })
           .finally(() => {
@@ -268,6 +176,81 @@ const RankingPage: React.FC = () => {
       }));
   }, [allUsers, activeTab]);
 
+  // Utilitário de data
+  const nowLabel = () => new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+
+  // Exportar CSV (cliente) usando os dados atuais
+  const handleExportCSV = () => {
+    try {
+      const sep = ',';
+      const header = [
+        'Posição','Nome','XP Total','Nível','XP Semanal','XP Mensal','Missões Concluídas','Bônus Consistência','Streak'
+      ];
+      const rows = (rankingData.length ? rankingData : allUsers).map(u => [
+        String(u.position ?? ''),
+        `"${u.name ?? ''}"`,
+        String(u.xp ?? 0),
+        String(u.level ?? ''),
+        String(u.weeklyXp ?? 0),
+        String(u.monthlyXp ?? 0),
+        String(u.missionsCompleted ?? 0),
+        String(u.consistencyBonus ?? 0),
+        String(u.streak ?? 0)
+      ]);
+      const csv = [header.join(sep), ...rows.map(r => r.join(sep))].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ranking-${activeTab}-${new Date().toISOString().slice(0,10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('Erro ao exportar CSV do ranking:', e);
+    }
+  };
+
+  // Exportar PDF (cliente) com jsPDF + autoTable
+  const handleExportPDF = () => {
+    try {
+      const doc = new jsPDF();
+      const period = activeTab === 'weekly' ? 'Semanal' : 'Mensal';
+      // Título
+      doc.setFontSize(16);
+      doc.text('Ranking de Gamificação', 14, 18);
+      doc.setFontSize(11);
+      doc.text(`Período: ${period}`, 14, 26);
+      doc.text(`Gerado em: ${nowLabel()}`, 14, 32);
+
+      // Tabela
+      const data = (rankingData.length ? rankingData : allUsers).map(u => ([
+        u.position ?? '',
+        u.name ?? '',
+        u.xp ?? 0,
+        u.level ?? '',
+        u.weeklyXp ?? 0,
+        u.monthlyXp ?? 0,
+        u.missionsCompleted ?? 0,
+        u.consistencyBonus ?? 0,
+        u.streak ?? 0
+      ]));
+
+      autoTable(doc, {
+        head: [[
+          'Posição','Nome','XP Total','Nível','XP Semanal','XP Mensal','Missões','Bônus Consistência','Streak'
+        ]],
+        body: data,
+        startY: 40,
+        headStyles: { fillColor: [139, 92, 246] },
+        styles: { fontSize: 9 },
+      });
+
+      doc.save(`ranking-${activeTab}-${new Date().toISOString().slice(0,10)}.pdf`);
+    } catch (e) {
+      console.error('Erro ao exportar PDF do ranking:', e);
+    }
+  };
+
   const handleUserClick = (clicked: UserRanking) => {
     // Regra: para perfil "user/player", só pode abrir o card do próprio usuário
     const role = String((user as any)?.role || '').toLowerCase();
@@ -281,51 +264,31 @@ const RankingPage: React.FC = () => {
       });
       return;
     }
-    // Simular carregamento de detalhes do usuário
-    const mockDetails: PerformanceDetails = {
-      userId: clicked.id,
-      userName: clicked.name,
-      xpHistory: [
-        { date: '2023-05-01', xp: 10, source: 'task', description: 'Tarefa finalizada: Relatório Mensal' },
-        { date: '2023-05-02', xp: 5, source: 'task', description: 'Tarefa finalizada: Análise de Dados' },
-        { date: '2023-05-03', xp: 10, source: 'mission', description: 'Missão semanal completada: Entregar 3 tarefas' },
-        { date: '2023-05-04', xp: 20, source: 'bonus', description: 'Bônus de consistência (5 dias seguidos)' },
-        { date: '2023-05-05', xp: -5, source: 'penalty', description: 'Penalização por atraso em tarefa' },
-        { date: '2023-05-06', xp: 10, source: 'task', description: 'Tarefa finalizada: Atualização de Relatório' },
-      ],
-      missions: [
-        {
-          id: 'm1',
-          title: 'Entregar 3 tarefas adiantadas',
-          description: 'Complete 3 tarefas antes do prazo para ganhar XP extra',
-          xpReward: 20,
-          completed: true,
-          deadline: '2023-05-10'
-        },
-        {
-          id: 'm2',
-          title: 'Participar de 5 reuniões',
-          description: 'Participe de 5 reuniões semanais para ganhar XP extra',
-          xpReward: 15,
-          completed: false,
-          deadline: '2023-05-12'
-        },
-        {
-          id: 'm3',
-          title: 'Revisar 10 tarefas de colegas',
-          description: 'Revise e forneça feedback para 10 tarefas de colegas',
-          xpReward: 25,
-          completed: false,
-          deadline: '2023-05-15'
-        }
-      ],
-      consistencyBonus: clicked.consistencyBonus,
-      penalties: 5,
-      currentStreak: clicked.streak,
-      bestStreak: 15
-    };
-    
-    setSelectedUser(mockDetails);
+    // Buscar detalhes reais do usuário via API
+    fetch(`http://localhost:3001/api/users/${clicked.id}/details`)
+      .then(response => response.json())
+      .then((userData: PerformanceDetails) => {
+        setSelectedUser({
+          ...userData,
+          userId: clicked.id,
+          userName: clicked.name,
+          consistencyBonus: clicked.consistencyBonus,
+          currentStreak: clicked.streak
+        });
+      })
+      .catch(() => {
+        // Fallback com dados mínimos baseados no usuário clicado
+        setSelectedUser({
+          userId: clicked.id,
+          userName: clicked.name,
+          xpHistory: [],
+          missions: [],
+          consistencyBonus: clicked.consistencyBonus,
+          penalties: 0,
+          currentStreak: clicked.streak,
+          bestStreak: clicked.streak
+        });
+      });
   };
 
   // Função para mostrar ícone de posição
@@ -357,12 +320,22 @@ const RankingPage: React.FC = () => {
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => window.open('http://localhost:3001/api/reports/ranking.csv', '_blank')}
+              onClick={handleExportCSV}
               disabled={isLoading}
               className="flex items-center gap-2"
             >
               <Download className="h-4 w-4" />
               Exportar CSV
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleExportPDF}
+              disabled={isLoading}
+              className="flex items-center gap-2"
+            >
+              <FileText className="h-4 w-4" />
+              Exportar PDF
             </Button>
             <Button 
               variant="outline" 
@@ -405,7 +378,7 @@ const RankingPage: React.FC = () => {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Total de XP</p>
-              <p className="text-xl font-bold">12,450</p>
+              <p className="text-xl font-bold">{allUsers.reduce((sum, user) => sum + user.xp, 0)}</p>
             </div>
           </CardContent>
         </Card>
@@ -417,7 +390,7 @@ const RankingPage: React.FC = () => {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Missões Completas</p>
-              <p className="text-xl font-bold">24</p>
+              <p className="text-xl font-bold">{allUsers.reduce((sum, user) => sum + user.missionsCompleted, 0)}</p>
             </div>
           </CardContent>
         </Card>
@@ -429,7 +402,7 @@ const RankingPage: React.FC = () => {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Maior Sequência</p>
-              <p className="text-xl font-bold">15 dias</p>
+              <p className="text-xl font-bold">{Math.max(...allUsers.map(u => u.streak), 0)} dias</p>
             </div>
           </CardContent>
         </Card>
@@ -441,7 +414,7 @@ const RankingPage: React.FC = () => {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Usuários Ativos</p>
-              <p className="text-xl font-bold">28</p>
+              <p className="text-xl font-bold">{allUsers.length}</p>
             </div>
           </CardContent>
         </Card>
@@ -567,19 +540,19 @@ const RankingPage: React.FC = () => {
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Nível Atual:</span>
-                        <span className="font-medium">5</span>
+                        <span className="font-medium">{calculateLevelFromXp(selectedUser.xpHistory.reduce((sum, entry) => sum + entry.xp, 0))}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">XP Total:</span>
-                        <span className="font-medium text-primary">2450 XP</span>
+                        <span className="font-medium text-primary">{selectedUser.xpHistory.reduce((sum, entry) => sum + entry.xp, 0)} XP</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Sequência Atual:</span>
-                        <span className="font-medium text-orange-500">12 dias</span>
+                        <span className="font-medium text-orange-500">{selectedUser.currentStreak} dias</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Melhor Sequência:</span>
-                        <span className="font-medium text-orange-500">15 dias</span>
+                        <span className="font-medium text-orange-500">{selectedUser.bestStreak} dias</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Bônus de Consistência:</span>

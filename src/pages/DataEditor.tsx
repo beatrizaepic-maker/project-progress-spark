@@ -1,11 +1,12 @@
 import DataEditor from "@/components/dashboard/DataEditor";
 import { DataProvider } from "@/contexts/DataContext";
-import { mockTaskData } from "@/data/projectData";
+import { getTasksData } from "@/services/localStorageData";
 import KPIDebugSection from "@/components/dashboard/KPIDebugSection";
 
 const DataEditorPage = () => {
+  const taskData = getTasksData();
   return (
-    <DataProvider initialTasks={mockTaskData}>
+    <DataProvider initialTasks={taskData}>
       <main className="container mx-auto px-6 py-8 space-y-8">
           {/* Editor de Dados */}
           <section>
@@ -25,7 +26,7 @@ const DataEditorPage = () => {
               <h3 className="text-xl font-semibold text-foreground mb-2">Debug e Monitoramento</h3>
               <p className="text-muted-foreground">Informações técnicas e métricas de performance dos KPIs</p>
             </div>
-            <KPIDebugSection tasks={mockTaskData} />
+            <KPIDebugSection tasks={taskData} />
           </section>
       </main>
     </DataProvider>

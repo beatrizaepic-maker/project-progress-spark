@@ -14,7 +14,7 @@ import Mail from 'lucide-react/dist/esm/icons/mail';
 import Briefcase from 'lucide-react/dist/esm/icons/briefcase';
 import Bell from 'lucide-react/dist/esm/icons/bell';
 import { PlayerProfile, PlayerStats } from '@/types/player';
-import { mockTaskData } from '@/data/projectData';
+import { useData } from '@/contexts/DataContext';
 import TasksModal, { TaskItem } from './TasksModal';
 import PlayerStatsCard from './PlayerStatsCard';
 
@@ -40,12 +40,14 @@ const PlayerProfileView: React.FC<PlayerProfileViewProps> = ({
   // Estado do modal de tarefas
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<'overdue' | 'today'>('overdue');
-
+  
+  // Usar dados reais do contexto em vez de mock
+  const { tasks: allTasks } = useData();
+  
   // Mapeia os dados globais para as tarefas do usuário logado (por nome)
-  // Em uma implementação real, substituir por dados do backend + id do usuário
   const userTasks = useMemo(() => {
-    return mockTaskData.filter(t => !t.responsavel || t.responsavel?.toLowerCase().includes(profile.name.split(' ')[0].toLowerCase()));
-  }, [profile.name]);
+    return allTasks.filter(t => !t.responsavel || t.responsavel?.toLowerCase().includes(profile.name.split(' ')[0].toLowerCase()));
+  }, [allTasks, profile.name]);
 
   // Utilidades de data
   const isToday = (isoLike: string) => {
@@ -88,19 +90,9 @@ const PlayerProfileView: React.FC<PlayerProfileViewProps> = ({
       }));
   }, [userTasks]);
 
-  // Fallback demonstrativo para quando não houver tarefas do usuário no mock
-  const fallbackOverdue: TaskItem[] = [
-    { id: 'f1', titulo: 'Desenvolvimento Frontend', prazo: formatDate(new Date(Date.now() - 2*24*60*60*1000).toISOString()), status: 'overdue', detalhe: '2 dias atrasado' },
-    { id: 'f2', titulo: 'Revisão de Requisitos', prazo: formatDate(new Date(Date.now() - 1*24*60*60*1000).toISOString()), status: 'overdue', detalhe: '1 dia atrasado' },
-  ];
-  const fallbackToday: TaskItem[] = [
-    { id: 'f3', titulo: 'Atualizar Documentação', prazo: formatDate(new Date().toISOString()), status: 'today', detalhe: 'vence hoje' },
-    { id: 'f4', titulo: 'Testes Unitários', prazo: formatDate(new Date().toISOString()), status: 'today', detalhe: 'vence hoje' },
-    { id: 'f5', titulo: 'Deploy de Hotfix', prazo: formatDate(new Date().toISOString()), status: 'today', detalhe: 'vence hoje' },
-  ];
-
-  const computedOverdue = overdueTasks.length ? overdueTasks : fallbackOverdue;
-  const computedToday = todayTasks.length ? todayTasks : fallbackToday;
+  // Não usar fallback com mocks; se não houver tarefas, retornar listas vazias
+  const computedOverdue = overdueTasks;
+  const computedToday = todayTasks;
 
   const openModal = (type: 'overdue' | 'today') => {
     setModalType(type);

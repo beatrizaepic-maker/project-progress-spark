@@ -12,10 +12,11 @@ import ProfileEditModal from '@/components/player/ProfileEditModal';
 import NotificationsModal from '@/components/player/NotificationsModal';
 import { PlayerStats } from '@/types/player';
 import { calculatePlayerStats } from '@/services/playerService';
-import { fetchPlayerProfile } from '@/services/mockApi';
-import { reportUrls, download } from '@/services/reports';
+import { fetchPlayerProfile, getTasksData } from '@/services/localStorageData';
+// import { reportUrls, download } from '@/services/reports';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import HelpCircle from 'lucide-react/dist/esm/icons/help-circle';
+import { DataProvider } from '@/contexts/DataContext';
 // (import duplicado removido)
 
 const PlayerProfilePage: React.FC = () => {
@@ -178,39 +179,45 @@ const PlayerProfilePage: React.FC = () => {
     );
   };
 
-    // Dados fictícios para Atividade Recente
-    const recentActivities = [
-      {
-        id: 'a1',
-        title: 'XP ganho',
-        description: 'Você ganhou 20 XP ao completar a tarefa "Revisão de Código".',
-        date: '2025-10-08 14:30',
-      },
-      {
-        id: 'a2',
-        title: 'Missão concluída',
-        description: 'Missão semanal "Colaborar em 3 projetos" concluída. +50 XP.',
-        date: '2025-10-07 18:10',
-      },
-      {
-        id: 'a3',
-        title: 'Novo nível',
-        description: 'Você atingiu o nível 6! Continue evoluindo.',
-        date: '2025-10-06 09:45',
-      },
-      {
-        id: 'a4',
-        title: 'Conquista desbloqueada',
-        description: 'Conquista "Primeiro Deploy" desbloqueada. +30 XP.',
-        date: '2025-10-05 16:20',
-      },
-      {
-        id: 'a5',
-        title: 'Feedback recebido',
-        description: 'Você recebeu feedback positivo do líder de projeto.',
-        date: '2025-10-04 11:00',
-      },
-    ];
+    // Atividade Recente dinâmica baseada em dados reais do localStorage (tarefas)
+    type RecentActivity = { id: string; title: string; description: string; date: string };
+    const formatDateTime = (iso?: string) => {
+      if (!iso) return '';
+      try {
+        return new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+      } catch { return iso; }
+    };
+
+    const tasksForProfile = (() => {
+      const all = getTasksData();
+      // Tenta filtrar por responsável (nome do perfil)
+      const firstName = (state.profile?.name || '').split(' ')[0] || '';
+      const byOwner = all.filter(t => t.responsavel && firstName && t.responsavel.toLowerCase().includes(firstName.toLowerCase()));
+      return byOwner.length ? byOwner : all; // se não houver match, usa geral
+    })();
+
+    const recentActivities: RecentActivity[] = tasksForProfile
+      .map((t) => {
+        // Preferir evento de conclusão quando houver fim
+        if (t.fim) {
+          return {
+            id: `task-fim-${t.id}`,
+            title: t.status === 'completed' ? 'Tarefa concluída' : 'Tarefa atualizada',
+            description: `"${t.tarefa}" ${t.status === 'completed' ? 'concluída' : 'atualizada'} por ${t.responsavel || 'N/D'}.`,
+            date: formatDateTime(t.fim)
+          };
+        }
+        // Caso não tenha fim, usar criação/início como atividade
+        return {
+          id: `task-inicio-${t.id}`,
+          title: 'Tarefa criada',
+          description: `"${t.tarefa}" atribuída a ${t.responsavel || 'N/D'}.`,
+          date: formatDateTime(t.inicio)
+        };
+      })
+      // ordenar por data descendente (fim ou início)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 5);
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
@@ -221,14 +228,7 @@ const PlayerProfilePage: React.FC = () => {
         <p className="text-muted-foreground">
           Gerencie suas informações e visualize seu progresso
         </p>
-        <div className="mt-3 flex gap-2">
-          <Button variant="outline" className="rounded-none" onClick={() => download(reportUrls.productivityCsv())}>
-            Exportar Produtividade (CSV)
-          </Button>
-          <Button variant="outline" className="rounded-none" onClick={() => download(reportUrls.incorrectCsv())}>
-            Exportar Submissões Incorretas (CSV)
-          </Button>
-        </div>
+        {/* Botões de exportação removidos conforme solicitado */}
         {isOwnProfile && (
           <div className="mt-4">
             <Button 
@@ -243,14 +243,16 @@ const PlayerProfilePage: React.FC = () => {
       </div>
       {/* Card de tarefas agora é renderizado dentro de PlayerProfileView logo após o cabeçalho */}
 
-      <PlayerProfileView 
-        profile={state.profile} 
-        stats={stats as PlayerStats} 
-        isOwnProfile={isOwnProfile}
-        onEdit={isOwnProfile ? () => setIsEditing(true) : undefined}
-        onSendMessage={!isOwnProfile ? () => console.log('Enviar mensagem') : undefined}
-        onNotifications={isOwnProfile ? () => setIsNotificationsOpen(true) : undefined}
-      />
+      <DataProvider initialTasks={getTasksData()}>
+        <PlayerProfileView 
+          profile={state.profile} 
+          stats={stats as PlayerStats} 
+          isOwnProfile={isOwnProfile}
+          onEdit={isOwnProfile ? () => setIsEditing(true) : undefined}
+          onSendMessage={!isOwnProfile ? () => console.log('Enviar mensagem') : undefined}
+          onNotifications={isOwnProfile ? () => setIsNotificationsOpen(true) : undefined}
+        />
+      </DataProvider>
 
         {/* Produtividade Média (apenas no perfil) */}
         {prodMetrics && (
@@ -319,17 +321,23 @@ const PlayerProfilePage: React.FC = () => {
             <h2 className="text-2xl font-bold text-white">Atividade Recente</h2>
           </div>
           <p className="text-muted-foreground mb-4">Esta seção exibe o histórico recente de atividades do player.</p>
-          <ul className="space-y-3">
-            {recentActivities.map(activity => (
-              <li key={activity.id} className="bg-[#23234a] rounded-none p-4 border-l-4 border-[#7c3aed]">
-                <div className="flex justify-between items-center">
-                  <span className="font-semibold text-white">{activity.title}</span>
-                  <span className="text-xs text-muted-foreground">{activity.date}</span>
-                </div>
-                <p className="text-sm text-muted-foreground mt-1">{activity.description}</p>
-              </li>
-            ))}
-          </ul>
+          {recentActivities.length === 0 ? (
+            <div className="bg-[#23234a] rounded-none p-4 border border-dashed border-[#7c3aed]/40 text-muted-foreground">
+              Nenhuma atividade recente encontrada.
+            </div>
+          ) : (
+            <ul className="space-y-3">
+              {recentActivities.map(activity => (
+                <li key={activity.id} className="bg-[#23234a] rounded-none p-4 border-l-4 border-[#7c3aed]">
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold text-white">{activity.title}</span>
+                    <span className="text-xs text-muted-foreground">{activity.date}</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">{activity.description}</p>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         {/* Card de Aproveitamento da Temporada (posicionado abaixo de Atividade Recente) */}

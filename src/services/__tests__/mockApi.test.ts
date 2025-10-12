@@ -1,6 +1,6 @@
 // src/services/__tests__/mockApi.test.ts
 import { describe, it, expect } from 'vitest';
-import { seedMockData, fetchRanking, fetchPlayerProfile } from '../mockApi';
+import { seedMockData, fetchRanking, fetchPlayerProfile } from '../localStorageData';
 import type { Task, User } from '../gamificationService';
 
 describe('mockApi ranking/profile DTOs', () => {

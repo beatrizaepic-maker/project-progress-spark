@@ -1,7 +1,7 @@
 import React, { useState, useRef, Fragment } from 'react';
 import Charts from "@/components/dashboard/Charts";
 import { DataProvider, useData } from "@/contexts/DataContext";
-import { mockTaskData } from "@/data/projectData";
+import { getTasksData } from "@/services/localStorageData";
 import { useAnalyticsKPIs } from "@/hooks/useKPIs";
 import KPILoadingIndicator from "@/components/ui/kpi-loading-indicator";
 import { motion, AnimatePresence } from "framer-motion";
@@ -60,7 +60,15 @@ const AnalyticsContent = () => {
   const [isButtonHidden, setIsButtonHidden] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   
-  const analyticsKPIs = useAnalyticsKPIs(tasks, {
+  // Garantir que temos dados suficientes para os cálculos
+  const validTasks = tasks.filter(task => 
+    task.tarefa && 
+    task.inicio && 
+    task.prazo && 
+    task.status
+  );
+  
+  const analyticsKPIs = useAnalyticsKPIs(validTasks, {
     debounceMs: 500, // Maior debounce para analytics (gráficos mais pesados)
     cacheTTL: 10 * 60 * 1000, // 10 minutos de cache
     enableCache: true,
@@ -310,8 +318,9 @@ const AnalyticsContent = () => {
 };
 
 const Analytics = () => {
+  const taskData = getTasksData();
   return (
-    <DataProvider initialTasks={mockTaskData}>
+    <DataProvider initialTasks={taskData}>
       <AnalyticsContent />
     </DataProvider>
   );

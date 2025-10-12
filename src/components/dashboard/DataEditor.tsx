@@ -10,10 +10,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-import { TaskData, mockTaskData } from '@/data/projectData';
+import { TaskData } from '@/data/projectData';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { toast } from '@/hooks/use-toast';
 import KanbanBoard from './KanbanBoard';
+import { getTasksData, saveTasksData } from '@/services/localStorageData';
 
 interface TaskFormData {
   tarefa: string;
@@ -29,11 +30,12 @@ interface TaskFormData {
 // Tipo nomeado para as props do formulário para evitar ambiguidade no parser
 type TaskFormProps = {
   task?: TaskData;
+  tasks: TaskData[]; // Adicionado para obter os responsáveis únicos
   onSubmit: (data: TaskFormData) => void;
   onCancel: () => void;
 };
 
-const TaskForm: React.FC<TaskFormProps> = ({ task, onSubmit, onCancel }) => {
+const TaskForm: React.FC<TaskFormProps> = ({ task, tasks, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState<TaskFormData>({
     tarefa: task?.tarefa || '',
     responsavel: task?.responsavel || '',
@@ -102,7 +104,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSubmit, onCancel }) => {
             <SelectValue placeholder="Selecione o responsável" />
           </SelectTrigger>
           <SelectContent>
-            {[...new Set(mockTaskData.map(t => t.responsavel))]
+            {[...new Set(tasks.map(t => t.responsavel))]
               .filter((name): name is string => Boolean(name))
               .map((name) => (
                 <SelectItem key={name} value={name}>{name}</SelectItem>
@@ -187,22 +189,44 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSubmit, onCancel }) => {
 };
 
 const DataEditor: React.FC = () => {
-  const { tasks, addTask, editTask, deleteTask, importData, exportData } = useData();
+  const { tasks, addTask, editTask, deleteTask, importData, exportData, updateTasks } = useData();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<TaskData | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'kanban' | 'player'>('table');
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
+
+  // Resetar dados do localStorage com confirmação
+  const handleResetData = () => {
+    if (!confirm('Tem certeza que deseja limpar todas as tarefas e métricas do projeto? Esta ação não pode ser desfeita.')) return;
+    try {
+      // Limpa tarefas e métricas
+      saveTasksData([]);
+      // Atualiza contexto com o novo estado vazio
+      updateTasks(getTasksData());
+      toast({
+        title: 'Dados resetados',
+        description: 'Todas as tarefas e métricas foram limpas com sucesso.',
+        className: 'bg-gradient-to-r from-[#6A0DAD] to-[#FF0066] border-none text-white rounded-md shadow-lg',
+      });
+    } catch (e) {
+      toast({
+        title: 'Erro ao resetar dados',
+        description: 'Não foi possível limpar os dados. Verifique o console.',
+        variant: 'destructive'
+      });
+      console.error(e);
+    }
+  };
   
   // Função para obter players únicos a partir das tarefas
-  // Map de player para avatar (mock: pode ser expandido para buscar de API ou contexto de perfil)
-  const playerAvatars: Record<string, string> = {
-    'Maria Silva': '/avatars/maria.png',
-    'João Santos': '/avatars/joao.png',
-    'Ana Costa': '/avatars/ana.png',
-    'Pedro Lima': '/avatars/pedro.png',
-    'Carla Oliveira': '/avatars/carla.png',
-    'Roberto Alves': '/avatars/roberto.png',
-  };
+  // Mapa dinâmico de player para avatar
+  const playerAvatars: Record<string, string> = {};
+  // Preenche o mapa com valores padrão para qualquer responsável encontrado
+  tasks.forEach(task => {
+    if (task.responsavel && !playerAvatars[task.responsavel]) {
+      playerAvatars[task.responsavel] = '/avatars/default.png';
+    }
+  });
   const players = Array.from(new Set(tasks.map(task => task.responsavel))).filter(Boolean) as string[];
 
   const getStatusLabel = (status: string) => {
@@ -319,6 +343,14 @@ const DataEditor: React.FC = () => {
               📥
               Exportar
             </Button>
+            <Button 
+              variant="destructive" 
+              size="sm" 
+              onClick={handleResetData}
+              className="rounded-none"
+            >
+              🗑️ Resetar Dados
+            </Button>
             
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
@@ -338,6 +370,7 @@ const DataEditor: React.FC = () => {
                   </DialogDescription>
                 </DialogHeader>
                 <TaskForm 
+                  tasks={tasks} 
                   onSubmit={handleAddTask} 
                   onCancel={() => setIsAddDialogOpen(false)} 
                 />
@@ -514,6 +547,7 @@ const DataEditor: React.FC = () => {
             {editingTask && (
               <TaskForm 
                 task={editingTask}
+                tasks={tasks}
                 onSubmit={handleEditTask} 
                 onCancel={() => setEditingTask(null)} 
               />
@@ -553,6 +587,7 @@ const DataEditor: React.FC = () => {
                       </DialogDescription>
                     </DialogHeader>
                     <TaskForm 
+                      tasks={tasks}
                       onSubmit={(data) => {
                         // Preenche automaticamente o campo responsável com o player selecionado
                         addTask({

@@ -1,5 +1,5 @@
 import { DataProvider } from "@/contexts/DataContext";
-import { mockTaskData } from "@/data/projectData";
+import { getTasksData, getGamificationUsers } from "@/services/localStorageData";
 import { Button, ButtonProps } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import React, { useState } from "react";
@@ -167,8 +167,9 @@ const Settings = () => {
   const [streakEnabled, setStreakEnabledState] = useState<boolean>(() => isStreakEnabled());
   const [streakInclude, setStreakInclude] = useState<{ total: boolean; weekly: boolean; monthly: boolean }>(() => getStreakIncludeIn());
 
-  // Usuários cadastrados (derivados dos responsáveis cadastrados nas tarefas mock)
-  const users = Array.from(new Set(mockTaskData.map(t => t.responsavel))).filter(Boolean) as string[];
+  // Usuários cadastrados (derivados dos responsáveis cadastrados nas tarefas)
+  const taskData = getTasksData();
+  const users = Array.from(new Set(taskData.map(t => t.responsavel))).filter(Boolean) as string[];
   const [selectedUser, setSelectedUser] = useState<string>("");
   const [selectedAccess, setSelectedAccess] = useState<'Player' | 'Adm' | 'DEV'>("Player");
   const [accessLevels, setAccessLevels] = useState<Record<string, 'Player' | 'Adm' | 'DEV'>>({});
@@ -242,7 +243,7 @@ const Settings = () => {
   };
 
   return (
-    <DataProvider initialTasks={mockTaskData}>
+    <DataProvider initialTasks={taskData}>
       <main className="container mx-auto px-6 py-8 space-y-8">
         {/* Configurações */}
         <section>
@@ -453,6 +454,123 @@ const Settings = () => {
                 <ParticleButton onClick={saveStreakCard} className="w-full md:w-auto">
                   <Save className="mr-2 h-4 w-4" /> Salvar Streak
                 </ParticleButton>
+              </div>
+            </SettingsCard>
+            
+            {/* Tabela de Usuários do Sistema */}
+            <SettingsCard title="Usuários do Sistema" icon={Target}>
+              <div className="space-y-4">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm text-left rounded-xl overflow-hidden">
+                    <thead>
+                      <tr className="bg-gradient-to-r from-[#6A0DAD]/80 to-[#FF0066]/80 text-white">
+                        <th className="px-4 py-3 font-semibold">Nome</th>
+                        <th className="px-4 py-3 font-semibold">E-mail</th>
+                        <th className="px-4 py-3 font-semibold">% Utilização</th>
+                        <th className="px-4 py-3 font-semibold">XP Total</th>
+                        <th className="px-4 py-3 font-semibold">Último Acesso</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-[#1A1A2E] divide-y divide-[#6A0DAD]/30">
+                      {(() => {
+                        // Carrega usuários do localStorage
+                        const gamificationUsers = getGamificationUsers();
+                        
+                        // Calcula estatísticas para cada usuário
+                        const userTasks = getTasksData();
+                        const userTasksMap = {};
+                        
+                        // Agrupa tarefas por responsável
+                        userTasks.forEach(task => {
+                          if (task.responsavel) {
+                            if (!userTasksMap[task.responsavel]) {
+                              userTasksMap[task.responsavel] = [];
+                            }
+                            userTasksMap[task.responsavel].push(task);
+                          }
+                        });
+                        
+                        // Combina dados de usuários do sistema e tarefas
+                        const allUsers = Array.from(new Set([
+                          ...gamificationUsers.map(u => u.name),
+                          ...Object.keys(userTasksMap)
+                        ]));
+                        
+                        // Se não há usuários, mostra mensagem
+                        if (allUsers.length === 0) {
+                          return (
+                            <tr>
+                              <td colSpan={5} className="px-4 py-6 text-center text-[#C0C0C0]">
+                                Nenhum usuário cadastrado no sistema.
+                              </td>
+                            </tr>
+                          );
+                        }
+                        
+                        return allUsers.map((userName, idx) => {
+                          // Encontra dados do usuário na gamificação (se existir)
+                          const gamificationUser = gamificationUsers.find(u => u.name === userName);
+                          const userTaskList = userTasksMap[userName] || [];
+                          
+                          // Calcula estatísticas
+                          const totalTasks = userTaskList.length;
+                          const completedTasks = userTaskList.filter(t => t.statusTarefa === 'Concluída').length;
+                          const utilizationPercent = totalTasks > 0 
+                            ? Math.round((completedTasks / totalTasks) * 100) 
+                            : 0;
+                          
+                          // Último acesso (usa a data mais recente de qualquer tarefa concluída)
+                          const lastTaskDate = userTaskList
+                            .filter(t => t.dataTermino)
+                            .map(t => new Date(t.dataTermino))
+                            .sort((a, b) => b.getTime() - a.getTime())[0];
+                            
+                          const lastAccess = lastTaskDate 
+                            ? new Intl.DateTimeFormat('pt-BR', { 
+                                day: '2-digit', 
+                                month: '2-digit',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              }).format(lastTaskDate)
+                            : 'Não disponível';
+                          
+                          // XP Total (da gamificação ou 0 se não existir)
+                          const xpTotal = gamificationUser ? gamificationUser.xp : 0;
+                          
+                          // E-mail (baseado no nome para demonstração)
+                          const email = `${userName.toLowerCase().replace(/\s+/g, '.')}@empresa.com.br`;
+                          
+                          return (
+                            <tr key={idx} className="hover:bg-[#6A0DAD]/10">
+                              <td className="px-4 py-3 text-white">{userName}</td>
+                              <td className="px-4 py-3 text-[#C0C0C0]">{email}</td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center">
+                                  <div className="w-full bg-[#1A1A2E] rounded-full h-2 mr-2">
+                                    <div 
+                                      className="bg-gradient-to-r from-[#6A0DAD] to-[#FF0066] h-2 rounded-full" 
+                                      style={{ width: `${utilizationPercent}%` }}
+                                    />
+                                  </div>
+                                  <span className="text-white">{utilizationPercent}%</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 font-medium text-[#FF0066]">{xpTotal} XP</td>
+                              <td className="px-4 py-3 text-[#C0C0C0]">{lastAccess}</td>
+                            </tr>
+                          );
+                        });
+                      })()}
+                    </tbody>
+                  </table>
+                </div>
+                
+                <div className="flex justify-end mt-2">
+                  <p className="text-sm text-[#C0C0C0]">
+                    <span className="text-[#FF0066] font-medium">Nota:</span> A porcentagem de utilização é calculada com base nas tarefas concluídas vs. total de tarefas atribuídas.
+                  </p>
+                </div>
               </div>
             </SettingsCard>
             {/* Removido: duplicidade de 'Pontos e Conquistas Especiais' */}

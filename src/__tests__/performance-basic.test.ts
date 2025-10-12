@@ -7,12 +7,13 @@
 import { describe, it, expect } from 'vitest';
 import { performance } from 'perf_hooks';
 import { appStateManager } from '@/services/appStateManager';
-import { mockTaskData } from '@/data/projectData';
+import { getTasksData } from '@/services/localStorageData';
 
 // Gerador de dados simples
 const generateTestData = (size: number) => {
+  const taskData = getTasksData();
   return Array.from({ length: size }, (_, i) => ({
-    ...mockTaskData[i % mockTaskData.length],
+    ...taskData[i % taskData.length],
     id: i,
     tarefa: `Teste ${i}`
   }));

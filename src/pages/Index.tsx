@@ -4,7 +4,7 @@ import Charts from "@/components/dashboard/Charts";
 import TaskTable from "@/components/dashboard/TaskTable";
 import DataEditor from "@/components/dashboard/DataEditor";
 import { DataProvider, useData } from "@/contexts/DataContext";
-import { mockTaskData } from "@/data/projectData";
+import { getTasksData } from "@/services/localStorageData";
 import { InsufficientDataDisplay, DataQualityIndicator } from "@/components/ui/empty-state";
 
 const DashboardContent = () => {
@@ -160,8 +160,9 @@ const DashboardContent = () => {
 };
 
 const Index = () => {
+  const taskData = getTasksData();
   return (
-    <DataProvider initialTasks={mockTaskData}>
+    <DataProvider initialTasks={taskData}>
       <DashboardContent />
     </DataProvider>
   );

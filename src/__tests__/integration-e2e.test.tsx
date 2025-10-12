@@ -5,18 +5,19 @@
  * de dados entre todas as páginas da aplicação.
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import userEvent from '@testing-library/user-event';
+import '@testing-library/jest-dom';
 
 import GlobalProvider from '@/contexts/GlobalContext';
 import IntegratedNavigation from '@/components/navigation/IntegratedNavigation';
 import Dashboard from '@/pages/Dashboard';
 import Analytics from '@/pages/Analytics';
 import Tasks from '@/pages/Tasks';
-import { mockTaskData } from '@/data/projectData';
+import { getTasksData } from '@/services/localStorageData';
 
 // Componente de teste que inclui toda a estrutura da aplicação
 const TestApp = ({ initialRoute = '/' }: { initialRoute?: string }) => {
@@ -79,7 +80,8 @@ describe('Integração End-to-End das Páginas', () => {
       });
 
       // Verificar se dados estão sincronizados (devem mostrar mesmo número de tarefas)
-      const taskBadges = screen.getAllByText(new RegExp(`${mockTaskData.length}`, 'i'));
+      const taskData = getTasksData();
+      const taskBadges = screen.getAllByText(new RegExp(`${taskData.length}`, 'i'));
       expect(taskBadges.length).toBeGreaterThan(0);
 
       // Navegar para Tasks
@@ -91,7 +93,8 @@ describe('Integração End-to-End das Páginas', () => {
       });
 
       // Verificar consistência dos dados na página Tasks
-      expect(screen.getByText(`Total de Tarefas: ${mockTaskData.length}`)).toBeInTheDocument();
+      const taskData2 = getTasksData();
+      expect(screen.getByText(`Total de Tarefas: ${taskData2.length}`)).toBeInTheDocument();
     });
 
     it('deve atualizar breadcrumb corretamente durante navegação', async () => {
