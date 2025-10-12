@@ -14,7 +14,7 @@ import { TaskData } from '@/data/projectData';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { toast } from '@/hooks/use-toast';
 import KanbanBoard from './KanbanBoard';
-import { getTasksData, saveTasksData } from '@/services/localStorageData';
+import { getTasksData, saveTasksData, getSystemUsers } from '@/services/localStorageData';
 
 interface TaskFormData {
   tarefa: string;
@@ -104,11 +104,14 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, tasks, onSubmit, onCancel }) 
             <SelectValue placeholder="Selecione o responsável" />
           </SelectTrigger>
           <SelectContent>
-            {[...new Set(tasks.map(t => t.responsavel))]
-              .filter((name): name is string => Boolean(name))
-              .map((name) => (
+            {(() => {
+              const canonical = getSystemUsers().map(u => u.name);
+              const fromTasks = [...new Set(tasks.map(t => t.responsavel))].filter(Boolean) as string[];
+              const merged = Array.from(new Set([...canonical, ...fromTasks]));
+              return merged.map(name => (
                 <SelectItem key={name} value={name}>{name}</SelectItem>
-              ))}
+              ));
+            })()}
           </SelectContent>
         </Select>
       </div>

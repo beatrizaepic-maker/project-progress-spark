@@ -13,11 +13,48 @@ import NotificationsModal from '@/components/player/NotificationsModal';
 import { PlayerStats } from '@/types/player';
 import { calculatePlayerStats } from '@/services/playerService';
 import { fetchPlayerProfile, getTasksData } from '@/services/localStorageData';
+import { getUserXpHistory } from '@/services/xpHistoryService';
 // import { reportUrls, download } from '@/services/reports';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import HelpCircle from 'lucide-react/dist/esm/icons/help-circle';
-import { DataProvider } from '@/contexts/DataContext';
 // (import duplicado removido)
+
+// Notificações reais derivadas do localStorage (tarefas + histórico de XP)
+type UINotification = {
+  id: string;
+  title: string;
+  message: string;
+  type: 'task' | 'mission' | 'achievement' | 'warning' | 'system';
+  isRead: boolean;
+  createdAt: string;
+  xpReward?: number;
+};
+
+// Persistência leve do status de leitura no localStorage - funções utilitárias
+const READ_KEY = 'epic_read_notifications_v1';
+
+const loadReadSet = (uid?: string): Set<string> => {
+  if (!uid) return new Set();
+  try {
+    const raw = localStorage.getItem(READ_KEY);
+    if (!raw) return new Set();
+    const map = JSON.parse(raw) as Record<string, Record<string, boolean>>;
+    const userMap = map?.[uid] || {};
+    return new Set(Object.keys(userMap).filter(k => userMap[k]));
+  } catch { return new Set(); }
+};
+
+const saveReadSet = (uid: string, setIds: Set<string>) => {
+  try {
+    const raw = localStorage.getItem(READ_KEY);
+    const map = raw ? (JSON.parse(raw) as Record<string, Record<string, boolean>>) : {};
+    map[uid] = {};
+    setIds.forEach(id => { map[uid][id] = true; });
+    localStorage.setItem(READ_KEY, JSON.stringify(map));
+  } catch {}
+};
+
+type TaskBreakdownItem = { id: string; title: string; classificacao: string; percent: number; completedDate: string | null };
 
 const PlayerProfilePage: React.FC = () => {
   const { playerId } = useParams<{ playerId: string }>();
@@ -26,48 +63,10 @@ const PlayerProfilePage: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [prodMetrics, setProdMetrics] = useState<{ averagePercent: number; totalConsidered: number } | null>(null);
-  type TaskBreakdownItem = { id: string; title: string; classificacao: string; percent: number; completedDate: string | null };
   const [tasksBreakdown, setTasksBreakdown] = useState<TaskBreakdownItem[] | null>(null);
   const [seasonMetrics, setSeasonMetrics] = useState<{ averagePercent: number; totalConsidered: number; label: string } | null>(null);
   const [deliveryDist, setDeliveryDist] = useState<{ early: number; on_time: number; late: number; refacao: number } | null>(null);
-  
-  // Mock notifications - em uma aplicação real, viria de uma API
-  const [notifications, setNotifications] = useState([
-    {
-      id: '1',
-      title: 'Tarefa concluída com sucesso!',
-      message: 'Você completou a tarefa "Análise de Requisitos" e ganhou 10 XP.',
-      type: 'task' as const,
-      isRead: false,
-      createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 horas atrás
-      xpReward: 10
-    },
-    {
-      id: '2',
-      title: 'Nova missão semanal disponível!',
-      message: 'Complete 3 tarefas esta semana para ganhar bônus de consistência.',
-      type: 'mission' as const,
-      isRead: false,
-      createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(), // 6 horas atrás
-    },
-    {
-      id: '3',
-      title: 'Conquista desbloqueada!',
-      message: 'Parabéns! Você alcançou o Nível 5 e desbloqueou a conquista "Desenvolvedor Dedicado".',
-      type: 'achievement' as const,
-      isRead: true,
-      createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 dia atrás
-      xpReward: 50
-    },
-    {
-      id: '4',
-      title: 'Tarefa com atraso',
-      message: 'A tarefa "Desenvolvimento Frontend" está com 2 dias de atraso. Considere atualizá-la.',
-      type: 'warning' as const,
-      isRead: true,
-      createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 dias atrás
-    }
-  ]);
+  const [notifications, setNotifications] = useState<UINotification[]>([]);
   
   // Simular carregamento de dados do player
   useEffect(() => {
@@ -162,25 +161,32 @@ const PlayerProfilePage: React.FC = () => {
   // Verificar se é o perfil do próprio usuário
   const isOwnProfile = playerId === 'current';
 
-  // Funções para gerenciar notificações
+  // Funções para gerenciar notificações (com persistência de leitura)
   const handleMarkAsRead = (notificationId: string) => {
-    setNotifications(prev => 
-      prev.map(notification => 
-        notification.id === notificationId 
-          ? { ...notification, isRead: true }
-          : notification
-      )
-    );
+    setNotifications(prev => {
+      const updated = prev.map(n => n.id === notificationId ? { ...n, isRead: true } : n);
+      if (user?.id) {
+        const readSet = loadReadSet(String(user.id));
+        readSet.add(notificationId);
+        saveReadSet(String(user.id), readSet);
+      }
+      return updated;
+    });
   };
 
   const handleMarkAllAsRead = () => {
-    setNotifications(prev => 
-      prev.map(notification => ({ ...notification, isRead: true }))
-    );
+    setNotifications(prev => {
+      const updated = prev.map(n => ({ ...n, isRead: true }));
+      if (user?.id) {
+        const allIds = new Set(updated.map(n => n.id));
+        saveReadSet(String(user.id), allIds);
+      }
+      return updated;
+    });
   };
 
-    // Atividade Recente dinâmica baseada em dados reais do localStorage (tarefas)
-    type RecentActivity = { id: string; title: string; description: string; date: string };
+  // Atividade Recente dinâmica baseada em dados reais do localStorage (tarefas + XP)
+  type RecentActivity = { id: string; title: string; description: string; date: string };
     const formatDateTime = (iso?: string) => {
       if (!iso) return '';
       try {
@@ -196,7 +202,8 @@ const PlayerProfilePage: React.FC = () => {
       return byOwner.length ? byOwner : all; // se não houver match, usa geral
     })();
 
-    const recentActivities: RecentActivity[] = tasksForProfile
+    // Eventos das tarefas
+    const taskActivities: RecentActivity[] = tasksForProfile
       .map((t) => {
         // Preferir evento de conclusão quando houver fim
         if (t.fim) {
@@ -215,9 +222,26 @@ const PlayerProfilePage: React.FC = () => {
           date: formatDateTime(t.inicio)
         };
       })
-      // ordenar por data descendente (fim ou início)
+    
+    // Eventos de XP do usuário autenticado (streak, bônus, penalidades, etc.)
+    const xpActivities: RecentActivity[] = (() => {
+      try {
+        if (!user?.id) return [];
+        const hist = getUserXpHistory(String(user.id));
+        return hist.map(e => ({
+          id: `xp-${e.id}`,
+          title: e.xp >= 0 ? 'XP ganho' : 'XP perdido',
+          description: `${e.description} ${e.xp >= 0 ? `(+${e.xp} XP)` : `(${e.xp} XP)`}`,
+          date: formatDateTime(e.date),
+        }));
+      } catch {
+        return [];
+      }
+    })();
+
+    const recentActivities: RecentActivity[] = [...taskActivities, ...xpActivities]
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .slice(0, 5);
+      .slice(0, 10);
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
@@ -243,16 +267,15 @@ const PlayerProfilePage: React.FC = () => {
       </div>
       {/* Card de tarefas agora é renderizado dentro de PlayerProfileView logo após o cabeçalho */}
 
-      <DataProvider initialTasks={getTasksData()}>
-        <PlayerProfileView 
-          profile={state.profile} 
-          stats={stats as PlayerStats} 
-          isOwnProfile={isOwnProfile}
-          onEdit={isOwnProfile ? () => setIsEditing(true) : undefined}
-          onSendMessage={!isOwnProfile ? () => console.log('Enviar mensagem') : undefined}
-          onNotifications={isOwnProfile ? () => setIsNotificationsOpen(true) : undefined}
-        />
-      </DataProvider>
+      <PlayerProfileView 
+        profile={state.profile} 
+        stats={stats as PlayerStats} 
+        tasks={getTasksData()} 
+        isOwnProfile={isOwnProfile}
+        onEdit={isOwnProfile ? () => setIsEditing(true) : undefined}
+        onSendMessage={!isOwnProfile ? () => console.log('Enviar mensagem') : undefined}
+        onNotifications={isOwnProfile ? () => setIsNotificationsOpen(true) : undefined}
+      />
 
         {/* Produtividade Média (apenas no perfil) */}
         {prodMetrics && (

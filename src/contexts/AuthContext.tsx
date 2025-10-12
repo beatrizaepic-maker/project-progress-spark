@@ -7,6 +7,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { authService, User, AuthResponse } from '@/services/authService';
 import { useToast } from '@/hooks/use-toast';
 import { addStreakAwardIfNeeded } from '@/config/streak';
+import { addSimpleXpHistory } from '@/services/xpHistoryService';
 
 interface AuthContextValue {
   user: User | null;
@@ -81,6 +82,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         try {
           const res = addStreakAwardIfNeeded(response.user.id);
           if (res.awarded && res.xp > 0) {
+            // Registrar no histórico de XP
+            try {
+              addSimpleXpHistory(response.user.id, res.xp, 'streak', 'Bônus diário de login (streak)');
+            } catch {}
             toast({
               title: "🔥 Streak diário!",
               description: `Você ganhou +${res.xp} XP por seu login de hoje.`,

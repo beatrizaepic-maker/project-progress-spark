@@ -14,13 +14,14 @@ import Mail from 'lucide-react/dist/esm/icons/mail';
 import Briefcase from 'lucide-react/dist/esm/icons/briefcase';
 import Bell from 'lucide-react/dist/esm/icons/bell';
 import { PlayerProfile, PlayerStats } from '@/types/player';
-import { useData } from '@/contexts/DataContext';
+import { TaskData } from '@/data/projectData';
 import TasksModal, { TaskItem } from './TasksModal';
 import PlayerStatsCard from './PlayerStatsCard';
 
 interface PlayerProfileViewProps {
   profile: PlayerProfile;
   stats: PlayerStats;
+  tasks: TaskData[]; // Adicionado para usar no lugar de useData()
   isOwnProfile?: boolean;
   onEdit?: () => void;
   onSendMessage?: () => void;
@@ -31,6 +32,7 @@ interface PlayerProfileViewProps {
 const PlayerProfileView: React.FC<PlayerProfileViewProps> = ({ 
   profile, 
   stats, 
+  tasks: allTasks, // Recebe tarefas como prop em vez de usar useData()
   isOwnProfile = false, 
   onEdit,
   onSendMessage,
@@ -40,9 +42,6 @@ const PlayerProfileView: React.FC<PlayerProfileViewProps> = ({
   // Estado do modal de tarefas
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<'overdue' | 'today'>('overdue');
-  
-  // Usar dados reais do contexto em vez de mock
-  const { tasks: allTasks } = useData();
   
   // Mapeia os dados globais para as tarefas do usuário logado (por nome)
   const userTasks = useMemo(() => {

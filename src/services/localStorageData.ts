@@ -34,21 +34,8 @@ const DEFAULT_PROJECT_METRICS = {
   mediana: 0
 };
 
-// Dados iniciais para usuários do sistema de gamificação
-const DEFAULT_USERS: User[] = [
-  {
-    id: "u1",
-    name: "Usuário Demo",
-    avatar: "/avatars/default.png",
-    xp: 0,
-    level: 1,
-    weeklyXp: 0,
-    monthlyXp: 0,
-    missionsCompleted: 0,
-    consistencyBonus: 0,
-    streak: 0
-  }
-];
+// Não utilizar usuários fictícios: users derivam do DB de auth (epic_users_db)
+const DEFAULT_USERS: User[] = [];
 
 // Dados iniciais para tarefas do sistema de gamificação
 const DEFAULT_GAMIFICATION_TASKS: Task[] = [];
@@ -75,20 +62,47 @@ function purgeLegacyMockTasksIfPresent(): void {
       // Limpa completamente as tarefas e métricas associadas
       localStorage.setItem(STORAGE_KEYS.TASKS_DATA, JSON.stringify([]));
       localStorage.setItem(STORAGE_KEYS.PROJECT_METRICS, JSON.stringify(DEFAULT_PROJECT_METRICS));
-    } else {
-      // Caso as tarefas mock estejam misturadas com dados reais, remove apenas as que batem exatamente
-      const filtered = tasks.filter(t => !(
-        (t.tarefa === 'Análise de Requisitos' && t.responsavel === 'Maria Silva') ||
-        (t.tarefa === 'Design UI/UX' && t.responsavel === 'João Santos') ||
-        (t.tarefa === 'Desenvolvimento Frontend' && t.responsavel === 'Ana Costa')
-      ));
-      if (filtered.length !== tasks.length) {
-        localStorage.setItem(STORAGE_KEYS.TASKS_DATA, JSON.stringify(filtered));
-      }
     }
   } catch (err) {
     console.warn('Falha ao purgar tarefas mock legadas:', err);
   }
+}
+
+// ----- Leitura canônica dos usuários do sistema (Auth DB) -----
+type AuthDBUser = {
+  id: string;
+  email: string;
+  name: string;
+  role?: 'admin' | 'user' | 'dev' | string;
+  avatar?: string;
+};
+
+const AUTH_USERS_DB_KEY = 'epic_users_db';
+
+function readAuthUsersDB(): AuthDBUser[] {
+  try {
+    const raw = localStorage.getItem(AUTH_USERS_DB_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function mapAuthToGamificationUsers(authUsers: AuthDBUser[]): User[] {
+  return authUsers.map(u => ({
+    id: u.id,
+    name: u.name || u.email,
+    avatar: u.avatar || '/avatars/default.png',
+    xp: 0,
+    level: 1,
+    weeklyXp: 0,
+    monthlyXp: 0,
+    missionsCompleted: 0,
+    consistencyBonus: 0,
+    streak: 0,
+  }));
 }
 
 // Inicializa o localStorage com versão e dados mínimos se necessário
@@ -112,7 +126,10 @@ export function initializeLocalStorage(): void {
     }
     
     if (!localStorage.getItem(STORAGE_KEYS.USERS)) {
-      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(DEFAULT_USERS));
+      // Semear usuários de gamificação a partir do DB de autenticação (quando existir)
+      const authUsers = readAuthUsersDB();
+      const seed = mapAuthToGamificationUsers(authUsers);
+      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(seed));
     }
     
     if (!localStorage.getItem(STORAGE_KEYS.GAMIFICATION_TASKS)) {
@@ -122,6 +139,19 @@ export function initializeLocalStorage(): void {
 
   // Purgar tarefas mock legadas se existirem
   purgeLegacyMockTasksIfPresent();
+
+  // Migração: se ainda houver apenas "Usuário Demo", substituir por usuários do Auth DB
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.USERS);
+    const current: User[] = raw ? JSON.parse(raw) : [];
+    const onlyDemo = current.length === 1 && current[0]?.name === 'Usuário Demo';
+    const authUsers = readAuthUsersDB();
+    if ((onlyDemo || current.length === 0) && authUsers.length > 0) {
+      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(mapAuthToGamificationUsers(authUsers)));
+    }
+  } catch {
+    // ignore erros de migração
+  }
 }
 
 // Funções para gerenciar tarefas (DataContext, componentes UI)
@@ -226,10 +256,14 @@ export function updateProjectMetrics(tasks: TaskData[]): void {
 export function getGamificationUsers(): User[] {
   try {
     const data = localStorage.getItem(STORAGE_KEYS.USERS);
-    return data ? JSON.parse(data) : DEFAULT_USERS;
+    const parsed: User[] = data ? JSON.parse(data) : [];
+    if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    // Fallback canônico: derivar do Auth DB sem criar mocks
+    const auth = readAuthUsersDB();
+    return mapAuthToGamificationUsers(auth);
   } catch (error) {
     console.error('Erro ao carregar usuários do localStorage:', error);
-    return DEFAULT_USERS;
+    return [];
   }
 }
 
@@ -289,6 +323,12 @@ export async function fetchPlayerProfile(userId: string): Promise<PlayerProfileD
 export function seedMockData(users: User[], tasks: Task[]): void {
   saveGamificationUsers(users);
   saveGamificationTasks(tasks);
+}
+
+// API para obter os usuários canônicos do sistema (Auth DB)
+export function getSystemUsers(): Array<{ id: string; name: string; email: string; role?: string; avatar?: string }> {
+  const authUsers = readAuthUsersDB();
+  return authUsers.map(u => ({ id: u.id, name: u.name || u.email, email: u.email, role: u.role, avatar: u.avatar }));
 }
 
 // Inicializa o localStorage na importação do módulo

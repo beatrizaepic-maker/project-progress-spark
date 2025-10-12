@@ -1,5 +1,5 @@
 import { DataProvider } from "@/contexts/DataContext";
-import { getTasksData, getGamificationUsers } from "@/services/localStorageData";
+import { getTasksData, getGamificationUsers, getSystemUsers } from "@/services/localStorageData";
 import { Button, ButtonProps } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import React, { useState } from "react";
@@ -167,9 +167,10 @@ const Settings = () => {
   const [streakEnabled, setStreakEnabledState] = useState<boolean>(() => isStreakEnabled());
   const [streakInclude, setStreakInclude] = useState<{ total: boolean; weekly: boolean; monthly: boolean }>(() => getStreakIncludeIn());
 
-  // Usuários cadastrados (derivados dos responsáveis cadastrados nas tarefas)
+  // Usuários canônicos (Auth DB)
   const taskData = getTasksData();
-  const users = Array.from(new Set(taskData.map(t => t.responsavel))).filter(Boolean) as string[];
+  const systemUsers = getSystemUsers();
+  const users = systemUsers.map(u => u.name);
   const [selectedUser, setSelectedUser] = useState<string>("");
   const [selectedAccess, setSelectedAccess] = useState<'Player' | 'Adm' | 'DEV'>("Player");
   const [accessLevels, setAccessLevels] = useState<Record<string, 'Player' | 'Adm' | 'DEV'>>({});
@@ -473,8 +474,9 @@ const Settings = () => {
                     </thead>
                     <tbody className="bg-[#1A1A2E] divide-y divide-[#6A0DAD]/30">
                       {(() => {
-                        // Carrega usuários do localStorage
+                        // Carrega usuários canônicos + gamificação
                         const gamificationUsers = getGamificationUsers();
+                        const canonical = getSystemUsers();
                         
                         // Calcula estatísticas para cada usuário
                         const userTasks = getTasksData();
@@ -490,8 +492,9 @@ const Settings = () => {
                           }
                         });
                         
-                        // Combina dados de usuários do sistema e tarefas
+                        // Combina dados (canônicos primeiro)
                         const allUsers = Array.from(new Set([
+                          ...canonical.map(u => u.name),
                           ...gamificationUsers.map(u => u.name),
                           ...Object.keys(userTasksMap)
                         ]));
@@ -510,6 +513,7 @@ const Settings = () => {
                         return allUsers.map((userName, idx) => {
                           // Encontra dados do usuário na gamificação (se existir)
                           const gamificationUser = gamificationUsers.find(u => u.name === userName);
+                          const sysUser = canonical.find(u => u.name === userName);
                           const userTaskList = userTasksMap[userName] || [];
                           
                           // Calcula estatísticas
@@ -538,8 +542,8 @@ const Settings = () => {
                           // XP Total (da gamificação ou 0 se não existir)
                           const xpTotal = gamificationUser ? gamificationUser.xp : 0;
                           
-                          // E-mail (baseado no nome para demonstração)
-                          const email = `${userName.toLowerCase().replace(/\s+/g, '.')}@empresa.com.br`;
+                          // E-mail real do Auth DB quando disponível
+                          const email = sysUser?.email || `${userName.toLowerCase().replace(/\s+/g, '.')}@empresa.com.br`;
                           
                           return (
                             <tr key={idx} className="hover:bg-[#6A0DAD]/10">
