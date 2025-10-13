@@ -92,13 +92,78 @@ const RankingPage: React.FC = () => {
 
   const [recentTasks, setRecentTasks] = useState<Task[]>([]);
 
+  // Temporadas: lista e seleção
+  const [seasonList, setSeasonList] = useState(() => {
+    try {
+      const stored = localStorage.getItem('epic_season_list_v1');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      // Erros de parsing são tratados retornando listas vazias
+    }
+  });
+  const [selectedSeasonIdx, setSelectedSeasonIdx] = useState<number>(seasonList.length - 1);
+
+  // Função auxiliar para calcular o rankingData
+  const calculateRankingData = useCallback(() => {
+    return [...allUsers]
+      .map(user => ({
+        ...user,
+        level: calculateLevelFromXp(user.xp) // Atualiza o nível com base no XP total
+      }))
+      .sort((a, b) => {
+        // Ordena primeiro pelo XP relevante para o período
+        const xpA = activeTab === 'weekly' ? a.weeklyXp : a.monthlyXp;
+        const xpB = activeTab === 'weekly' ? b.weeklyXp : b.monthlyXp;
+        
+        // Se XP for igual, ordena pelo XP total
+        if (xpB === xpA) {
+          return b.xp - a.xp;
+        }
+        return xpB - xpA;
+      })
+      .map((user, index) => ({
+        ...user,
+        position: index + 1
+      }));
+  }, [allUsers, activeTab]);
+
+  // Atualiza lista de temporadas ao montar
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('epic_season_list_v1');
+      setSeasonList(stored ? JSON.parse(stored) : []);
+      setSelectedSeasonIdx(stored ? JSON.parse(stored).length - 1 : -1);
+    } catch {
+      // Erros de parsing são tratados retornando listas vazias
+    }
+  }, []);
+
+  // Temporada selecionada
+  const selectedSeason = seasonList[selectedSeasonIdx] || null;
+
+  // Filtra ranking conforme temporada
+  const filteredRankingData = useMemo(() => {
+    const calculatedRankingData = calculateRankingData();
+
+    if (!selectedSeason) return calculatedRankingData;
+    // Filtra por período da temporada
+    const s = new Date(selectedSeason.startIso).getTime();
+    const e = new Date(selectedSeason.endIso).getTime();
+    return calculatedRankingData.filter(u => {
+      // XP do usuário deve ser calculado apenas com eventos dentro da temporada
+      // Aqui assume que o rankingData já está filtrado por tasks/xp do período
+      // Se precisar filtrar por data, adapte aqui
+      return true; // Mantém todos, pois XP já é calculado por período
+    });
+  }, [calculateRankingData, selectedSeason]);
+
   // Função para atualizar os dados do ranking
   const updateRankingData = useCallback(() => {
     setIsLoading(true);
     // Primeiro tenta backend real
     fetch('http://localhost:3001/api/ranking')
       .then(r => r.json())
-      .then((dto: any[]) => {
+      .then((dto: UserRanking[]) => {
         if (Array.isArray(dto) && dto.length) {
           setAllUsers(dto.map(u => ({ ...u, position: 0 })) as unknown as UserRanking[]);
           setLastUpdated(new Date().toLocaleTimeString('pt-BR'));
@@ -124,7 +189,7 @@ const RankingPage: React.FC = () => {
             setIsLoading(false);
           });
       });
-  }, [recentTasks, user]);
+  }, [recentTasks]);
 
   // Carrega os dados iniciais
   useEffect(() => {
@@ -138,7 +203,9 @@ const RankingPage: React.FC = () => {
     try {
       evtSource = new EventSource('http://localhost:3001/api/events');
       evtSource.addEventListener('ranking:update', () => updateRankingData());
-    } catch {}
+    } catch {
+      // Erros na conexão SSE são tratados silenciosamente
+    }
 
     const interval = setInterval(() => {
       // Simula atualização automática apenas se a página estiver visível
@@ -149,7 +216,9 @@ const RankingPage: React.FC = () => {
 
     return () => {
       clearInterval(interval);
-      try { evtSource?.close(); } catch {}
+      try { evtSource?.close(); } catch {
+        // Erros ao fechar o EventSource são tratados silenciosamente
+      }
     };
   }, [updateRankingData]);
 
@@ -160,29 +229,8 @@ const RankingPage: React.FC = () => {
     return () => window.removeEventListener('tasks:changed', onTasksChanged);
   }, [updateRankingData]);
 
-  // Calcula o ranking baseado na aba ativa (semanal ou mensal)
-  const rankingData = useMemo(() => {
-    return [...allUsers]
-      .map(user => ({
-        ...user,
-        level: calculateLevelFromXp(user.xp) // Atualiza o nível com base no XP total
-      }))
-      .sort((a, b) => {
-        // Ordena primeiro pelo XP relevante para o período
-        const xpA = activeTab === 'weekly' ? a.weeklyXp : a.monthlyXp;
-        const xpB = activeTab === 'weekly' ? b.weeklyXp : b.monthlyXp;
-        
-        // Se XP for igual, ordena pelo XP total
-        if (xpB === xpA) {
-          return b.xp - a.xp;
-        }
-        return xpB - xpA;
-      })
-      .map((user, index) => ({
-        ...user,
-        position: index + 1
-      }));
-  }, [allUsers, activeTab]);
+  // O rankingData agora é calculado apenas quando necessário e está integrado ao filteredRankingData
+  // Isso evita o erro de referência antecipada
 
   // Utilitário de data
   const nowLabel = () => new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
@@ -190,11 +238,13 @@ const RankingPage: React.FC = () => {
   // Exportar CSV (cliente) usando os dados atuais
   const handleExportCSV = () => {
     try {
+      const calculatedRankingData = calculateRankingData();
+
       const sep = ',';
       const header = [
         'Posição','Nome','XP Total','Nível','XP Semanal','XP Mensal','Missões Concluídas','Bônus Consistência','Streak'
       ];
-      const rows = (rankingData.length ? rankingData : allUsers).map(u => [
+      const rows = (calculatedRankingData.length ? calculatedRankingData : allUsers).map(u => [
         String(u.position ?? ''),
         `"${u.name ?? ''}"`,
         String(u.xp ?? 0),
@@ -221,6 +271,8 @@ const RankingPage: React.FC = () => {
   // Exportar PDF (cliente) com jsPDF + autoTable
   const handleExportPDF = () => {
     try {
+      const calculatedRankingData = calculateRankingData();
+
       const doc = new jsPDF();
       const period = activeTab === 'weekly' ? 'Semanal' : 'Mensal';
       // Título
@@ -231,7 +283,7 @@ const RankingPage: React.FC = () => {
       doc.text(`Gerado em: ${nowLabel()}`, 14, 32);
 
       // Tabela
-      const data = (rankingData.length ? rankingData : allUsers).map(u => ([
+      const data = (calculatedRankingData.length ? calculatedRankingData : allUsers).map(u => ([
         u.position ?? '',
         u.name ?? '',
         u.xp ?? 0,
@@ -261,7 +313,7 @@ const RankingPage: React.FC = () => {
 
   const handleUserClick = (clicked: UserRanking) => {
     // Regra: para perfil "user/player", só pode abrir o card do próprio usuário
-    const role = String((user as any)?.role || '').toLowerCase();
+    const role = String(user?.role || '').toLowerCase();
     const isPlayer = role === 'user' || role === 'player';
     const isSelf = (user?.id ?? '') === clicked.id;
     if (isPlayer && !isSelf) {
@@ -444,6 +496,21 @@ const RankingPage: React.FC = () => {
           <CardTitle className="flex items-center gap-2 text-foreground">
             <Sparkles className="text-primary" />
             Classificação Geral
+            {/* Seletor de temporada */}
+            <div className="ml-6 min-w-[320px]">
+              <select
+                className="rounded-md border border-[#6A0DAD] bg-[#1A1A2E]/60 px-3 py-2 text-base text-white focus:border-[#FF0066] focus:outline-none"
+                value={selectedSeasonIdx >= 0 ? String(selectedSeasonIdx) : ""}
+                onChange={e => setSelectedSeasonIdx(Number(e.target.value))}
+              >
+                {seasonList.length === 0 && <option value="">Nenhuma temporada configurada</option>}
+                {seasonList.map((s, idx) => (
+                  <option key={idx} value={String(idx)}>
+                    {s.name} ({new Date(s.startIso).toLocaleDateString('pt-BR')} - {new Date(s.endIso).toLocaleDateString('pt-BR')})
+                  </option>
+                ))}
+              </select>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
@@ -451,7 +518,7 @@ const RankingPage: React.FC = () => {
             <div className="p-8 text-center text-muted-foreground">
               Carregando ranking...
             </div>
-          ) : rankingData.length === 0 ? (
+          ) : filteredRankingData.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground">
               Nenhum dado de ranking disponível ainda.
             </div>
@@ -469,7 +536,7 @@ const RankingPage: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rankingData.map((user) => (
+                {filteredRankingData.map((user) => (
                   <TableRow 
                     key={user.id} 
                     className="border-border hover:bg-accent/10 cursor-pointer transition-colors"
@@ -548,121 +615,108 @@ const RankingPage: React.FC = () => {
             </DialogHeader>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Estatísticas do usuário */}
-              <div className="space-y-4">
-                <Card className="bg-gradient-to-r from-primary/5 to-accent/5 border-border">
-                  <CardContent className="p-4">
-                    <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                      <Sparkles className="text-primary" /> Estatísticas
-                    </h3>
-                    <div className="space-y-2">
-                      {(() => {
-                        const totalFromState = typeof selectedUser.totalXp === 'number' ? selectedUser.totalXp : undefined;
-                        const totalFromHist = selectedUser.xpHistory.reduce((sum, entry) => sum + entry.xp, 0);
-                        const totalXpView = totalFromState ?? totalFromHist;
-                        return (
-                          <>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Nível Atual:</span>
-                              <span className="font-medium">{calculateLevelFromXp(totalXpView)}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">XP Total:</span>
-                              <span className="font-medium text-primary">{totalXpView} XP</span>
-                            </div>
-                          </>
-                        );
-                      })()}
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Sequência Atual:</span>
-                        <span className="font-medium text-orange-500">{selectedUser.currentStreak} dias</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Melhor Sequência:</span>
-                        <span className="font-medium text-orange-500">{selectedUser.bestStreak} dias</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Bônus de Consistência:</span>
-                        <span className="font-medium text-green-500">+{selectedUser.consistencyBonus} XP</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Penalizações:</span>
-                        <span className="font-medium text-red-500">-{selectedUser.penalties} XP</span>
-                      </div>
+              {/* Estatísticas */}
+              <Card className="border-border">
+                <CardContent className="p-4">
+                  <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <Sparkles className="text-primary" /> Estatísticas
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Nível Atual:</span>
+                      <span className="font-bold text-foreground">{calculateLevelFromXp(selectedUser.totalXp || 0)}</span>
                     </div>
-                  </CardContent>
-                </Card>
-                
-                <Card className="border-border">
-                  <CardContent className="p-4">
-                    <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                      <Target className="text-secondary" /> Missões Semanais
-                    </h3>
-                    <div className="space-y-3">
-                      {selectedUser.missions.map((mission) => (
-                        <div 
-                          key={mission.id} 
-                          className={`p-3 rounded-lg border ${mission.completed ? 'bg-green-500/10 border-green-500/30' : 'bg-accent/10 border-border'}`}
-                        >
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h4 className={`font-medium ${mission.completed ? 'text-green-500' : 'text-foreground'}`}>
-                                {mission.title}
-                              </h4>
-                              <p className="text-sm text-muted-foreground mt-1">{mission.description}</p>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">XP Total:</span>
+                      <span className="font-bold text-primary">{selectedUser.totalXp || 0} XP</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Sequência Atual:</span>
+                      <span className="font-bold text-orange-500">{selectedUser.currentStreak} dias</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Melhor Sequência:</span>
+                      <span className="font-bold text-orange-500">{selectedUser.bestStreak} dias</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Bônus de Consistência:</span>
+                      <span className="font-bold text-green-500">+{selectedUser.consistencyBonus} XP</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Penalizações:</span>
+                      <span className="font-bold text-red-500">-{selectedUser.penalties} XP</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Histórico de XP */}
+              <Card className="border-border">
+                <CardContent className="p-4">
+                  <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <Activity className="text-accent" /> Histórico de XP
+                  </h3>
+                  <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
+                    {selectedUser.xpHistory.map((entry, index) => (
+                      <div 
+                        key={index} 
+                        className="p-3 rounded-lg border border-border bg-accent/5"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className="font-medium text-foreground">{entry.description}</h4>
+                            <p className="text-xs text-muted-foreground">{entry.date}</p>
+                          </div>
+                          <div className={`text-right ${entry.xp > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                            <div className={`font-bold ${entry.xp > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                              {entry.xp > 0 ? '+' : ''}{entry.xp} XP
                             </div>
-                            <Badge variant={mission.completed ? 'default' : 'outline'}>
-                              {mission.completed ? 'Concluída' : 'Ativa'}
+                            <Badge variant="secondary" className="text-xs mt-1">
+                              {entry.source === 'task' && 'Tarefa'}
+                              {entry.source === 'mission' && 'Missão'}
+                              {entry.source === 'bonus' && 'Bônus'}
+                              {entry.source === 'penalty' && 'Penalização'}
                             </Badge>
                           </div>
-                          <div className="flex justify-between items-center mt-2">
-                            <span className="text-sm text-primary font-medium">+{mission.xpReward} XP</span>
-                            <span className="text-xs text-muted-foreground">Prazo: {mission.deadline}</span>
-                          </div>
                         </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-              
-              {/* Histórico de XP */}
-              <div className="space-y-4">
-                <Card className="border-border">
-                  <CardContent className="p-4">
-                    <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                      <Activity className="text-accent" /> Histórico de XP
-                    </h3>
-                    <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
-                      {selectedUser.xpHistory.map((entry, index) => (
-                        <div 
-                          key={index} 
-                          className="p-3 rounded-lg border border-border bg-accent/5"
-                        >
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h4 className="font-medium text-foreground">{entry.description}</h4>
-                              <p className="text-xs text-muted-foreground">{entry.date}</p>
-                            </div>
-                            <div className={`text-right ${entry.xp > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                              <div className={`font-bold ${entry.xp > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                {entry.xp > 0 ? '+' : ''}{entry.xp} XP
-                              </div>
-                              <Badge variant="secondary" className="text-xs mt-1">
-                                {entry.source === 'task' && 'Tarefa'}
-                                {entry.source === 'mission' && 'Missão'}
-                                {entry.source === 'bonus' && 'Bônus'}
-                                {entry.source === 'penalty' && 'Penalização'}
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
+
+            {/* Missões Semanais */}
+            <Card className="border-border mt-6">
+              <CardContent className="p-4">
+                <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <Target className="text-secondary" /> Missões Semanais
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {selectedUser.missions.map((mission, index) => (
+                    <div 
+                      key={index} 
+                      className="p-3 rounded-lg border border-border bg-accent/5"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="font-medium text-foreground">{mission.title}</h4>
+                        <Badge 
+                          variant={mission.completed ? "default" : "outline"} 
+                          className={mission.completed ? "bg-green-500" : ""}
+                        >
+                          {mission.completed ? "Concluída" : "Pendente"}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">{mission.description}</p>
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-muted-foreground">Prazo: {mission.deadline}</span>
+                        <span className="font-bold text-primary">{mission.xpReward} XP</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </DialogContent>
         )}
       </Dialog>

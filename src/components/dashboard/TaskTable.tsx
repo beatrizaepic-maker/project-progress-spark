@@ -48,9 +48,10 @@ const TaskTable = forwardRef<TaskTableRef>((props, ref) => {
     }
   }));
 
-  // Função para formatar datas de forma consistente
+  // Função para formatar datas de forma consistente, corrigindo o problema de fuso horário
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+    // Para datas no formato 'YYYY-MM-DD', criamos a data considerando o fuso horário local
+    const date = dateString ? new Date(dateString + 'T00:00:00') : new Date();
     return {
       short: date.toLocaleDateString('pt-BR', { 
         day: '2-digit', 

@@ -175,13 +175,35 @@ const SelectInput: React.FC<SelectInputProps> = ({ label, id, options, ...props 
   );
 };
 
+// Tipos de missões
+type MissionType = 
+  | 'complete_tasks'           // Completar N tarefas
+  | 'complete_early'           // Completar N tarefas adiantadas
+  | 'attend_meetings'          // Participar de N reuniões
+  | 'review_peer_tasks'        // Revisar N tarefas de colegas
+  | 'streak_days'              // Manter sequência por N dias
+  | 'no_delays'                // Não atrasar nenhuma tarefa
+  | 'high_effort_tasks';       // Completar tarefas de alta dificuldade
+
 
 const Settings = () => {
   const [pointsPerTask, setPointsPerTask] = useState(10);
-  const [earlyTaskPercentage, setEarlyTaskPercentage] = useState(10);
-  const [onTimeTaskPercentage, setOnTimeTaskPercentage] = useState(5);
-  const [delayedTaskPercentage, setDelayedTaskPercentage] = useState(-2);
-  const [refactoredTaskPercentage, setRefactoredTaskPercentage] = useState(15);
+  const [earlyTaskPercentage, setEarlyTaskPercentage] = useState(() => {
+    const config = localStorage.getItem('epic_productivity_config_v1');
+    return config ? JSON.parse(config).early || 110 : 110;
+  });
+  const [onTimeTaskPercentage, setOnTimeTaskPercentage] = useState(() => {
+    const config = localStorage.getItem('epic_productivity_config_v1');
+    return config ? JSON.parse(config).on_time || 100 : 100;
+  });
+  const [delayedTaskPercentage, setDelayedTaskPercentage] = useState(() => {
+    const config = localStorage.getItem('epic_productivity_config_v1');
+    return config ? JSON.parse(config).late || 50 : 50;
+  });
+  const [refactoredTaskPercentage, setRefactoredTaskPercentage] = useState(() => {
+    const config = localStorage.getItem('epic_productivity_config_v1');
+    return config ? JSON.parse(config).refacao || 40 : 40;
+  });
   const [bonusPercentage, setBonusPercentage] = useState(20);
   const [levelThreshold, setLevelThreshold] = useState(100);
   const [weeklyGoal, setWeeklyGoal] = useState(5);
@@ -202,6 +224,10 @@ const Settings = () => {
   // Estados para configuração de Missões
     const [missionName, setMissionName] = useState("");
     const [missionDescription, setMissionDescription] = useState("");
+    const [missionType, setMissionType] = useState<MissionType>('complete_tasks');
+    const [missionTarget, setMissionTarget] = useState(1);
+    const [missionXpReward, setMissionXpReward] = useState(10);
+    const [missionFrequency, setMissionFrequency] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
     const [missionStart, setMissionStart] = useState("");
     const [missionEnd, setMissionEnd] = useState("");
     const [missionContinuous, setMissionContinuous] = useState(false);
@@ -223,6 +249,10 @@ const Settings = () => {
         const m = missionList[selectedMissionIdx];
         setMissionName(m.name || "");
         setMissionDescription(m.description || "");
+        setMissionType(m.type || 'complete_tasks');
+        setMissionTarget(m.target || 1);
+        setMissionXpReward(m.xpReward || 10);
+        setMissionFrequency(m.frequency || 'weekly');
         setMissionStart(m.start || "");
         setMissionEnd(m.end || "");
         setMissionContinuous(!!m.continuous);
@@ -230,6 +260,10 @@ const Settings = () => {
       } else {
         setMissionName("");
         setMissionDescription("");
+        setMissionType('complete_tasks');
+        setMissionTarget(1);
+        setMissionXpReward(10);
+        setMissionFrequency('weekly');
         setMissionStart("");
         setMissionEnd("");
         setMissionContinuous(false);
@@ -408,6 +442,10 @@ const Settings = () => {
     const missionObj = {
       name: missionName,
       description: missionDescription,
+      type: missionType,
+      target: missionTarget,
+      xpReward: missionXpReward,
+      frequency: missionFrequency,
       start: missionStart,
       end: missionEnd,
       continuous: missionContinuous,
@@ -456,21 +494,17 @@ const Settings = () => {
                       <th className="px-3 py-2 font-semibold">Opção</th>
                       <th className="px-3 py-2 font-semibold">Pontuação</th>
                       <th className="px-3 py-2 font-semibold">Ativo</th>
-                      <th className="px-3 py-2 font-semibold">Observação</th>
+                      {/* Observação column removed as requested */}
                       <th className="px-3 py-2 font-semibold">Player</th>
                       <th className="px-3 py-2 font-semibold">Ajuste Individual (XP)</th>
                     </tr>
                   </thead>
                   <tbody className="bg-[#1A1A2E] divide-y divide-[#6A0DAD]/30">
                     {[ 
-                      { label: "Entrega com antecedência" },
                       { label: "Solucionar um problema criativo" },
                       { label: "Ajudar um Épico" },
                       { label: "Feedback recebido com elogio do cliente ou gestores" },
-                      { label: "Cumprir todas as tarefas da semana no prazo" },
-                      { label: "Toda a equipe entrega sem atrasos na semana" },
                       { label: "Criar uma melhoria de processo" },
-                      { label: "Manter consistência por um mês sem atrasos" },
                       { label: "Entrega acima da média" },
                     ].map((item, idx) => {
                       // Estados locais para cada linha
@@ -500,25 +534,17 @@ const Settings = () => {
                           <td className="px-3 py-2 text-center">
                             <input type="checkbox" className="w-4 h-4 accent-[#FF0066]" defaultChecked />
                           </td>
-                          <td className="px-3 py-2">
-                            <Input
-                              type="text"
-                              placeholder="Observação..."
-                              className="w-full border-[#6A0DAD] bg-[#1A1A2E]/60 text-white"
-                            />
-                          </td>
+                          {/* Observação cell removed */}
                           <td className="px-3 py-2">
                             <select
-                              className="w-32 rounded-md border-[#FF0066] bg-[#1A1A2E]/60 text-white px-2 py-1"
+                              className="w-40 rounded-md border-[#FF0066] bg-[#1A1A2E]/60 text-white px-2 py-1"
                               value={selectedUser}
                               onChange={e => setSelectedUser(e.target.value)}
                             >
                               <option value="">Selecione...</option>
-                              <option value="joao">João</option>
-                              <option value="maria">Maria</option>
-                              <option value="carlos">Carlos</option>
-                              <option value="ana">Ana</option>
-                              <option value="lucas">Lucas</option>
+                              {getSystemUsers().map(u => (
+                                <option key={u.id} value={u.id}>{u.name}</option>
+                              ))}
                             </select>
                           </td>
                           <td className="px-3 py-2 flex gap-2 items-center">
@@ -991,6 +1017,52 @@ const Settings = () => {
                         onChange={e => setMissionDescription(e.target.value)}
                         className="w-full h-20 p-2 rounded-md bg-[#1A1A2E]/60 border border-[#6A0DAD] text-white focus:border-[#FF0066] focus:outline-none"
                         placeholder="Descreva a missão..."
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <SelectInput
+                        label="Tipo de missão"
+                        id="missionType"
+                        value={missionType}
+                        onChange={e => setMissionType(e.target.value as MissionType)}
+                        options={[
+                          { value: 'complete_tasks', label: 'Completar tarefas' },
+                          { value: 'complete_early', label: 'Completar tarefas adiantadas' },
+                          { value: 'attend_meetings', label: 'Participar de reuniões' },
+                          { value: 'review_peer_tasks', label: 'Revisar tarefas de colegas' },
+                          { value: 'streak_days', label: 'Manter sequência de dias' },
+                          { value: 'no_delays', label: 'Não atrasar tarefas' },
+                          { value: 'high_effort_tasks', label: 'Completar tarefas de alta dificuldade' },
+                        ]}
+                      />
+                      <SelectInput
+                        label="Frequência"
+                        id="missionFrequency"
+                        value={missionFrequency}
+                        onChange={e => setMissionFrequency(e.target.value as 'daily' | 'weekly' | 'monthly')}
+                        options={[
+                          { value: 'daily', label: 'Diária' },
+                          { value: 'weekly', label: 'Semanal' },
+                          { value: 'monthly', label: 'Mensal' },
+                        ]}
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <LabeledInput
+                        label="Objetivo"
+                        id="missionTarget"
+                        type="number"
+                        min="1"
+                        value={missionTarget}
+                        onChange={e => setMissionTarget(Number(e.target.value))}
+                      />
+                      <LabeledInput
+                        label="Recompensa (XP)"
+                        id="missionXpReward"
+                        type="number"
+                        min="1"
+                        value={missionXpReward}
+                        onChange={e => setMissionXpReward(Number(e.target.value))}
                       />
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">

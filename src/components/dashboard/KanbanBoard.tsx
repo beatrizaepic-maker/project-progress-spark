@@ -188,7 +188,7 @@ const KanbanTask: React.FC<KanbanTaskProps> = ({ task, onEdit, onDelete }) => {
           <div className="flex items-center gap-2">
             📅
             <span className="text-xs text-gray-300">
-              Início: {new Date(task.inicio).toLocaleDateString('pt-BR')}
+              Início: {new Date(task.inicio + 'T00:00:00').toLocaleDateString('pt-BR')}
             </span>
           </div>
         )}
@@ -197,7 +197,7 @@ const KanbanTask: React.FC<KanbanTaskProps> = ({ task, onEdit, onDelete }) => {
           <div className="flex items-center gap-2">
             <span className={isOverdue ? 'text-red-500' : 'text-orange-500'}>🚩</span>
             <span className={`text-xs ${isOverdue ? 'text-red-400 font-medium' : 'text-gray-300'}`}>
-              Prazo: {new Date(task.prazo).toLocaleDateString('pt-BR')}
+              Prazo: {new Date(task.prazo + 'T00:00:00').toLocaleDateString('pt-BR')}
               {daysUntilDeadline !== null && (
                 <span className={`ml-1 ${isOverdue ? 'text-red-400' : daysUntilDeadline <= 3 ? 'text-orange-400' : 'text-gray-300'}`}>
                   ({daysUntilDeadline > 0 ? `${daysUntilDeadline}d restantes` : `${Math.abs(daysUntilDeadline)}d atrasado`})
@@ -211,7 +211,7 @@ const KanbanTask: React.FC<KanbanTaskProps> = ({ task, onEdit, onDelete }) => {
           <div className="flex items-center gap-2">
             <CheckCircle className="w-3 h-3 text-green-500" />
             <span className="text-xs text-gray-300">
-              Fim: {new Date(task.fim).toLocaleDateString('pt-BR')}
+              Fim: {new Date(task.fim + 'T00:00:00').toLocaleDateString('pt-BR')}
             </span>
           </div>
         )}

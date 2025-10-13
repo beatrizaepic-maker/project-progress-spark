@@ -11,8 +11,8 @@ export interface ProductivityConfig {
 }
 
 const DEFAULTS: ProductivityConfig = {
-  early: 100,
-  on_time: 90,
+  early: 110,
+  on_time: 100,
   late: 50,
   refacao: 40,
 };

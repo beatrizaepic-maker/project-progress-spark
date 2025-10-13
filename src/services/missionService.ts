@@ -40,54 +40,88 @@ export interface ActiveMission {
   createdAt: string; // Data de criação
 }
 
-// Configurações padrão de missões semanais
-export const DEFAULT_MISSIONS: MissionConfig[] = [
-  {
-    type: 'complete_tasks',
-    name: 'Trabalho Incansável',
-    description: 'Complete 5 tarefas na semana',
-    target: 5,
-    xpReward: 25,
-    frequency: 'weekly',
-    isActive: true
-  },
-  {
-    type: 'complete_early',
-    name: 'Andando na Frente',
-    description: 'Complete 3 tarefas antes do prazo',
-    target: 3,
-    xpReward: 30,
-    frequency: 'weekly',
-    isActive: true
-  },
-  {
-    type: 'no_delays',
-    name: 'Pontualidade',
-    description: 'Não atrasar nenhuma tarefa na semana',
-    target: 0,
-    xpReward: 35,
-    frequency: 'weekly',
-    isActive: true
-  },
-  {
-    type: 'review_peer_tasks',
-    name: 'Colaboração',
-    description: 'Revisar 5 tarefas de colegas',
-    target: 5,
-    xpReward: 20,
-    frequency: 'weekly',
-    isActive: true
-  },
-  {
-    type: 'streak_days',
-    name: 'Sequência',
-    description: 'Mantenha uma sequência de 5 dias consecutivos',
-    target: 5,
-    xpReward: 40,
-    frequency: 'weekly',
-    isActive: true
+// Função para obter missões configuradas do localStorage
+function getMissionConfigsFromStorage(): MissionConfig[] {
+  try {
+    const stored = localStorage.getItem('epic_mission_list_v1');
+    if (stored) {
+      const missions = JSON.parse(stored);
+      return missions.map((m: any) => ({
+        type: m.type || 'complete_tasks',
+        name: m.name || m.label || 'Missão Personalizada',
+        description: m.description || '',
+        target: m.target || 1,
+        xpReward: m.xpReward || 10,
+        frequency: m.frequency || 'weekly',
+        isActive: m.active !== undefined ? m.active : true
+      }));
+    }
+  } catch (error) {
+    console.error('Erro ao ler missões do localStorage:', error);
   }
-];
+  
+  // Retorna missões padrão se não houver configurações salvas
+  return getDefaultMissions();
+}
+
+// Configurações padrão de missões semanais
+function getDefaultMissions(): MissionConfig[] {
+  return [
+    {
+      type: 'complete_tasks',
+      name: 'Trabalho Incansável',
+      description: 'Complete 5 tarefas na semana',
+      target: 5,
+      xpReward: 25,
+      frequency: 'weekly',
+      isActive: true
+    },
+    {
+      type: 'complete_early',
+      name: 'Andando na Frente',
+      description: 'Complete 3 tarefas antes do prazo',
+      target: 3,
+      xpReward: 30,
+      frequency: 'weekly',
+      isActive: true
+    },
+    {
+      type: 'no_delays',
+      name: 'Pontualidade',
+      description: 'Não atrasar nenhuma tarefa na semana',
+      target: 0,
+      xpReward: 35,
+      frequency: 'weekly',
+      isActive: true
+    },
+    {
+      type: 'review_peer_tasks',
+      name: 'Colaboração',
+      description: 'Revisar 5 tarefas de colegas',
+      target: 5,
+      xpReward: 20,
+      frequency: 'weekly',
+      isActive: true
+    },
+    {
+      type: 'streak_days',
+      name: 'Sequência',
+      description: 'Mantenha uma sequência de 5 dias consecutivos',
+      target: 5,
+      xpReward: 40,
+      frequency: 'weekly',
+      isActive: true
+    }
+  ];
+}
+
+// Exportar missões padrão para referência
+export const DEFAULT_MISSIONS: MissionConfig[] = getDefaultMissions();
+
+// Função para obter missões configuradas (do localStorage ou padrão)
+export function getAvailableMissions(): MissionConfig[] {
+  return getMissionConfigsFromStorage();
+}
 
 /**
  * Cria missões semanais para um usuário
@@ -101,9 +135,9 @@ export function createWeeklyMissionsForUser(userId: string): ActiveMission[] {
   endOfWeek.setDate(today.getDate() + (7 - today.getDay()));
   endOfWeek.setHours(23, 59, 59, 999);
   
-  // Seleciona aleatoriamente algumas missões da lista padrão
+  // Seleciona aleatoriamente algumas missões da lista configurada
   const activeMissions: ActiveMission[] = [];
-  const availableMissions = DEFAULT_MISSIONS.filter(m => m.isActive && m.frequency === 'weekly');
+  const availableMissions = getAvailableMissions().filter(m => m.isActive && m.frequency === 'weekly');
   
   // Seleciona 3 missões aleatórias para a semana
   const shuffled = [...availableMissions].sort(() => 0.5 - Math.random());

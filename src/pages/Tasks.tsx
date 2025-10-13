@@ -133,9 +133,9 @@ const TasksContent = () => {
       const tableData = tasks.map(task => [
         task.tarefa,
         task.prioridade?.toUpperCase() || 'N/A',
-        new Date(task.inicio).toLocaleDateString('pt-BR'),
-        new Date(task.prazo).toLocaleDateString('pt-BR'),
-        task.fim ? new Date(task.fim).toLocaleDateString('pt-BR') : 'Pendente',
+        new Date(task.inicio + 'T00:00:00').toLocaleDateString('pt-BR'),
+        new Date(task.prazo + 'T00:00:00').toLocaleDateString('pt-BR'),
+        task.fim ? new Date(task.fim + 'T00:00:00').toLocaleDateString('pt-BR') : 'Pendente',
         task.status
       ]);
 

@@ -446,9 +446,9 @@ const DataEditor: React.FC = () => {
                   <TableRow key={task.id}>
                     <TableCell className="font-medium">{task.tarefa}</TableCell>
                     <TableCell>{task.responsavel || 'Não informado'}</TableCell>
-                    <TableCell>{new Date(task.inicio).toLocaleDateString('pt-BR')}</TableCell>
-                    <TableCell>{task.fim ? new Date(task.fim).toLocaleDateString('pt-BR') : 'Não informado'}</TableCell>
-                    <TableCell>{new Date(task.prazo).toLocaleDateString('pt-BR')}</TableCell>
+                    <TableCell>{new Date(task.inicio + 'T00:00:00').toLocaleDateString('pt-BR')}</TableCell>
+                    <TableCell>{task.fim ? new Date(task.fim + 'T00:00:00').toLocaleDateString('pt-BR') : 'Não informado'}</TableCell>
+                    <TableCell>{new Date(task.prazo + 'T00:00:00').toLocaleDateString('pt-BR')}</TableCell>
                     <TableCell>{task.duracaoDiasUteis} dias</TableCell>
                     <TableCell>
                       {task.atrasoDiasUteis > 0 ? (
@@ -628,9 +628,9 @@ const DataEditor: React.FC = () => {
                       .map((task) => (
                         <TableRow key={task.id}>
                           <TableCell className="font-medium">{task.tarefa}</TableCell>
-                          <TableCell>{new Date(task.inicio).toLocaleDateString('pt-BR')}</TableCell>
-                          <TableCell>{task.fim ? new Date(task.fim).toLocaleDateString('pt-BR') : 'Não informado'}</TableCell>
-                          <TableCell>{new Date(task.prazo).toLocaleDateString('pt-BR')}</TableCell>
+                          <TableCell>{new Date(task.inicio + 'T00:00:00').toLocaleDateString('pt-BR')}</TableCell>
+                          <TableCell>{task.fim ? new Date(task.fim + 'T00:00:00').toLocaleDateString('pt-BR') : 'Não informado'}</TableCell>
+                          <TableCell>{new Date(task.prazo + 'T00:00:00').toLocaleDateString('pt-BR')}</TableCell>
                           <TableCell>{task.duracaoDiasUteis} dias</TableCell>
                           <TableCell>
                             {task.atrasoDiasUteis > 0 ? (
