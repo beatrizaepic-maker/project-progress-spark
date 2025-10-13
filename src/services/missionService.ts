@@ -1,6 +1,8 @@
 // src/services/missionService.ts
 
 import { Task, Mission, User } from './gamificationService';
+import { getSystemUsers, getGamificationTasks } from './localStorageData';
+import { addSimpleXpHistory, getUserXpHistory } from './xpHistoryService';
 
 // Tipos de missões disponíveis
 export type MissionType = 
@@ -21,6 +23,10 @@ export interface MissionConfig {
   xpReward: number; // XP recompensado ao completar
   frequency: 'daily' | 'weekly' | 'monthly'; // Frequência da missão
   isActive: boolean; // Se está ativa para atribuição
+  // Janela de vigência (opcional quando contínua)
+  start?: string;
+  end?: string;
+  continuous?: boolean;
 }
 
 // Missão ativa para um usuário
@@ -53,7 +59,10 @@ function getMissionConfigsFromStorage(): MissionConfig[] {
         target: m.target || 1,
         xpReward: m.xpReward || 10,
         frequency: m.frequency || 'weekly',
-        isActive: m.active !== undefined ? m.active : true
+        isActive: m.active !== undefined ? m.active : true,
+        start: m.start,
+        end: m.end,
+        continuous: !!m.continuous,
       }));
     }
   } catch (error) {
@@ -121,6 +130,136 @@ export const DEFAULT_MISSIONS: MissionConfig[] = getDefaultMissions();
 // Função para obter missões configuradas (do localStorage ou padrão)
 export function getAvailableMissions(): MissionConfig[] {
   return getMissionConfigsFromStorage();
+}
+
+// -------------------- AVALIAÇÃO GLOBAL E PREMIAÇÃO --------------------
+
+function isWithinWindow(dateIso: string | undefined, start?: string, end?: string, continuous?: boolean): boolean {
+  if (!dateIso) return false;
+  if (continuous) return true;
+  if (!start || !end) return true; // se não definido, considerar sempre
+  const d = new Date(dateIso).getTime();
+  const s = new Date(start).getTime();
+  const e = new Date(end).getTime();
+  if (!Number.isFinite(d) || !Number.isFinite(s) || !Number.isFinite(e)) return false;
+  return d >= s && d <= e;
+}
+
+function generateMissionKey(m: MissionConfig): string {
+  const base = JSON.stringify({
+    type: m.type,
+    name: m.name,
+    target: m.target,
+    reward: m.xpReward,
+    freq: m.frequency,
+    start: m.start || '',
+    end: m.end || '',
+    continuous: !!m.continuous,
+  });
+  // hash simples e estável suficiente para de-dup local
+  let hash = 0;
+  for (let i = 0; i < base.length; i++) {
+    hash = (hash * 31 + base.charCodeAt(i)) | 0;
+  }
+  return `mission_${Math.abs(hash)}`;
+}
+
+function getActiveMissions(): MissionConfig[] {
+  const now = Date.now();
+  return getAvailableMissions().filter(m => {
+    if (!m.isActive) return false;
+    if (m.continuous) return true;
+    if (!m.start || !m.end) return true;
+    const s = new Date(m.start).getTime();
+    const e = new Date(m.end).getTime();
+    if (!Number.isFinite(s) || !Number.isFinite(e)) return true;
+    return now >= s && now <= e;
+  });
+}
+
+function getUserTasksForMission(userId: string, mission: MissionConfig, allTasks: Task[]): Task[] {
+  // Filtra por responsável e janela da missão
+  const userTasks = allTasks.filter(t => t.assignedTo === userId);
+  return userTasks.filter(t => isWithinWindow(t.completedDate || t.dueDate, mission.start, mission.end, mission.continuous));
+}
+
+function countEarly(tasks: Task[]): number {
+  let n = 0;
+  for (const t of tasks) {
+    if (t.status !== 'completed') continue;
+    if (!t.completedDate || !t.dueDate) continue;
+    const comp = new Date(t.completedDate).getTime();
+    const due = new Date(t.dueDate).getTime();
+    if (Number.isFinite(comp) && Number.isFinite(due) && comp < due) n++;
+  }
+  return n;
+}
+
+function hasNoDelays(tasks: Task[]): boolean {
+  for (const t of tasks) {
+    // Tarefa marcada como overdue
+    if (t.status === 'overdue') return false;
+    if (t.status === 'completed' && t.completedDate && t.dueDate) {
+      const comp = new Date(t.completedDate).getTime();
+      const due = new Date(t.dueDate).getTime();
+      if (Number.isFinite(comp) && Number.isFinite(due) && comp > due) return false;
+    }
+  }
+  return true;
+}
+
+function meetsMission(mission: MissionConfig, tasks: Task[]): boolean {
+  switch (mission.type) {
+    case 'complete_tasks': {
+      const done = tasks.filter(t => t.status === 'completed').length;
+      return done >= mission.target;
+    }
+    case 'complete_early': {
+      return countEarly(tasks) >= mission.target;
+    }
+    case 'no_delays': {
+      return hasNoDelays(tasks);
+    }
+    case 'review_peer_tasks': {
+      const reviews = tasks.filter(t => (t.title || '').toLowerCase().includes('revisão') || (t.title || '').toLowerCase().includes('review')).length;
+      return reviews >= mission.target;
+    }
+    // Tipos que dependem de dados não modelados atualmente serão ignorados
+    case 'streak_days':
+    case 'attend_meetings':
+    case 'high_effort_tasks':
+    default:
+      return false;
+  }
+}
+
+export function evaluateAndApplyAllMissions(): { awarded: number; details: Array<{ userId: string; missionKey: string; xp: number }> } {
+  const active = getActiveMissions();
+  if (active.length === 0) return { awarded: 0, details: [] };
+
+  const users = getSystemUsers();
+  const allTasks = getGamificationTasks();
+  let awarded = 0;
+  const details: Array<{ userId: string; missionKey: string; xp: number }> = [];
+
+  for (const m of active) {
+    const missionKey = generateMissionKey(m);
+    for (const u of users) {
+      const history = getUserXpHistory(u.id) || [];
+      const already = history.some(h => h.source === 'mission' && h.missionId === missionKey);
+      if (already) continue; // de-dup
+      const tasks = getUserTasksForMission(u.id, m, allTasks);
+      if (meetsMission(m, tasks)) {
+        addSimpleXpHistory(u.id, m.xpReward, 'mission', m.name || 'Missão', { missionId: missionKey });
+        awarded++;
+        details.push({ userId: u.id, missionKey, xp: m.xpReward });
+      }
+    }
+  }
+
+  // Notifica ouvintes interessados
+  try { window.dispatchEvent(new CustomEvent('missions:applied', { detail: { awarded, details } })); } catch {}
+  return { awarded, details };
 }
 
 /**

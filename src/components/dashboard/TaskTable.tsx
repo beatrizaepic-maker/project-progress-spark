@@ -260,12 +260,12 @@ const TaskTable = forwardRef<TaskTableRef>((props, ref) => {
 
   return (
     <TooltipProvider>
-      <Card className="border-2 border-purple-500 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm overflow-hidden">
+      <Card className="border-2 border-purple-500 bg-white overflow-hidden">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-foreground">
+          <CardTitle className="text-purple-900">
             Detalhamento das Tarefas
-            <span className="text-sm font-normal text-muted-foreground ml-2">
+            <span className="text-sm font-normal text-purple-900 ml-2">
               ({filteredTasks.length} de {tasks.length} tarefas)
             </span>
           </CardTitle>
@@ -377,14 +377,14 @@ const TaskTable = forwardRef<TaskTableRef>((props, ref) => {
             </div>
           )}
         </div>
-        <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mt-2">
+        <div className="flex flex-wrap gap-4 text-sm mt-2">
           <div className="flex items-center gap-1">
             <span className="text-blue-500">📅</span>
-            <span>Data Planejada: Baseada na duração estimada</span>
+            <span className="text-purple-900">Data Planejada: Baseada na duração estimada</span>
           </div>
           <div className="flex items-center gap-1">
             <Clock className="h-4 w-4 text-green-500" />
-            <span>Apenas dias úteis são considerados</span>
+            <span className="text-purple-900">Apenas dias úteis são considerados</span>
           </div>
         </div>
         
@@ -455,9 +455,9 @@ const TaskTable = forwardRef<TaskTableRef>((props, ref) => {
                 >
                   {/* Nome da tarefa */}
                   <div>
-                    <h3 className="font-medium text-sm">{task.tarefa}</h3>
+                    <h3 className="font-medium text-sm text-purple-900">{task.tarefa}</h3>
                     <div className="flex items-center gap-2 mt-1">
-                      <Badge variant={status.variant} className="text-xs">
+                      <Badge variant={status.variant} className="text-xs text-purple-900">
                         {status.icon} {status.label}
                       </Badge>
                     </div>
@@ -466,23 +466,23 @@ const TaskTable = forwardRef<TaskTableRef>((props, ref) => {
                   {/* Datas */}
                   <div className="grid grid-cols-2 gap-3 text-xs">
                     <div>
-                      <span className="text-muted-foreground">Início:</span>
-                      <div className="font-mono">{startDate.short}</div>
+                      <span className="text-purple-900">Início:</span>
+                      <div className="font-mono text-purple-900">{startDate.short}</div>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Fim:</span>
-                      <div className="font-mono">{endDate.short}</div>
+                      <span className="text-purple-900">Fim:</span>
+                      <div className="font-mono text-purple-900">{endDate.short}</div>
                     </div>
                   </div>
 
                   {/* Duração e prioridade */}
                   <div className="grid grid-cols-2 gap-3 text-xs">
                     <div>
-                      <span className="text-muted-foreground">Duração:</span>
-                      <div className="font-mono">{formatDays(task.duracaoDiasUteis)}</div>
+                      <span className="text-purple-900">Duração:</span>
+                      <div className="font-mono text-purple-900">{formatDays(task.duracaoDiasUteis)}</div>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Prioridade:</span>
+                      <span className="text-purple-900">Prioridade:</span>
                       <div className={`font-medium ${
                         task.prioridade === 'critica' ? 'text-red-600' :
                         task.prioridade === 'alta' ? 'text-orange-600' :
@@ -509,14 +509,14 @@ const TaskTable = forwardRef<TaskTableRef>((props, ref) => {
             <table className="w-full">
               <thead className="bg-muted/30">
                 <tr>
-                  <th className="text-left p-4 text-sm font-medium text-muted-foreground">Tarefa</th>
-                  <th className="text-left p-4 text-sm font-medium text-muted-foreground">
+                  <th className="text-left p-4 text-sm font-medium text-purple-900">Tarefa</th>
+                  <th className="text-left p-4 text-sm font-medium text-purple-900">
                     <div className="flex items-center gap-1">
                       <span>👤</span>
                       Responsável
                     </div>
                   </th>
-                <th className="text-left p-4 text-sm font-medium text-muted-foreground">
+                <th className="text-left p-4 text-sm font-medium text-purple-900">
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div className="flex items-center gap-1 cursor-help">
@@ -533,7 +533,7 @@ const TaskTable = forwardRef<TaskTableRef>((props, ref) => {
                     </TooltipContent>
                   </Tooltip>
                 </th>
-                <th className="text-left p-4 text-sm font-medium text-muted-foreground">
+                <th className="text-left p-4 text-sm font-medium text-purple-900">
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div className="flex items-center gap-1 cursor-help">
@@ -550,7 +550,7 @@ const TaskTable = forwardRef<TaskTableRef>((props, ref) => {
                     </TooltipContent>
                   </Tooltip>
                 </th>
-                <th className="text-left p-4 text-sm font-medium text-muted-foreground">
+                <th className="text-left p-4 text-sm font-medium text-purple-900">
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div className="flex items-center gap-1 cursor-help">
@@ -567,7 +567,7 @@ const TaskTable = forwardRef<TaskTableRef>((props, ref) => {
                     </TooltipContent>
                   </Tooltip>
                 </th>
-                <th className="text-left p-4 text-sm font-medium text-muted-foreground">
+                <th className="text-left p-4 text-sm font-medium text-purple-900">
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div className="flex items-center gap-1 cursor-help">
@@ -584,7 +584,7 @@ const TaskTable = forwardRef<TaskTableRef>((props, ref) => {
                     </TooltipContent>
                   </Tooltip>
                 </th>
-                <th className="text-center p-4 text-sm font-medium text-muted-foreground">
+                <th className="text-center p-4 text-sm font-medium text-purple-900">
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div className="flex items-center gap-1 cursor-help justify-center">
@@ -600,7 +600,7 @@ const TaskTable = forwardRef<TaskTableRef>((props, ref) => {
                     </TooltipContent>
                   </Tooltip>
                 </th>
-                <th className="text-center p-4 text-sm font-medium text-muted-foreground">
+                <th className="text-center p-4 text-sm font-medium text-purple-900">
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div className="flex items-center gap-1 cursor-help justify-center">
@@ -612,12 +612,12 @@ const TaskTable = forwardRef<TaskTableRef>((props, ref) => {
                       <div className="text-sm max-w-xs">
                         <p className="font-semibold">Prioridade da Tarefa</p>
                         <p>Nível de importância definido durante a criação ou edição da tarefa.</p>
-                        <p className="text-xs text-muted-foreground mt-1">Crítica &gt; Alta &gt; Média &gt; Baixa</p>
+                        <p className="text-xs text-purple-900 mt-1">Crítica &gt; Alta &gt; Média &gt; Baixa</p>
                       </div>
                     </TooltipContent>
                   </Tooltip>
                 </th>
-                <th className="text-center p-4 text-sm font-medium text-muted-foreground">
+                <th className="text-center p-4 text-sm font-medium text-purple-900">
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div className="flex items-center gap-1 cursor-help justify-center">
@@ -670,10 +670,10 @@ const TaskTable = forwardRef<TaskTableRef>((props, ref) => {
                           }
                           return null;
                         })()}
-                        <div className="font-medium text-foreground flex items-center gap-2">
+                        <div className="font-medium text-purple-900 flex items-center gap-2">
                           {task.tarefa}
                           {task.status === 'refacao' && (
-                            <Badge variant="secondary" className="rounded-none">Refação</Badge>
+                            <Badge variant="secondary" className="rounded-none text-purple-900">Refação</Badge>
                           )}
                         </div>
                       </div>
@@ -681,7 +681,7 @@ const TaskTable = forwardRef<TaskTableRef>((props, ref) => {
                     
                     {/* Responsável */}
                     <td className="p-4">
-                      <div className="text-sm text-foreground">
+                      <div className="text-sm text-purple-900">
                         {task.responsavel || 'Não informado'}
                       </div>
                     </td>
@@ -695,11 +695,11 @@ const TaskTable = forwardRef<TaskTableRef>((props, ref) => {
                         side="top"
                       >
                         <div className="text-sm cursor-help hover:bg-muted/20 rounded p-1 transition-colors">
-                          <div className="font-medium text-foreground flex items-center gap-1">
+                          <div className="font-medium text-purple-900 flex items-center gap-1">
                             {startDate.short}
-                            <HelpCircle className="h-3 w-3 text-muted-foreground" />
+                            <HelpCircle className="h-3 w-3 text-purple-900" />
                           </div>
-                          <div className="text-xs text-muted-foreground">{startDate.weekday}</div>
+                          <div className="text-xs text-purple-900">{startDate.weekday}</div>
                         </div>
                       </DateTooltip>
                     </td>
@@ -713,11 +713,11 @@ const TaskTable = forwardRef<TaskTableRef>((props, ref) => {
                         side="top"
                       >
                         <div className="text-sm cursor-help hover:bg-muted/20 rounded p-1 transition-colors">
-                          <div className="font-medium text-foreground flex items-center gap-1">
+                          <div className="font-medium text-purple-900 flex items-center gap-1">
                             {endDate.short}
-                            <HelpCircle className="h-3 w-3 text-muted-foreground" />
+                            <HelpCircle className="h-3 w-3 text-purple-900" />
                           </div>
-                          <div className="text-xs text-muted-foreground">{endDate.weekday}</div>
+                          <div className="text-xs text-purple-900">{endDate.weekday}</div>
                         </div>
                       </DateTooltip>
                     </td>
@@ -734,9 +734,9 @@ const TaskTable = forwardRef<TaskTableRef>((props, ref) => {
                         <div className="text-sm cursor-help hover:bg-muted/20 rounded p-1 transition-colors">
                           <div className="font-medium text-blue-600 dark:text-blue-400 flex items-center gap-1">
                             {plannedEndDate.short}
-                            <HelpCircle className="h-3 w-3 text-muted-foreground" />
+                            <HelpCircle className="h-3 w-3 text-purple-900" />
                           </div>
-                          <div className="text-xs text-muted-foreground">{plannedEndDate.weekday}</div>
+                          <div className="text-xs text-purple-900">{plannedEndDate.weekday}</div>
                         </div>
                       </DateTooltip>
                     </td>
@@ -756,9 +756,9 @@ const TaskTable = forwardRef<TaskTableRef>((props, ref) => {
                               : 'text-red-600 dark:text-red-400'
                           }`}>
                             {deadlineDate.short}
-                            <HelpCircle className="h-3 w-3 text-muted-foreground" />
+                            <HelpCircle className="h-3 w-3 text-purple-900" />
                           </div>
-                          <div className="text-xs text-muted-foreground">{deadlineDate.weekday}</div>
+                          <div className="text-xs text-purple-900">{deadlineDate.weekday}</div>
                         </div>
                       </DateTooltip>
                     </td>
@@ -772,11 +772,11 @@ const TaskTable = forwardRef<TaskTableRef>((props, ref) => {
                         side="top"
                       >
                         <div className="text-sm cursor-help hover:bg-muted/20 rounded p-1 transition-colors">
-                          <div className="font-medium text-foreground flex items-center gap-1">
+                          <div className="font-medium text-purple-900 flex items-center gap-1">
                             {formatDays(task.duracaoDiasUteis, false)}
-                            <HelpCircle className="h-3 w-3 text-muted-foreground" />
+                            <HelpCircle className="h-3 w-3 text-purple-900" />
                           </div>
-                          <div className="text-xs text-muted-foreground">dias úteis</div>
+                          <div className="text-xs text-purple-900">dias úteis</div>
                         </div>
                       </WorkingDaysTooltip>
                     </td>
@@ -795,7 +795,7 @@ const TaskTable = forwardRef<TaskTableRef>((props, ref) => {
                             />
                           ))}
                         </div>
-                        <span className="text-xs font-medium text-muted-foreground">
+                        <span className="text-xs font-medium text-purple-900">
                           {task.prioridade?.charAt(0).toUpperCase() + task.prioridade?.slice(1)}
                         </span>
                       </div>
@@ -815,8 +815,8 @@ const TaskTable = forwardRef<TaskTableRef>((props, ref) => {
                             
                             return (
                               <div className="flex flex-col items-center gap-1 p-2">
-                                <IconComponent className={`h-5 w-5 ${status.color}`} />
-                                <span className={`text-xs font-medium text-white hover:text-purple-500 transition-colors duration-200`}>
+                                <IconComponent className="h-5 w-5 text-purple-900" />
+                                <span className="text-xs font-medium text-purple-900">
                                   {status.label}
                                 </span>
                                 {status.type === 'critical' && (
@@ -825,7 +825,7 @@ const TaskTable = forwardRef<TaskTableRef>((props, ref) => {
                                     <span>Atenção</span>
                                   </div>
                                 )}
-                                <HelpCircle className="h-3 w-3 text-white hover:text-purple-500 transition-colors duration-200 mt-1" />
+                                <HelpCircle className="h-3 w-3 text-purple-900 mt-1" />
                               </div>
                             );
                           })()}

@@ -20,7 +20,7 @@ import Flame from "lucide-react/dist/esm/icons/flame";
 import { getDailyStreakBonusXp, setDailyStreakBonusXp, isStreakEnabled, setStreakEnabled, getStreakIncludeIn, setStreakIncludeIn } from "@/config/streak";
 import { getAllLastAccess } from "@/services/authService";
 import { LevelRule, getLevelRules, setLevelRules, isThisMonth, isThisWeek, updateRanking, calculateUserProductivity } from "@/services/gamificationService";
-import { getSeasonConfig, setSeasonConfig, isInSeason, type SeasonConfig } from "@/config/season";
+import { getSeasonConfig, setSeasonConfig, isInSeason, getDefaultSeason, type SeasonConfig } from "@/config/season";
 
 // Tipos para os componentes
 interface LabeledInputProps {
@@ -339,7 +339,7 @@ const Settings = () => {
   const handleSelectSeason = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const idx = Number(e.target.value);
     setSelectedSeasonIdx(idx);
-    setSeason(seasonList[idx] || getDefaultSeason());
+  setSeason(seasonList[idx] || getDefaultSeason());
   };
 
   // Usuários canônicos (Auth DB)
@@ -466,6 +466,13 @@ const Settings = () => {
       className: "bg-gradient-to-r from-[#6A0DAD] to-[#FF0066] border-none text-white rounded-md shadow-lg",
       duration: 3000,
     });
+    // Avalia e aplica missões globais após salvar/ativar
+    try {
+      const { evaluateAndApplyAllMissions } = require('@/services/missionService');
+      evaluateAndApplyAllMissions();
+    } catch (e) {
+      console.warn('Falha ao avaliar missões após salvar:', e);
+    }
   };
 
   return (
@@ -822,14 +829,14 @@ const Settings = () => {
                     <SelectInput
                       label="Nível"
                       id="unique-level-dropdown"
-                      value={levelRules[0]?.level || 1}
+                      value={String(levelRules[0]?.level || 1)}
                       onChange={e => {
                         const newLevel = Number(e.target.value);
                         const updatedRules = [...levelRules];
                         updatedRules[0] = { ...updatedRules[0], level: newLevel };
                         setLevelRulesState(updatedRules);
                       }}
-                      options={Array.from({ length: 8 }, (_, i) => ({ value: i + 1, label: `Nível ${i + 1}` }))}
+                      options={Array.from({ length: 8 }, (_, i) => ({ value: String(i + 1), label: `Nível ${i + 1}` }))}
                       className="w-full border-[#6A0DAD] focus:border-[#FF0066] bg-[#1A1A2E]/60 text-white"
                     />
                     <div className="space-y-2 w-full">
@@ -1052,7 +1059,7 @@ const Settings = () => {
                         label="Objetivo"
                         id="missionTarget"
                         type="number"
-                        min="1"
+                        min={1}
                         value={missionTarget}
                         onChange={e => setMissionTarget(Number(e.target.value))}
                       />
@@ -1060,7 +1067,7 @@ const Settings = () => {
                         label="Recompensa (XP)"
                         id="missionXpReward"
                         type="number"
-                        min="1"
+                        min={1}
                         value={missionXpReward}
                         onChange={e => setMissionXpReward(Number(e.target.value))}
                       />

@@ -1,8 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import TaskTable, { TaskTableRef } from "@/components/dashboard/TaskTable";
 import { DataProvider, useData } from "@/contexts/DataContext";
 import { getTasksData } from "@/services/localStorageData";
+import { getSeasonConfig } from "@/config/season";
 import { toast } from "@/hooks/use-toast";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -40,20 +41,50 @@ const TasksContent = () => {
   const { tasks, exportData, importData } = useData();
   const { taskTableRef, applyQuickFilter } = useQuickFilters();
 
+  // Temporadas
+  const [seasonList, setSeasonList] = useState(() => {
+    try {
+      const stored = localStorage.getItem('epic_season_list_v1');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [selectedSeasonIdx, setSelectedSeasonIdx] = useState(0);
+  const selectedSeason = seasonList[selectedSeasonIdx] || getSeasonConfig();
+
+  // Filtrar tarefas por temporada
+  const filteredTasks = useMemo(() => {
+    if (!selectedSeason?.startIso || !selectedSeason?.endIso) return tasks;
+    const start = new Date(selectedSeason.startIso).getTime();
+    const end = new Date(selectedSeason.endIso).getTime();
+    return tasks.filter(task => {
+      // Considera tarefa dentro da temporada se qualquer data relevante estiver no intervalo
+      const inicio = task.inicio ? new Date(task.inicio).getTime() : undefined;
+      const prazo = task.prazo ? new Date(task.prazo).getTime() : undefined;
+      const fim = task.fim ? new Date(task.fim).getTime() : undefined;
+      return (
+        (inicio && inicio >= start && inicio <= end) ||
+        (prazo && prazo >= start && prazo <= end) ||
+        (fim && fim >= start && fim <= end)
+      );
+    });
+  }, [tasks, selectedSeason]);
+
   // Calcular estatísticas
-  const totalTasks = tasks.length;
-  const completedTasks = tasks.filter(task => {
+  const totalTasks = filteredTasks.length;
+  const completedTasks = filteredTasks.filter(task => {
     const prazo = new Date(task.prazo);
     if (!task.fim) return false;
     const conclusion = new Date(task.fim);
     return conclusion <= prazo;
   }).length;
-  const pendingTasks = tasks.filter(task => !task.fim).length;
+  const pendingTasks = filteredTasks.filter(task => !task.fim).length;
 
   // Função para exportar dados como JSON
   const handleExportData = () => {
     try {
-      const dataStr = JSON.stringify(tasks, null, 2);
+      const dataStr = JSON.stringify(filteredTasks, null, 2);
       const dataBlob = new Blob([dataStr], { type: 'application/json' });
       const url = URL.createObjectURL(dataBlob);
       
@@ -209,75 +240,29 @@ const TasksContent = () => {
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-foreground mb-2">Gerenciamento de Tarefas</h2>
           <p className="text-muted-foreground">Visualização detalhada e gerenciamento de todas as tarefas do projeto</p>
+          {/* Seletor de temporada */}
+          <div className="mt-4 flex items-center gap-4">
+            <label htmlFor="seasonSelector" className="text-sm font-medium text-[#6A0DAD]">Temporada:</label>
+            <select
+              id="seasonSelector"
+              value={selectedSeasonIdx}
+              onChange={e => setSelectedSeasonIdx(Number(e.target.value))}
+              className="rounded-md border border-[#6A0DAD] bg-[#1A1A2E]/60 px-3 py-2 text-base text-white focus:border-[#FF0066] focus:outline-none"
+              style={{ minWidth: 220 }}
+            >
+              {seasonList.length === 0 ? (
+                <option value={0} disabled>Nenhuma temporada cadastrada</option>
+              ) : (
+                seasonList.map((s, idx) => (
+                  <option key={idx} value={idx}>
+                    {s.name} ({new Date(s.startIso).toLocaleDateString('pt-BR')} - {new Date(s.endIso).toLocaleDateString('pt-BR')})
+                  </option>
+                ))
+              )}
+            </select>
+          </div>
         </div>
-        <TaskTable ref={taskTableRef} />
-      </section>
-
-      {/* Ações Rápidas */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <ActionCard>
-          <h3 className="text-sm font-semibold mb-2">Filtros Rápidos</h3>
-          <div className="space-y-2">
-            <button 
-              onClick={() => applyQuickFilter('critica')}
-              className="w-full text-left text-sm text-muted-foreground hover:text-foreground hover:bg-purple-500/10 p-2 rounded transition-colors"
-            >
-              🔴 Prioridade Crítica
-            </button>
-            <button 
-              onClick={() => applyQuickFilter('concluidas-hoje')}
-              className="w-full text-left text-sm text-muted-foreground hover:text-foreground hover:bg-purple-500/10 p-2 rounded transition-colors"
-            >
-              ✅ Concluídas Hoje
-            </button>
-            <button 
-              onClick={() => applyQuickFilter('alta')}
-              className="w-full text-left text-sm text-muted-foreground hover:text-foreground hover:bg-purple-500/10 p-2 rounded transition-colors"
-            >
-              🟠 Alta Prioridade
-            </button>
-          </div>
-        </ActionCard>
-        <ActionCard>
-          <h3 className="text-sm font-semibold mb-2">Ações</h3>
-          <div className="space-y-2">
-            <button 
-              onClick={handleExportData}
-              className="w-full text-left text-sm text-muted-foreground hover:text-foreground hover:bg-purple-500/10 p-2 rounded transition-colors"
-            >
-              📊 Exportar Dados
-            </button>
-            <button 
-              onClick={handleImportData}
-              className="w-full text-left text-sm text-muted-foreground hover:text-foreground hover:bg-purple-500/10 p-2 rounded transition-colors"
-            >
-              📥 Importar Tarefas
-            </button>
-            <button 
-              onClick={handleGeneratePDF}
-              className="w-full text-left text-sm text-muted-foreground hover:text-foreground hover:bg-purple-500/10 p-2 rounded transition-colors"
-            >
-              📄 Relatório PDF
-            </button>
-          </div>
-        </ActionCard>
-        <ActionCard>
-          <h3 className="text-sm font-semibold mb-2">Estatísticas</h3>
-          <div className="space-y-2">
-            <div className="text-sm">
-              <span className="text-muted-foreground">Total: </span>
-              <span className="font-medium text-purple-400">{totalTasks}</span>
-            </div>
-            <div className="text-sm">
-              <span className="text-muted-foreground">Concluídas: </span>
-              <span className="font-medium text-green-400">{completedTasks}</span>
-            </div>
-            <div className="text-sm">
-              <span className="text-muted-foreground">Pendentes: </span>
-              <span className="font-medium text-yellow-400">{pendingTasks}</span>
-            </div>
-          </div>
-        </ActionCard>
+        <TaskTable ref={taskTableRef} tasks={filteredTasks} />
       </section>
     </main>
   );
