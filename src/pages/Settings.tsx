@@ -1,5 +1,5 @@
 import { DataProvider } from "@/contexts/DataContext";
-import { getTasksData, getGamificationUsers, getSystemUsers } from "@/services/localStorageData";
+import { getTasksData, getGamificationUsers, getSystemUsers, getGamificationTasks } from "@/services/localStorageData";
 import { Button, ButtonProps } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import React, { useState, useEffect } from "react";
@@ -19,7 +19,22 @@ import UserSyncTester from "@/components/debug/UserSyncTester";
 import Flame from "lucide-react/dist/esm/icons/flame";
 import { getDailyStreakBonusXp, setDailyStreakBonusXp, isStreakEnabled, setStreakEnabled, getStreakIncludeIn, setStreakIncludeIn } from "@/config/streak";
 import { getAllLastAccess } from "@/services/authService";
-import { LevelRule, getLevelRules, setLevelRules } from "@/services/gamificationService";
+import { LevelRule, getLevelRules, setLevelRules, isThisMonth, isThisWeek, updateRanking, calculateUserProductivity } from "@/services/gamificationService";
+import { getSeasonConfig, setSeasonConfig, isInSeason, type SeasonConfig } from "@/config/season";
+
+// Tipos para os componentes
+interface LabeledInputProps {
+  label: string;
+  id: string;
+  type?: string;
+  min?: number;
+  max?: number;
+  value?: any;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  disabled?: boolean;
+  className?: string;
+  [key: string]: any;
+}
 
 // Componente para efeito de partículas no botão
 type ParticleButtonProps = ButtonProps & {
@@ -108,26 +123,38 @@ const SettingsCard = ({ title, children, icon: Icon }) => {
 };
 
 // Componente de input com label
-const LabeledInput = ({ label, id, type = "text", min, max, ...props }) => {
+const LabeledInput: React.FC<LabeledInputProps> = ({ label, id, type = "text", min, max, ...props }) => {
+  const inputProps = {
+    id,
+    type,
+    min,
+    max,
+    className: "border-[#6A0DAD] focus:border-[#FF0066] bg-[#1A1A2E]/60 text-white",
+    ...props
+  };
+  
   return (
     <div className="space-y-2">
       <label htmlFor={id} className="block text-sm font-medium text-[#C0C0C0]">
         {label}
       </label>
-      <Input 
-        id={id} 
-        type={type} 
-        min={min}
-        max={max}
-        className="border-[#6A0DAD] focus:border-[#FF0066] bg-[#1A1A2E]/60 text-white"
-        {...props} 
-      />
+      <Input {...inputProps} />
     </div>
   );
 };
 
 // Componente de seletor
-const SelectInput = ({ label, id, options, ...props }) => {
+interface SelectInputProps {
+  label: string;
+  id: string;
+  options: Array<{value: string, label: string}>;
+  value?: string;
+  onChange?: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  className?: string;
+  [key: string]: any;
+}
+
+const SelectInput: React.FC<SelectInputProps> = ({ label, id, options, ...props }) => {
   return (
     <div className="space-y-2">
       <label htmlFor={id} className="block text-sm font-medium text-[#C0C0C0]">
@@ -171,8 +198,115 @@ const Settings = () => {
   
   // Estados para configuração do sistema de níveis
   const [levelRules, setLevelRulesState] = useState<LevelRule[]>(() => getLevelRules());
-  // Estado para modal de detalhes dos níveis
   const [showLevelDetails, setShowLevelDetails] = useState(false);
+  // Estados para configuração de Missões
+    const [missionName, setMissionName] = useState("");
+    const [missionDescription, setMissionDescription] = useState("");
+    const [missionStart, setMissionStart] = useState("");
+    const [missionEnd, setMissionEnd] = useState("");
+    const [missionContinuous, setMissionContinuous] = useState(false);
+    const [missionActive, setMissionActive] = useState(true);
+    // Lista de missões e seleção
+    const [missionList, setMissionList] = useState(() => {
+      try {
+        const stored = localStorage.getItem('epic_mission_list_v1');
+        return stored ? JSON.parse(stored) : [];
+      } catch {
+        return [];
+      }
+    });
+    const [selectedMissionIdx, setSelectedMissionIdx] = useState<number>(-1);
+
+    // Atualiza campos ao selecionar missão
+    useEffect(() => {
+      if (selectedMissionIdx >= 0 && missionList[selectedMissionIdx]) {
+        const m = missionList[selectedMissionIdx];
+        setMissionName(m.name || "");
+        setMissionDescription(m.description || "");
+        setMissionStart(m.start || "");
+        setMissionEnd(m.end || "");
+        setMissionContinuous(!!m.continuous);
+        setMissionActive(!!m.active);
+      } else {
+        setMissionName("");
+        setMissionDescription("");
+        setMissionStart("");
+        setMissionEnd("");
+        setMissionContinuous(false);
+        setMissionActive(true);
+      }
+    }, [selectedMissionIdx, missionList]);
+  
+  // Estado para a configuração de temporada
+  const [season, setSeason] = useState<SeasonConfig>(() => {
+    const saved = getSeasonConfig();
+    return saved || {
+      name: '',
+      description: '',
+      startIso: new Date().toISOString(),
+      endIso: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 dias a partir de hoje
+    };
+  });
+  // Estado para lista e seleção de temporadas
+  const [seasonList, setSeasonList] = useState<SeasonConfig[]>(() => {
+    try {
+      const stored = localStorage.getItem('epic_season_list_v1');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [selectedSeasonIdx, setSelectedSeasonIdx] = useState<number>(0);
+
+  const handleSaveSeason = () => {
+    try {
+      if (!season.name || !season.startIso || !season.endIso) {
+        toast({
+          title: "❌ Dados incompletos",
+          description: "Preencha Nome, Início e Fim da temporada.",
+          variant: "destructive",
+        });
+        return;
+      }
+      const start = new Date(season.startIso).getTime();
+      const end = new Date(season.endIso).getTime();
+      if (!Number.isFinite(start) || !Number.isFinite(end) || start > end) {
+        toast({
+          title: "❌ Período inválido",
+          description: "A data de início deve ser anterior ou igual à data de término.",
+          variant: "destructive",
+        });
+        return;
+      }
+      // Atualiza ou adiciona temporada
+      let updatedList = [...seasonList];
+      const idx = updatedList.findIndex(s => s.startIso === season.startIso && s.endIso === season.endIso);
+      if (idx >= 0) {
+        updatedList[idx] = season;
+      } else {
+        updatedList.push(season);
+      }
+      setSeasonList(updatedList);
+      localStorage.setItem('epic_season_list_v1', JSON.stringify(updatedList));
+      setSelectedSeasonIdx(updatedList.length - 1);
+      setSeasonConfig(season);
+      toast({
+        title: "✅ Temporada salva",
+        description: `${season.name} (${new Date(season.startIso).toLocaleDateString('pt-BR')} — ${new Date(season.endIso).toLocaleDateString('pt-BR')})`,
+        className: "bg-gradient-to-r from-[#6A0DAD] to-[#FF0066] border-none text-white rounded-md shadow-lg",
+        duration: 3000,
+      });
+    } catch (e: any) {
+      toast({ title: "Erro ao salvar temporada", description: String(e?.message || e), variant: "destructive" });
+    }
+  };
+
+  // Handler para seleção de temporada
+  const handleSelectSeason = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const idx = Number(e.target.value);
+    setSelectedSeasonIdx(idx);
+    setSeason(seasonList[idx] || getDefaultSeason());
+  };
 
   // Usuários canônicos (Auth DB)
   const taskData = getTasksData();
@@ -253,6 +387,49 @@ const Settings = () => {
     });
   };
 
+  // Função para salvar missão (pode ser expandida para persistência real)
+  const handleSaveMission = () => {
+    if (!missionName) {
+      toast({
+        title: "❌ Nome obrigatório",
+        description: "Informe o nome da missão.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!missionContinuous && (!missionStart || !missionEnd)) {
+      toast({
+        title: "❌ Vigência obrigatória",
+        description: "Informe início e fim ou marque como contínuo.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const missionObj = {
+      name: missionName,
+      description: missionDescription,
+      start: missionStart,
+      end: missionEnd,
+      continuous: missionContinuous,
+      active: missionActive,
+    };
+    let updatedList = [...missionList];
+    if (selectedMissionIdx >= 0 && missionList[selectedMissionIdx]) {
+      updatedList[selectedMissionIdx] = missionObj;
+    } else {
+      updatedList.push(missionObj);
+      setSelectedMissionIdx(updatedList.length - 1);
+    }
+    setMissionList(updatedList);
+    localStorage.setItem('epic_mission_list_v1', JSON.stringify(updatedList));
+    toast({
+      title: "✅ Missão salva",
+      description: `Missão "${missionName}" configurada com sucesso!`,
+      className: "bg-gradient-to-r from-[#6A0DAD] to-[#FF0066] border-none text-white rounded-md shadow-lg",
+      duration: 3000,
+    });
+  };
+
   return (
     <DataProvider initialTasks={taskData}>
       <main className="container mx-auto px-6 py-8 space-y-8">
@@ -270,36 +447,7 @@ const Settings = () => {
           <div className="w-full flex flex-col" style={{ gap: '25px' }}>
             {/* Pontos e Conquistas Especiais (agora inclui configurações de pontuação) */}
             <SettingsCard title="Pontos e Conquistas Especiais" icon={Award}>
-              {/* Configurações de pontuação geral */}
-              <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-                <LabeledInput 
-                  label="Pontos por tarefa concluída" 
-                  id="pointsPerTask" 
-                  type="number"
-                  min={1}
-                  max={100}
-                  value={pointsPerTask}
-                  onChange={(e) => setPointsPerTask(Number(e.target.value))}
-                />
-                <LabeledInput 
-                  label="Bônus por conquista (XP)" 
-                  id="bonusXP" 
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={bonusPercentage}
-                  onChange={(e) => setBonusPercentage(Number(e.target.value))}
-                />
-                <LabeledInput 
-                  label="Penalidade por atraso (XP)" 
-                  id="penaltyXP" 
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={levelThreshold} // Você pode criar um estado específico se quiser
-                  onChange={(e) => setLevelThreshold(Number(e.target.value))} // Idem
-                />
-              </div>
+              {/* Nenhum campo de pontuação geral exibido conforme solicitado */}
               {/* Tabela de conquistas especiais */}
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm text-left rounded-xl overflow-hidden">
@@ -477,7 +625,7 @@ const Settings = () => {
                       <tr className="bg-gradient-to-r from-[#6A0DAD]/80 to-[#FF0066]/80 text-white">
                         <th className="px-4 py-3 font-semibold">Nome</th>
                         <th className="px-4 py-3 font-semibold">E-mail</th>
-                        <th className="px-4 py-3 font-semibold">% Utilização</th>
+                        <th className="px-4 py-3 font-semibold">% Aproveitamento</th>
                         <th className="px-4 py-3 font-semibold">XP Total</th>
                         <th className="px-4 py-3 font-semibold">Último Acesso</th>
                       </tr>
@@ -487,6 +635,7 @@ const Settings = () => {
                         // Carrega usuários canônicos + gamificação
                         const gamificationUsers = getGamificationUsers();
                         const canonical = getSystemUsers();
+                        const allGamTasks = getGamificationTasks() || [];
                         
                         // Obter logs de acesso
                         const accessLogs = getAllLastAccess();
@@ -507,25 +656,26 @@ const Settings = () => {
                           }
                         });
                         
-                        // Calcula estatísticas para cada usuário
-                        const userTasks = getTasksData();
-                        const userTasksMap = {};
-                        
-                        // Agrupa tarefas por responsável
-                        userTasks.forEach(task => {
-                          if (task.responsavel) {
-                            if (!userTasksMap[task.responsavel]) {
-                              userTasksMap[task.responsavel] = [];
-                            }
-                            userTasksMap[task.responsavel].push(task);
-                          }
+                        // Define temporada vigente (padrão: mês atual). Futuro: ler de settings.
+                        const inSeason = (date?: string) => isInSeason(date);
+
+                        // Agrupa tarefas de gamificação por usuário (apenas da temporada)
+                        const userTasksMap: Record<string, import("@/services/gamificationService").Task[]> = {};
+                        allGamTasks.forEach(t => {
+                          if (!t.assignedTo) return;
+                          // Considera completedDate ou dueDate para janela da temporada
+                          if (!inSeason(t.completedDate || t.dueDate)) return;
+                          if (!userTasksMap[t.assignedTo]) userTasksMap[t.assignedTo] = [];
+                          userTasksMap[t.assignedTo].push(t);
                         });
+
+                        // Ranking atualizado para XP Total real
+                        const rankedUsers = updateRanking(gamificationUsers, allGamTasks);
                         
                         // Combina dados (canônicos primeiro)
                         const allUsers = Array.from(new Set([
                           ...canonical.map(u => u.name),
                           ...gamificationUsers.map(u => u.name),
-                          ...Object.keys(userTasksMap)
                         ]));
                         
                         // Se não há usuários, mostra mensagem
@@ -540,23 +690,22 @@ const Settings = () => {
                         }
                         
                         return allUsers.map((userName, idx) => {
-                          // Encontra dados do usuário na gamificação (se existir)
-                          const gamificationUser = gamificationUsers.find(u => u.name === userName);
+                          // Dados canônicos + gamificação
                           const sysUser = canonical.find(u => u.name === userName);
-                          const userTaskList = userTasksMap[userName] || [];
+                          const gamUser = gamificationUsers.find(u => u.name === userName);
+                          const gamUserId = gamUser?.id || sysUser?.id || '';
+                          const userTaskList = gamUserId ? (userTasksMap[gamUserId] || []) : [];
                           
                           // Calcula estatísticas
-                          const totalTasks = userTaskList.length;
-                          const completedTasks = userTaskList.filter(t => t.statusTarefa === 'Concluída').length;
-                          const utilizationPercent = totalTasks > 0 
-                            ? Math.round((completedTasks / totalTasks) * 100) 
-                            : 0;
+                          const prod = calculateUserProductivity(userTaskList);
+                          const utilizationPercent = prod.averagePercentRounded;
                           
                           // Último acesso (usa o registro de log de acesso mais recente)
                           const lastAccess = accessLogsByName[userName] || 'Não disponível';
                           
                           // XP Total (da gamificação - ranking real)
-                          const xpTotal = gamificationUser ? gamificationUser.xp : 0;
+                          const ranked = rankedUsers.find(u => u.name === userName);
+                          const xpTotal = ranked ? ranked.xp : (gamUser?.xp || 0);
                           
                           // E-mail real do Auth DB quando disponível
                           const email = sysUser?.email || `${userName.toLowerCase().replace(/\s+/g, '.')}@empresa.com.br`;
@@ -714,13 +863,24 @@ const Settings = () => {
                             </tr>
                           </thead>
                           <tbody className="bg-[#1A1A2E] divide-y divide-[#6A0DAD]/30">
-                            {levelRules.map((rule) => (
-                              <tr key={rule.level} className="hover:bg-[#6A0DAD]/10">
-                                <td className="px-3 py-2 text-white font-medium">Nível {rule.level}</td>
-                                <td className="px-3 py-2 text-[#C0C0C0]">{rule.name}</td>
-                                <td className="px-3 py-2 text-[#FF0066]">{rule.xpRequired} XP</td>
+                            {levelRules.length > 0 ? (
+                              levelRules.map((rule) => (
+                                <tr key={rule.level} className="hover:bg-[#6A0DAD]/10">
+                                  <td className="px-3 py-2 text-white font-medium">Nível {rule.level}</td>
+                                  <td className="px-3 py-2 text-[#C0C0C0]">{rule.name || '---'}</td>
+                                  <td className="px-3 py-2 text-[#FF0066]">{rule.xpRequired ? `${rule.xpRequired} XP` : '---'}</td>
+                                </tr>
+                              ))
+                            ) : (
+                              // Exibe uma mensagem quando não há níveis configurados
+                              <tr>
+                                <td colSpan={3} className="px-3 py-8 text-center text-[#C0C0C0]">
+                                  Nenhuma configuração de nível foi definida ainda.
+                                  <br />
+                                  Configure um nível usando o formulário acima e clique em "SALVAR".
+                                </td>
                               </tr>
-                            ))}
+                            )}
                           </tbody>
                         </table>
                         <div className="flex justify-end">
@@ -737,47 +897,150 @@ const Settings = () => {
                   )}
                 </SettingsCard>
                 {/* Recompensas e Prêmios */}
-                <SettingsCard title="Recompensas e Prêmios (Em análise)" icon={Gift}>
-                  <SelectInput 
-                    label="Frequência de recompensas" 
-                    id="rewardFrequency"
-                    value={rewardFrequency}
-                    onChange={(e) => setRewardFrequency(e.target.value)}
-                    options={[
-                      { value: "daily", label: "Diária" },
-                      { value: "weekly", label: "Semanal" },
-                      { value: "monthly", label: "Mensal" }
-                    ]}
-                  />
-                  <SelectInput 
-                    label="Tipo de recompensa" 
-                    id="rewardType"
-                    options={[
-                      { value: "badge", label: "Emblemas" },
-                      { value: "title", label: "Títulos" },
-                      { value: "theme", label: "Temas personalizados" },
-                      { value: "mixed", label: "Sistema misto" }
-                    ]}
-                  />
-                  <div className="flex items-center space-x-2 pt-2">
-                    <input 
-                      type="checkbox" 
-                      id="rareRewards" 
-                      className="w-4 h-4 accent-[#FF0066]" 
+                <SettingsCard title="Configuração de Temporadas" icon={Gift}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Seletor de temporadas */}
+                    <div className="col-span-2 mb-2">
+                      <label htmlFor="seasonSelector" className="block text-sm font-medium text-[#C0C0C0] mb-1">Selecionar temporada</label>
+                      <select
+                        id="seasonSelector"
+                        value={selectedSeasonIdx}
+                        onChange={handleSelectSeason}
+                        className="w-full rounded-md border border-[#6A0DAD] bg-[#1A1A2E]/60 px-3 py-2 text-base text-white focus:border-[#FF0066] focus:outline-none"
+                      >
+                        {seasonList.length === 0 ? (
+                          <option value={0} disabled>Nenhuma temporada cadastrada</option>
+                        ) : (
+                          seasonList.map((s, idx) => (
+                            <option key={idx} value={idx}>
+                              {s.name} ({new Date(s.startIso).toLocaleDateString('pt-BR')} - {new Date(s.endIso).toLocaleDateString('pt-BR')})
+                            </option>
+                          ))
+                        )}
+                      </select>
+                    </div>
+                    {/* Campos de edição da temporada selecionada */}
+                    <LabeledInput
+                      label="Nome da temporada"
+                      id="seasonName"
+                      value={season.name}
+                      onChange={(e) => setSeason(prev => ({ ...prev, name: e.target.value }))}
                     />
-                    <label htmlFor="rareRewards" className="text-white text-sm">
-                      Incluir recompensas raras (probabilidade de 5%)
-                    </label>
+                    <div className="space-y-2">
+                      <label htmlFor="seasonDescription" className="block text-sm font-medium text-[#C0C0C0]">Descrição</label>
+                      <textarea
+                        id="seasonDescription"
+                        value={season.description || ''}
+                        onChange={(e) => setSeason(prev => ({ ...prev, description: e.target.value }))}
+                        className="w-full h-24 p-2 rounded-md bg-[#1A1A2E]/60 border border-[#6A0DAD] text-white focus:border-[#FF0066] focus:outline-none"
+                        placeholder="Ex.: Temporada Especial de Fim de Ano"
+                      />
+                    </div>
+                    <LabeledInput
+                      label="Início"
+                      id="seasonStart"
+                      type="date"
+                      value={season.startIso ? new Date(season.startIso).toISOString().slice(0,10) : ''}
+                      onChange={(e) => {
+                        const date = new Date(e.target.value);
+                        date.setHours(0,0,0,0);
+                        setSeason(prev => ({ ...prev, startIso: date.toISOString() }));
+                      }}
+                    />
+                    <LabeledInput
+                      label="Fim"
+                      id="seasonEnd"
+                      type="date"
+                      value={season.endIso ? new Date(season.endIso).toISOString().slice(0,10) : ''}
+                      onChange={(e) => {
+                        const date = new Date(e.target.value);
+                        date.setHours(23,59,59,999);
+                        setSeason(prev => ({ ...prev, endIso: date.toISOString() }));
+                      }}
+                    />
+                  </div>
+                  <div className="flex justify-end mt-4 gap-2">
+                    <ParticleButton onClick={handleSaveSeason} className="min-w-32 flex justify-center">
+                      <Save size={16} /> Salvar Temporada
+                    </ParticleButton>
                   </div>
                 </SettingsCard>
 
-                {/* Sobre */}
-                <SettingsCard title="Sobre" icon={Info}>
-                  <div className="space-y-2 text-sm text-[#C0C0C0]">
-                    <p>Versão: 1.5.0</p>
-                    <p>Última atualização: Outubro 2025</p>
-                    <p>Sistema de Gamificação: v2.0</p>
-                    <p>Desenvolvido por 🐰DashiTecnology®</p>
+                {/* Missões */}
+                <SettingsCard title="Missões" icon={Info}>
+                  <div className="space-y-4">
+                    {/* Seletor de missão */}
+                    <SelectInput
+                      label="Selecionar missão"
+                      id="missionSelector"
+                      value={selectedMissionIdx >= 0 ? String(selectedMissionIdx) : ""}
+                      onChange={e => setSelectedMissionIdx(Number(e.target.value))}
+                      options={[{ value: "", label: "Nova missão" }, ...missionList.map((m, idx) => ({ value: String(idx), label: m.name || `Missão ${idx + 1}` }))]}
+                    />
+                    <LabeledInput
+                      label="Nome da missão"
+                      id="missionName"
+                      value={missionName}
+                      onChange={e => setMissionName(e.target.value)}
+                    />
+                    <div className="space-y-2">
+                      <label htmlFor="missionDescription" className="block text-sm font-medium text-[#C0C0C0]">Descrição</label>
+                      <textarea
+                        id="missionDescription"
+                        value={missionDescription}
+                        onChange={e => setMissionDescription(e.target.value)}
+                        className="w-full h-20 p-2 rounded-md bg-[#1A1A2E]/60 border border-[#6A0DAD] text-white focus:border-[#FF0066] focus:outline-none"
+                        placeholder="Descreva a missão..."
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                      <div className="space-y-2">
+                        <label htmlFor="missionPeriod" className="block text-sm font-medium text-[#C0C0C0]">Vigência</label>
+                        <div className="flex gap-2 items-center">
+                          <LabeledInput
+                            id="missionStart"
+                            label="Início"
+                            type="date"
+                            value={missionStart}
+                            onChange={e => setMissionStart(e.target.value)}
+                            disabled={missionContinuous}
+                          />
+                          <LabeledInput
+                            id="missionEnd"
+                            label="Fim"
+                            type="date"
+                            value={missionEnd}
+                            onChange={e => setMissionEnd(e.target.value)}
+                            disabled={missionContinuous}
+                          />
+                        </div>
+                        <div className="flex items-center mt-2">
+                          <input
+                            type="checkbox"
+                            id="missionContinuous"
+                            className="w-4 h-4 accent-[#FF0066]"
+                            checked={missionContinuous}
+                            onChange={e => setMissionContinuous(e.target.checked)}
+                          />
+                          <label htmlFor="missionContinuous" className="ml-2 text-white text-sm">Contínuo</label>
+                        </div>
+                      </div>
+                      <div className="flex items-center mt-6 md:mt-0">
+                        <input
+                          type="checkbox"
+                          id="missionActive"
+                          className="w-4 h-4 accent-[#FF0066]"
+                          checked={missionActive}
+                          onChange={e => setMissionActive(e.target.checked)}
+                        />
+                        <label htmlFor="missionActive" className="ml-2 text-white text-sm">Ativo</label>
+                      </div>
+                    </div>
+                    <div className="flex justify-end mt-4">
+                      <ParticleButton onClick={handleSaveMission} className="min-w-32 flex justify-center">
+                        <Save size={16} /> Salvar Missão
+                      </ParticleButton>
+                    </div>
                   </div>
                 </SettingsCard>
 

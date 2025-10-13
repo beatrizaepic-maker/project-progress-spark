@@ -64,26 +64,27 @@ const XP_RULES = {
   penalty_late: -5            // Penalização por atraso significativo
 };
 
-// Regras de níveis (XP necessário para cada nível)
-let LEVEL_RULES: LevelRule[] = [
-  { level: 1, xpRequired: 0, name: "Iniciante" },
-  { level: 2, xpRequired: 100, name: "Aprendiz" },
-  { level: 3, xpRequired: 250, name: "Intermediário" },
-  { level: 4, xpRequired: 500, name: "Avançado" },
-  { level: 5, xpRequired: 1000, name: "Expert" },
-  { level: 6, xpRequired: 2000, name: "Mestre" },
-  { level: 7, xpRequired: 4000, name: "Grão-Mestre" },
-  { level: 8, xpRequired: 8000, name: "Lendário" }
-];
-
-// Função para obter as regras de níveis
+// Função para obter as regras de níveis do localStorage
 export function getLevelRules(): LevelRule[] {
-  return [...LEVEL_RULES]; // Retorna uma cópia para evitar modificações diretas
+  try {
+    const stored = localStorage.getItem('epic_level_rules_v1');
+    if (stored) {
+      return JSON.parse(stored);
+    }
+    return []; // Retorna array vazio se não há dados configurados
+  } catch (error) {
+    console.error('Erro ao carregar regras de níveis:', error);
+    return [];
+  }
 }
 
-// Função para definir as regras de níveis
+// Função para definir as regras de níveis no localStorage
 export function setLevelRules(newRules: LevelRule[]): void {
-  LEVEL_RULES = [...newRules]; // Atualiza as regras com nova cópia
+  try {
+    localStorage.setItem('epic_level_rules_v1', JSON.stringify(newRules));
+  } catch (error) {
+    console.error('Erro ao salvar regras de níveis:', error);
+  }
 }
 
 /**
@@ -224,8 +225,10 @@ export function calculateUserProductivity(tasks: Task[]): {
  */
 export function calculateLevelFromXp(xp: number): number {
   // Encontrar o maior nível com XP necessário menor ou igual ao XP do usuário
+  const levelRules = getLevelRules();
   let level = 1;
-  for (const rule of LEVEL_RULES) {
+  
+  for (const rule of levelRules) {
     if (xp >= rule.xpRequired) {
       level = rule.level;
     } else {
@@ -246,9 +249,10 @@ export function getLevelProgress(xp: number): {
   nextLevelXp: number, 
   progressPercentage: number 
 } {
+  const levelRules = getLevelRules();
   const currentLevel = calculateLevelFromXp(xp);
-  const currentLevelRule = LEVEL_RULES.find(rule => rule.level === currentLevel);
-  const nextLevelRule = LEVEL_RULES.find(rule => rule.level === currentLevel + 1);
+  const currentLevelRule = levelRules.find(rule => rule.level === currentLevel);
+  const nextLevelRule = levelRules.find(rule => rule.level === currentLevel + 1);
   
   if (!currentLevelRule) {
     return { 
