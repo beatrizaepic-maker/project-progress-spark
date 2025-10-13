@@ -284,9 +284,14 @@ const TasksContent = () => {
 };
 
 const Tasks = () => {
-  const taskData = getTasksData();
+  const [tasks, setTasks] = React.useState(() => getTasksData());
+  React.useEffect(() => {
+    const onChanged = () => setTasks(getTasksData());
+    window.addEventListener('tasks:changed', onChanged);
+    return () => window.removeEventListener('tasks:changed', onChanged);
+  }, []);
   return (
-    <DataProvider initialTasks={taskData}>
+    <DataProvider initialTasks={tasks}>
       <TasksContent />
     </DataProvider>
   );

@@ -2,11 +2,17 @@ import DataEditor from "@/components/dashboard/DataEditor";
 import { DataProvider } from "@/contexts/DataContext";
 import { getTasksData } from "@/services/localStorageData";
 import KPIDebugSection from "@/components/dashboard/KPIDebugSection";
+import React from "react";
 
 const DataEditorPage = () => {
-  const taskData = getTasksData();
+  const [tasks, setTasks] = React.useState(() => getTasksData());
+  React.useEffect(() => {
+    const onChanged = () => setTasks(getTasksData());
+    window.addEventListener('tasks:changed', onChanged);
+    return () => window.removeEventListener('tasks:changed', onChanged);
+  }, []);
   return (
-    <DataProvider initialTasks={taskData}>
+    <DataProvider initialTasks={tasks}>
       <main className="container mx-auto px-6 py-8 space-y-8">
           {/* Editor de Dados */}
           <section>
@@ -26,7 +32,7 @@ const DataEditorPage = () => {
               <h3 className="text-xl font-semibold text-foreground mb-2">Debug e Monitoramento</h3>
               <p className="text-muted-foreground">Informações técnicas e métricas de performance dos KPIs</p>
             </div>
-            <KPIDebugSection tasks={taskData} />
+            <KPIDebugSection tasks={tasks} />
           </section>
       </main>
     </DataProvider>

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 import { TaskData } from '@/data/projectData';
-import { getTasksData } from '@/services/localStorageData';
+import { getTasksData, saveTasksData } from '@/services/localStorageData';
 import { toast } from '@/hooks/use-toast';
 import { kpiCalculator, KPIResults } from '@/services/kpiCalculator';
 import { kpiErrorHandler } from '@/services/errorHandler';
@@ -224,6 +224,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, initialTas
     }));
     
     setTasks(updatedTasks);
+    // Persistir e notificar
+    try { saveTasksData(updatedTasks); } catch {}
   }, []);
 
   const addTask = useCallback((task: Omit<TaskData, 'id'> & { fim?: string }) => {
@@ -250,7 +252,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, initialTas
       atendeuPrazo: task.fim ? new Date(task.fim) <= new Date(task.prazo) : true
     };
     
-    setTasks(prev => [...prev, newTask]);
+    setTasks(prev => {
+      const next = [...prev, newTask];
+      try { saveTasksData(next); } catch {}
+      return next;
+    });
     toast({
       title: "Tarefa adicionada",
       description: `${task.tarefa} foi adicionada com sucesso.`,
@@ -260,7 +266,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, initialTas
   }, [tasks]);
 
   const editTask = useCallback((id: number, updates: Partial<TaskData>) => {
-    setTasks(prev => prev.map(task => {
+    setTasks(prev => {
+      const next = prev.map(task => {
       if (task.id === id) {
         const updated = { ...task, ...updates };
         return {
@@ -270,8 +277,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, initialTas
           atendeuPrazo: new Date(updated.fim) <= new Date(updated.prazo)
         };
       }
-      return task;
-    }));
+        return task;
+      });
+      try { saveTasksData(next); } catch {}
+      return next;
+    });
     
     toast({
       title: "Tarefa atualizada",
@@ -280,7 +290,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, initialTas
   }, []);
 
   const deleteTask = useCallback((id: number) => {
-    setTasks(prev => prev.filter(task => task.id !== id));
+    setTasks(prev => {
+      const next = prev.filter(task => task.id !== id);
+      try { saveTasksData(next); } catch {}
+      return next;
+    });
     toast({
       title: "Tarefa removida",
       description: "A tarefa foi removida com sucesso."
@@ -324,6 +338,18 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, initialTas
   React.useEffect(() => {
     recalculateMetrics();
   }, [tasks, recalculateMetrics]);
+
+  // Ouvir alterações globais em tarefas e recarregar do localStorage
+  React.useEffect(() => {
+    const handler = () => {
+      try {
+        const latest = getTasksData();
+        setTasks(latest);
+      } catch {}
+    };
+    window.addEventListener('tasks:changed', handler);
+    return () => window.removeEventListener('tasks:changed', handler);
+  }, []);
 
   return (
     <DataContext.Provider value={{

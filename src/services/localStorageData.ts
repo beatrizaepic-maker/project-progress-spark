@@ -171,6 +171,10 @@ export function saveTasksData(tasks: TaskData[]): void {
     localStorage.setItem(STORAGE_KEYS.TASKS_DATA, JSON.stringify(tasks));
     // Atualiza também as métricas calculadas
     updateProjectMetrics(tasks);
+    // Notifica outras páginas/abas e provedores para recarregar as tarefas
+    try {
+      window.dispatchEvent(new CustomEvent('tasks:changed'));
+    } catch {}
   } catch (error) {
     console.error('Erro ao salvar tarefas no localStorage:', error);
   }
