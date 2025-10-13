@@ -65,7 +65,7 @@ const XP_RULES = {
 };
 
 // Regras de níveis (XP necessário para cada nível)
-const LEVEL_RULES: LevelRule[] = [
+let LEVEL_RULES: LevelRule[] = [
   { level: 1, xpRequired: 0, name: "Iniciante" },
   { level: 2, xpRequired: 100, name: "Aprendiz" },
   { level: 3, xpRequired: 250, name: "Intermediário" },
@@ -75,6 +75,16 @@ const LEVEL_RULES: LevelRule[] = [
   { level: 7, xpRequired: 4000, name: "Grão-Mestre" },
   { level: 8, xpRequired: 8000, name: "Lendário" }
 ];
+
+// Função para obter as regras de níveis
+export function getLevelRules(): LevelRule[] {
+  return [...LEVEL_RULES]; // Retorna uma cópia para evitar modificações diretas
+}
+
+// Função para definir as regras de níveis
+export function setLevelRules(newRules: LevelRule[]): void {
+  LEVEL_RULES = [...newRules]; // Atualiza as regras com nova cópia
+}
 
 /**
  * Calcula o XP ganho com base no status da tarefa

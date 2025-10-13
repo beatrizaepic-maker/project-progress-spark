@@ -149,6 +149,9 @@ class AuthService {
     // Gera token
     const token = this.generateToken(user);
 
+    // Atualiza último acesso do usuário
+    this.updateLastAccess(user.id);
+
     // Salva no localStorage
     localStorage.setItem(this.STORAGE_KEYS.TOKEN, token);
     localStorage.setItem(this.STORAGE_KEYS.USER, JSON.stringify(user));
@@ -249,6 +252,40 @@ class AuthService {
       user: users[userIndex]
     };
   }
+
+  // Atualiza o último acesso do usuário
+  private updateLastAccess(userId: string): void {
+    const accessLogKey = 'epic_access_log';
+    const currentAccessLog = this.getAccessLog();
+    
+    // Atualiza o último acesso para o usuário
+    currentAccessLog[userId] = new Date().toISOString();
+    
+    // Salva o log atualizado
+    localStorage.setItem(accessLogKey, JSON.stringify(currentAccessLog));
+  }
+
+  // Obtém o log de acessos
+  private getAccessLog = (): Record<string, string> => {
+    const accessLogKey = 'epic_access_log';
+    const stored = localStorage.getItem(accessLogKey);
+    return stored ? JSON.parse(stored) : {};
+  }
+
+  // Obtém o último acesso de um usuário
+  getLastAccess = (userId: string): string | null => {
+    const accessLog = this.getAccessLog();
+    return accessLog[userId] || null;
+  }
+
+  // Obtém todos os logs de acesso
+  getAllLastAccess = (): Record<string, string> => {
+    return this.getAccessLog();
+  }
 }
 
 export const authService = new AuthService();
+
+// Exportar também métodos específicos que podem ser usados externamente
+export const getLastAccess = (userId: string) => authService.getLastAccess(userId);
+export const getAllLastAccess = () => authService.getAllLastAccess();

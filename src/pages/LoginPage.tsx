@@ -57,7 +57,7 @@ const LoginPage: React.FC = () => {
               </div>
             </div>
             <CardTitle className="text-2xl font-bold text-foreground">
-              Bem-vindo ao Epic Board
+              Bem-vindo ao EPIC Space
             </CardTitle>
             <CardDescription className="text-muted-foreground">
               Faça login para acessar sua conta

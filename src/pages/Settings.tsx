@@ -2,7 +2,7 @@ import { DataProvider } from "@/contexts/DataContext";
 import { getTasksData, getGamificationUsers, getSystemUsers } from "@/services/localStorageData";
 import { Button, ButtonProps } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import Save from "lucide-react/dist/esm/icons/save";
@@ -18,6 +18,8 @@ import UserDataDebug from "@/components/debug/UserDataDebug";
 import UserSyncTester from "@/components/debug/UserSyncTester";
 import Flame from "lucide-react/dist/esm/icons/flame";
 import { getDailyStreakBonusXp, setDailyStreakBonusXp, isStreakEnabled, setStreakEnabled, getStreakIncludeIn, setStreakIncludeIn } from "@/config/streak";
+import { getAllLastAccess } from "@/services/authService";
+import { LevelRule, getLevelRules, setLevelRules } from "@/services/gamificationService";
 
 // Componente para efeito de partículas no botão
 type ParticleButtonProps = ButtonProps & {
@@ -166,6 +168,11 @@ const Settings = () => {
   const [dailyStreakXp, setDailyStreakXp] = useState<number>(() => getDailyStreakBonusXp());
   const [streakEnabled, setStreakEnabledState] = useState<boolean>(() => isStreakEnabled());
   const [streakInclude, setStreakInclude] = useState<{ total: boolean; weekly: boolean; monthly: boolean }>(() => getStreakIncludeIn());
+  
+  // Estados para configuração do sistema de níveis
+  const [levelRules, setLevelRulesState] = useState<LevelRule[]>(() => getLevelRules());
+  // Estado para modal de detalhes dos níveis
+  const [showLevelDetails, setShowLevelDetails] = useState(false);
 
   // Usuários canônicos (Auth DB)
   const taskData = getTasksData();
@@ -196,7 +203,10 @@ const Settings = () => {
   };
 
   const handleSave = () => {
-    // Aqui iria a lógica para salvar as configurações
+    // Salvar as regras de níveis
+    setLevelRules(levelRules);
+    
+    // Aqui iria a lógica para salvar as outras configurações
     setShowToast(true);
     setTimeout(() => setShowToast(false), 3000);
   };
@@ -478,6 +488,25 @@ const Settings = () => {
                         const gamificationUsers = getGamificationUsers();
                         const canonical = getSystemUsers();
                         
+                        // Obter logs de acesso
+                        const accessLogs = getAllLastAccess();
+                        
+                        // Mapeia os logs de acesso para nomes de usuários
+                        const accessLogsByName: Record<string, string> = {};
+                        canonical.forEach(user => {
+                          if (accessLogs[user.id]) {
+                            // Converte a data ISO para formato legível
+                            const date = new Date(accessLogs[user.id]);
+                            accessLogsByName[user.name] = new Intl.DateTimeFormat('pt-BR', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            }).format(date);
+                          }
+                        });
+                        
                         // Calcula estatísticas para cada usuário
                         const userTasks = getTasksData();
                         const userTasksMap = {};
@@ -523,23 +552,10 @@ const Settings = () => {
                             ? Math.round((completedTasks / totalTasks) * 100) 
                             : 0;
                           
-                          // Último acesso (usa a data mais recente de qualquer tarefa concluída)
-                          const lastTaskDate = userTaskList
-                            .filter(t => t.dataTermino)
-                            .map(t => new Date(t.dataTermino))
-                            .sort((a, b) => b.getTime() - a.getTime())[0];
-                            
-                          const lastAccess = lastTaskDate 
-                            ? new Intl.DateTimeFormat('pt-BR', { 
-                                day: '2-digit', 
-                                month: '2-digit',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              }).format(lastTaskDate)
-                            : 'Não disponível';
+                          // Último acesso (usa o registro de log de acesso mais recente)
+                          const lastAccess = accessLogsByName[userName] || 'Não disponível';
                           
-                          // XP Total (da gamificação ou 0 se não existir)
+                          // XP Total (da gamificação - ranking real)
                           const xpTotal = gamificationUser ? gamificationUser.xp : 0;
                           
                           // E-mail real do Auth DB quando disponível
@@ -627,24 +643,51 @@ const Settings = () => {
                 </SettingsCard>
                 {/* Sistema de Níveis */}
                 <SettingsCard title="Sistema de Níveis" icon={Trophy}>
-                  <LabeledInput 
-                    label="Pontos necessários por nível" 
-                    id="levelThreshold" 
-                    type="number"
-                    min={50}
-                    max={1000}
-                    value={levelThreshold}
-                    onChange={(e) => setLevelThreshold(Number(e.target.value))}
-                  />
-                  <SelectInput 
-                    label="Progresso de nível" 
-                    id="levelProgress"
-                    options={[
-                      { value: "linear", label: "Linear (igual para todos níveis)" },
-                      { value: "exponential", label: "Exponencial (aumenta a cada nível)" }
-                    ]}
-                  />
-                  <div className="flex items-center space-x-2 pt-2">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                    <SelectInput
+                      label="Nível"
+                      id="unique-level-dropdown"
+                      value={levelRules[0]?.level || 1}
+                      onChange={e => {
+                        const newLevel = Number(e.target.value);
+                        const updatedRules = [...levelRules];
+                        updatedRules[0] = { ...updatedRules[0], level: newLevel };
+                        setLevelRulesState(updatedRules);
+                      }}
+                      options={Array.from({ length: 8 }, (_, i) => ({ value: i + 1, label: `Nível ${i + 1}` }))}
+                      className="w-full border-[#6A0DAD] focus:border-[#FF0066] bg-[#1A1A2E]/60 text-white"
+                    />
+                    <div className="space-y-2 w-full">
+                      <label htmlFor="unique-xp-input" className="block text-sm font-medium text-[#C0C0C0]">XP necessário</label>
+                      <Input
+                        id="unique-xp-input"
+                        type="number"
+                        min={0}
+                        value={levelRules[0]?.xpRequired || 0}
+                        onChange={e => {
+                          const newValue = Number(e.target.value);
+                          const updatedRules = [...levelRules];
+                          updatedRules[0] = { ...updatedRules[0], xpRequired: newValue };
+                          setLevelRulesState(updatedRules);
+                        }}
+                        className="w-full border-[#6A0DAD] focus:border-[#FF0066] bg-[#1A1A2E]/60 text-white"
+                        placeholder="Digite o valor de XP"
+                      />
+                    </div>
+                    <div className="flex items-end gap-2">
+                      <ParticleButton onClick={() => setLevelRules(levelRules)} className="w-full bg-gradient-to-r from-[#FF0066] to-[#C8008F] text-white font-semibold px-4 py-2 rounded-none transition-colors shadow-lg hover:from-[#FF0066]/80 hover:to-[#C8008F]/80 hover:shadow-xl transform hover:scale-105">
+                        <Save size={16} /> SALVAR
+                      </ParticleButton>
+                      <Button
+                        type="button"
+                        className="w-full bg-gradient-to-r from-[#6A0DAD] to-[#FF0066] text-white font-semibold px-4 py-2 rounded-none transition-colors shadow-lg hover:from-[#6A0DAD]/80 hover:to-[#FF0066]/80 hover:shadow-xl transform hover:scale-105"
+                        onClick={() => setShowLevelDetails(true)}
+                      >
+                        Detalhes
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2 pt-4">
                     <input 
                       type="checkbox" 
                       id="levelNotification" 
@@ -656,8 +699,43 @@ const Settings = () => {
                       Ativar notificações para subida de nível
                     </label>
                   </div>
+                  {/* Modal de detalhes dos níveis */}
+                  {typeof showLevelDetails !== 'undefined' && showLevelDetails && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center">
+                      <div className="absolute inset-0 bg-black/50" onClick={() => setShowLevelDetails(false)} />
+                      <div className="relative z-50 w-full max-w-md p-6 bg-[#1A1A2E] border border-[#6A0DAD] rounded-xl shadow-lg">
+                        <h3 className="text-lg font-semibold text-white mb-4">Configuração dos Níveis</h3>
+                        <table className="min-w-full text-sm text-left rounded-xl overflow-hidden mb-4">
+                          <thead>
+                            <tr className="bg-gradient-to-r from-[#6A0DAD]/80 to-[#FF0066]/80 text-white">
+                              <th className="px-3 py-2 font-semibold">Nível</th>
+                              <th className="px-3 py-2 font-semibold">Nome</th>
+                              <th className="px-3 py-2 font-semibold">XP necessário</th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-[#1A1A2E] divide-y divide-[#6A0DAD]/30">
+                            {levelRules.map((rule) => (
+                              <tr key={rule.level} className="hover:bg-[#6A0DAD]/10">
+                                <td className="px-3 py-2 text-white font-medium">Nível {rule.level}</td>
+                                <td className="px-3 py-2 text-[#C0C0C0]">{rule.name}</td>
+                                <td className="px-3 py-2 text-[#FF0066]">{rule.xpRequired} XP</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                        <div className="flex justify-end">
+                          <Button
+                            type="button"
+                            className="bg-gradient-to-r from-[#FF0066] to-[#C8008F] text-white font-semibold px-4 py-2 rounded-none"
+                            onClick={() => setShowLevelDetails(false)}
+                          >
+                            Fechar
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </SettingsCard>
-
                 {/* Recompensas e Prêmios */}
                 <SettingsCard title="Recompensas e Prêmios (Em análise)" icon={Gift}>
                   <SelectInput 
@@ -780,6 +858,28 @@ const Settings = () => {
                       value={refactoredTaskPercentage}
                       onChange={(e) => setRefactoredTaskPercentage(Number(e.target.value))}
                     />
+                  </div>
+                  <div className="flex justify-end mt-4">
+                    <ParticleButton
+                      onClick={() => {
+                        // Persistir no localStorage
+                        localStorage.setItem('epic_productivity_config_v1', JSON.stringify({
+                          early: earlyTaskPercentage,
+                          on_time: onTimeTaskPercentage,
+                          late: delayedTaskPercentage,
+                          refacao: refactoredTaskPercentage,
+                        }));
+                        toast({
+                          title: "Percentuais salvos!",
+                          description: "Os percentuais de ganho por tarefa foram atualizados e já impactam os cálculos da plataforma.",
+                          className: "bg-gradient-to-r from-[#6A0DAD] to-[#FF0066] border-none text-white rounded-md shadow-lg",
+                          duration: 3000,
+                        });
+                      }}
+                      className="min-w-32 flex justify-center"
+                    >
+                      <Save size={16} /> Salvar
+                    </ParticleButton>
                   </div>
                 </SettingsCard>
               </div>

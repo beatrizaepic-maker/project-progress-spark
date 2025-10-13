@@ -3,7 +3,8 @@
 // Substitui todos os dados mock do projeto por dados persistidos no navegador
 
 import { TaskData } from '@/data/projectData';
-import { Task, User } from './gamificationService';
+import { Task, User, calculateRankingXpFromTasks } from './gamificationService';
+import { addSimpleXpHistory } from '@/services/xpHistoryService';
 import { toOrderedRankingDTO, toPlayerProfileDTO } from './dtoTransformers';
 import { RankingEntryDTO, PlayerProfileDTO } from '@/types/dto';
 
@@ -171,6 +172,55 @@ export function saveTasksData(tasks: TaskData[]): void {
     localStorage.setItem(STORAGE_KEYS.TASKS_DATA, JSON.stringify(tasks));
     // Atualiza também as métricas calculadas
     updateProjectMetrics(tasks);
+    // Espelha as tarefas do editor no modelo de gamificação (para ranking)
+    try {
+      // Snapshot anterior das tarefas de gamificação
+      const prevGamTasks = getGamificationTasks();
+      // Novo snapshot a partir do TaskData atual
+      const gamTasks = mapTaskDataToGamification(tasks);
+
+      // Calcular delta de XP por usuário responsável
+      const usersSet = new Set<string>();
+      for (const t of prevGamTasks) if (t.assignedTo) usersSet.add(t.assignedTo);
+      for (const t of gamTasks) if (t.assignedTo) usersSet.add(t.assignedTo);
+
+      // Detectar tarefas que passaram a "completed" nesta gravação
+      const beforeById: Record<string, Task> = Object.fromEntries(prevGamTasks.map(t => [t.id, t]));
+      const newlyCompletedByUser: Record<string, string[]> = {};
+      for (const t of gamTasks) {
+        if (!t.assignedTo) continue;
+        const before = beforeById[t.id];
+        const becameCompleted = t.status === 'completed' && (!before || before.status !== 'completed');
+        if (becameCompleted) {
+          if (!newlyCompletedByUser[t.assignedTo]) newlyCompletedByUser[t.assignedTo] = [];
+          newlyCompletedByUser[t.assignedTo].push(t.title);
+        }
+      }
+
+      // Para cada usuário, comparar XP de ranking baseado em tarefas (sem streak)
+      for (const userId of usersSet) {
+        const beforeList = prevGamTasks.filter(t => t.assignedTo === userId);
+        const afterList = gamTasks.filter(t => t.assignedTo === userId);
+        const xpBefore = calculateRankingXpFromTasks(beforeList);
+        const xpAfter = calculateRankingXpFromTasks(afterList);
+        const delta = xpAfter - xpBefore;
+        if (delta !== 0) {
+          // Monta descrição amigável
+          const completed = newlyCompletedByUser[userId] || [];
+          let desc = 'Atualização de XP por tarefas';
+          if (completed.length === 1 && delta > 0) desc = `Tarefa concluída: ${completed[0]}`;
+          else if (completed.length > 1 && delta > 0) desc = `${completed.length} tarefas concluídas`;
+          else if (delta < 0) desc = 'Ajuste de XP por alterações de tarefas';
+          // Registra evento no histórico (fonte: task)
+          try { addSimpleXpHistory(userId, delta, 'task', desc); } catch {}
+        }
+      }
+
+      // Persistir o novo snapshot para o ranking
+      saveGamificationTasks(gamTasks);
+    } catch (e) {
+      console.warn('Falha ao espelhar tarefas para gamificação:', e);
+    }
     // Notifica outras páginas/abas e provedores para recarregar as tarefas
     try {
       window.dispatchEvent(new CustomEvent('tasks:changed'));
@@ -295,6 +345,51 @@ export function saveGamificationTasks(tasks: Task[]): void {
   } catch (error) {
     console.error('Erro ao salvar tarefas de gamificação no localStorage:', error);
   }
+}
+
+// --------- Mapeamento TaskData -> Gamification Task ---------
+export function resolveUserIdByName(name?: string): string | undefined {
+  if (!name) return undefined;
+  try {
+    const authUsers = readAuthUsersDB();
+    const trimmed = name.trim().toLowerCase();
+    // 1) match exato por nome completo
+    let hit = authUsers.find(u => (u.name || u.email).trim().toLowerCase() === trimmed);
+    if (hit) return hit.id;
+    // 2) match por primeiro nome contido
+    const first = trimmed.split(' ')[0];
+    hit = authUsers.find(u => (u.name || '').toLowerCase().includes(first));
+    if (hit) return hit.id;
+    return undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+export function mapTaskDataToGamification(tasks: TaskData[]): Task[] {
+  const now = new Date();
+  return tasks.map<Task>((t) => {
+    const assignedTo = resolveUserIdByName(t.responsavel) || '';
+    // Status de gamificação
+    let status: Task['status'] = 'pending';
+    if (t.status === 'refacao') status = 'refacao';
+    else if (t.status === 'completed' || (!!t.fim && t.fim !== '')) status = 'completed';
+    else if (t.prazo && new Date(t.prazo) < now) status = 'overdue';
+    else status = 'pending';
+
+    const completedDate = t.fim && t.fim !== '' ? new Date(t.fim).toISOString() : undefined;
+    const dueDate = t.prazo ? new Date(t.prazo).toISOString() : '';
+
+    return {
+      id: String(t.id ?? `td-${Math.random().toString(36).slice(2,8)}`),
+      title: t.tarefa || `Tarefa ${t.id ?? ''}`,
+      status,
+      completedDate,
+      dueDate,
+      assignedTo,
+      completedEarly: undefined,
+    };
+  });
 }
 
 // Mock API service simulados com dados do localStorage

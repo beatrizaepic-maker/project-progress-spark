@@ -35,7 +35,7 @@ const Navigation = () => {
           <div className="flex items-center space-x-2 py-4">
             <img src={logoEpic} alt="Epic Logo" className="h-10 w-10 drop-shadow-sm" />
             <span className="font-bold text-2xl text-foreground text-shadow ethnocentric-header">
-              Epic Board
+              EPIC Space
             </span>
           </div>
           

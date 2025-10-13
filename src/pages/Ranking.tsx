@@ -36,7 +36,6 @@ import { useToast } from '@/hooks/use-toast';
 // Usando localStorage para persistência dos dados
 import { fetchRanking } from '@/services/localStorageData';
 import { getUserXpHistory } from '@/services/xpHistoryService';
-import type { XpHistory } from '@/types/player';
 
 // Tipos para o sistema de gameficação
 interface UserRanking {
@@ -62,17 +61,17 @@ interface Mission {
   deadline: string;
 }
 
-interface XpHistoryDisplay {
+interface XpHistory {
   date: string;
   xp: number;
-  source: string; // 'task', 'mission', 'bonus', 'penalty', 'streak'
+  source: string; // 'task', 'mission', 'bonus', 'penalty'
   description: string;
 }
 
 interface PerformanceDetails {
   userId: string;
   userName: string;
-  xpHistory: XpHistoryDisplay[];
+  xpHistory: XpHistory[];
   missions: Mission[];
   consistencyBonus: number;
   penalties: number;
@@ -152,6 +151,13 @@ const RankingPage: React.FC = () => {
       clearInterval(interval);
       try { evtSource?.close(); } catch {}
     };
+  }, [updateRankingData]);
+
+  // Reagir imediatamente a alterações de tarefas (salvas no localStorage)
+  useEffect(() => {
+    const onTasksChanged = () => updateRankingData();
+    window.addEventListener('tasks:changed', onTasksChanged);
+    return () => window.removeEventListener('tasks:changed', onTasksChanged);
   }, [updateRankingData]);
 
   // Calcula o ranking baseado na aba ativa (semanal ou mensal)
@@ -271,39 +277,15 @@ const RankingPage: React.FC = () => {
       .then(response => response.json())
       .then((userData: PerformanceDetails) => {
         // Mesclar histórico local e garantir totalXp do ranking
-        let localHist = getUserXpHistory(clicked.id);
-        
-        // Se não há histórico para este ID, tentar mapear pelo nome para usuário canônico
-        if (localHist.length === 0) {
-          const canonicalUserMap: Record<string, string> = {
-            'João Silva': '2',
-            'Gabriel Santos': '3', 
-            'Administrador': '1'
-          };
-          
-          const canonicalId = canonicalUserMap[clicked.name];
-          if (canonicalId) {
-            localHist = getUserXpHistory(canonicalId);
-            console.log(`Backend: Mapeando ${clicked.name} (ID: ${clicked.id}) para usuário canônico (ID: ${canonicalId}), encontrados ${localHist.length} registros de XP`);
-          }
-        }
-        
-        const mappedLocalHist: XpHistoryDisplay[] = localHist.map((entry: XpHistory) => ({
-          date: new Date(entry.date).toLocaleString('pt-BR'),
-          xp: entry.xp,
-          source: entry.source,
-          description: entry.description,
-        }));
-        
+        const localHist = getUserXpHistory(clicked.id);
         const mergedHistory = Array.isArray(userData.xpHistory) && userData.xpHistory.length
-          ? [...userData.xpHistory, ...mappedLocalHist]
-          : mappedLocalHist;
-          
+          ? [...userData.xpHistory, ...localHist]
+          : localHist;
         setSelectedUser({
           ...userData,
           userId: clicked.id,
           userName: clicked.name,
-          xpHistory: mergedHistory.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+          xpHistory: mergedHistory,
           consistencyBonus: clicked.consistencyBonus,
           currentStreak: clicked.streak,
           bestStreak: userData.bestStreak ?? clicked.streak,
@@ -313,34 +295,10 @@ const RankingPage: React.FC = () => {
       .catch(() => {
         // Fallback com dados mínimos baseados no usuário clicado
         const hist = getUserXpHistory(clicked.id);
-        // Verificar se há histórico para este usuário ou tentar mapear para usuário canônico
-        let finalHist = hist;
-        if (hist.length === 0) {
-          // Se não há histórico para este ID, tentar mapear pelo nome para usuário canônico
-          const canonicalUserMap: Record<string, string> = {
-            'João Silva': '2',
-            'Gabriel Santos': '3', 
-            'Administrador': '1'
-          };
-          
-          const canonicalId = canonicalUserMap[clicked.name];
-          if (canonicalId) {
-            finalHist = getUserXpHistory(canonicalId);
-            console.log(`Mapeando ${clicked.name} (ID: ${clicked.id}) para usuário canônico (ID: ${canonicalId}), encontrados ${finalHist.length} registros de XP`);
-          }
-        }
-        
-        const mappedHist: XpHistoryDisplay[] = finalHist.map((entry: XpHistory) => ({
-          date: new Date(entry.date).toLocaleString('pt-BR'),
-          xp: entry.xp,
-          source: entry.source,
-          description: entry.description,
-        }));
-        
         setSelectedUser({
           userId: clicked.id,
           userName: clicked.name,
-          xpHistory: mappedHist,
+          xpHistory: hist,
           missions: [],
           consistencyBonus: clicked.consistencyBonus,
           penalties: 0,
@@ -676,12 +634,7 @@ const RankingPage: React.FC = () => {
                       <Activity className="text-accent" /> Histórico de XP
                     </h3>
                     <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
-                      {selectedUser.xpHistory.length === 0 ? (
-                        <div className="text-center py-8 text-muted-foreground">
-                          <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                          <p>Nenhum histórico de XP disponível</p>
-                        </div>
-                      ) : selectedUser.xpHistory.map((entry, index) => (
+                      {selectedUser.xpHistory.map((entry, index) => (
                         <div 
                           key={index} 
                           className="p-3 rounded-lg border border-border bg-accent/5"
@@ -700,7 +653,6 @@ const RankingPage: React.FC = () => {
                                 {entry.source === 'mission' && 'Missão'}
                                 {entry.source === 'bonus' && 'Bônus'}
                                 {entry.source === 'penalty' && 'Penalização'}
-                                {entry.source === 'streak' && 'Streak'}
                               </Badge>
                             </div>
                           </div>

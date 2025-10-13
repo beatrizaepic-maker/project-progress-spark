@@ -14,7 +14,7 @@ export default function Header() {
               />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">EPIC - Dashboard de Projeto</h1>
+              <h1 className="text-2xl font-bold text-foreground">EPIC Space - Dashboard de Projeto</h1>
               <p className="text-sm text-muted-foreground">Sistema de Acompanhamento de Progresso de Projetos</p>
             </div>
           </div>
