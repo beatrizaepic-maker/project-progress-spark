@@ -87,23 +87,23 @@ const ProjectDeadlineCard: React.FC<ProjectDeadlineCardProps> = ({
 
   return (
     <KPICard
-      title="Status do Projeto"
-      value={`${getStatusEmoji(deadlineStatus)} ${formatDeadlineStatus(deadlineStatus)}`}
+      title="Produtividade da Squad"
+      value={`${formatPercentage(completionPercentage, 0)}`}
       status={getCardStatus(deadlineStatus)}
       trend={getTrend(deadlineStatus)}
-      subtitle={formatPercentage(completionPercentage, 0) + ' concluído'}
+      subtitle="aproveitamento médio da equipe"
       icon={Target}
-      description={getDescription(deadlineStatus, completionPercentage)}
-      tooltipTitle="Indicador de Prazo do Projeto"
-      tooltipDescription="Este KPI avalia o status geral do projeto baseado no cumprimento de prazos das tarefas individuais."
+      description={`Produtividade média da equipe baseada em ${formatPercentage(completionPercentage, 0)} de aproveitamento geral das tarefas concluídas pelos membros cadastrados.`}
+      tooltipTitle="Produtividade da Squad"
+      tooltipDescription="Este KPI calcula a produtividade média da equipe em percentual, considerando o aproveitamento de todos os players cadastrados."
       tooltipDetails={[
-        "🟢 No Prazo: Todas as tarefas estão dentro do cronograma",
-        "🟡 Em Risco: Algumas tarefas apresentam atrasos leves (1-2 dias)",
-        "🔴 Atrasado: Tarefas com atrasos significativos (3+ dias)",
-        "Porcentagem de conclusão baseada em tarefas finalizadas",
-        "Atualizado automaticamente quando dados de tarefas mudam"
+        "� Cálculo baseado em tarefas concluídas vs total de tarefas",
+        "� Considera todos os membros da equipe cadastrados",
+        "� Percentual de aproveitamento médio da squad",
+        "🎯 Indica a eficiência geral da equipe",
+        "⚡ Atualizado automaticamente quando dados mudam"
       ]}
-      tooltipCalculation="Status = Análise dos atrasos de todas as tarefas concluídas"
+      tooltipCalculation="Produtividade = (Tarefas Concluídas / Total de Tarefas) × 100"
       lastUpdated={lastUpdated}
       isCalculating={isCalculating}
       calculationId={calculationId}

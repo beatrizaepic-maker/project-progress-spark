@@ -56,6 +56,8 @@ function SuccessParticles({ buttonRef }: { buttonRef: React.RefObject<HTMLButton
 
 const AnalyticsContent = () => {
   const { tasks } = useData();
+  // Importa o contexto de autenticação
+  const { user } = require("@/contexts/AuthContext").useAuth();
   const [showParticles, setShowParticles] = useState(false);
   const [isButtonHidden, setIsButtonHidden] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -125,12 +127,15 @@ const AnalyticsContent = () => {
             <h2 className="text-2xl font-bold text-foreground mb-2">Análise Visual</h2>
             <p className="text-muted-foreground">Visualização detalhada dos dados de duração, atrasos e performance</p>
           </div>
-          <KPILoadingIndicator
-            isCalculating={analyticsKPIs.isCalculating}
-            lastUpdated={analyticsKPIs.lastUpdated}
-            cacheHit={analyticsKPIs.cacheHit}
-            variant="badge"
-          />
+          {/* Exibe o badge apenas se o usuário for DEV */}
+          {user?.role === 'dev' && (
+            <KPILoadingIndicator
+              isCalculating={analyticsKPIs.isCalculating}
+              lastUpdated={analyticsKPIs.lastUpdated}
+              cacheHit={analyticsKPIs.cacheHit}
+              variant="badge"
+            />
+          )}
         </div>
         
         {/* Timestamp e Versionamento Detalhado para Analytics */}

@@ -14,11 +14,12 @@ import { TaskData } from '@/data/projectData';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { toast } from '@/hooks/use-toast';
 import KanbanBoard from './KanbanBoard';
-import { getTasksData, saveTasksData, getSystemUsers } from '@/services/localStorageData';
+import { getTasksData, saveTasksData, getSystemUsers, resolveUserIdByName } from '@/services/localStorageData';
 
 interface TaskFormData {
   tarefa: string;
   responsavel: string;
+  userId?: string; // ID do usuário responsável
   descricao?: string;
   status: 'backlog' | 'todo' | 'in-progress' | 'completed' | 'refacao';
   inicio: string;
@@ -39,6 +40,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, tasks, onSubmit, onCancel }) 
   const [formData, setFormData] = useState<TaskFormData>({
     tarefa: task?.tarefa || '',
     responsavel: task?.responsavel || '',
+    userId: task?.userId || '',
     descricao: task?.descricao || '',
     status: task?.status || 'backlog',
     inicio: task?.inicio || '',
@@ -69,7 +71,13 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, tasks, onSubmit, onCancel }) 
       return;
     }
     
-    onSubmit(formData);
+    // Converter nome para userId se estiver vazio
+    const updatedFormData = {
+      ...formData,
+      userId: formData.userId || resolveUserIdByName(formData.responsavel)
+    };
+    
+    onSubmit(updatedFormData);
   };
 
   return (
@@ -97,28 +105,31 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, tasks, onSubmit, onCancel }) 
       <div>
         <Label htmlFor="responsavel">Responsável</Label>
         <Select
-          value={formData.responsavel || undefined}
-          onValueChange={(value) => setFormData(prev => ({ ...prev, responsavel: value }))}
+          value={formData.userId || (formData.responsavel ? resolveUserIdByName(formData.responsavel) || undefined : undefined)}
+          onValueChange={(value) => {
+            // Obter o nome do usuário com base no ID selecionado
+            const selectedUser = getSystemUsers().find(u => u.id === value);
+            setFormData(prev => ({
+              ...prev,
+              userId: value,
+              responsavel: selectedUser?.name || prev.responsavel
+            }));
+          }}
         >
           <SelectTrigger>
             <SelectValue placeholder="Selecione o responsável" />
           </SelectTrigger>
           <SelectContent>
-            {(() => {
-              const canonical = getSystemUsers().map(u => u.name);
-              const fromTasks = [...new Set(tasks.map(t => t.responsavel))].filter(Boolean) as string[];
-              const merged = Array.from(new Set([...canonical, ...fromTasks]));
-              return merged.map(name => (
-                <SelectItem key={name} value={name}>{name}</SelectItem>
-              ));
-            })()}
+            {getSystemUsers().map(user => (
+              <SelectItem key={user.id} value={user.id}>{user.name}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
       
       <div>
         <Label htmlFor="status">Status</Label>
-  <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value as any }))}>
+  <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value as 'backlog' | 'todo' | 'in-progress' | 'completed' | 'refacao' }))}>
           <SelectTrigger>
             <SelectValue placeholder="Selecione o status" />
           </SelectTrigger>
@@ -134,7 +145,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, tasks, onSubmit, onCancel }) 
       
       <div>
         <Label htmlFor="prioridade">Prioridade</Label>
-        <Select value={formData.prioridade} onValueChange={(value) => setFormData(prev => ({ ...prev, prioridade: value as any }))}>
+        <Select value={formData.prioridade} onValueChange={(value) => setFormData(prev => ({ ...prev, prioridade: value as 'baixa' | 'media' | 'alta' | 'critica' }))}>
           <SelectTrigger>
             <SelectValue placeholder="Selecione a prioridade" />
           </SelectTrigger>

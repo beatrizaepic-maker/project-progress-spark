@@ -24,10 +24,20 @@ export interface TaskTableRef {
   setStatusFilter: (filter: string) => void;
   setSearchTerm: (term: string) => void;
   clearFilters: () => void;
+  getActiveFilters: () => {
+    searchTerm: string;
+    statusFilter: string;
+    priorityFilter: string;
+  };
 }
 
-const TaskTable = forwardRef<TaskTableRef>((props, ref) => {
-  const { tasks } = useData();
+type TaskTableProps = {
+  tasks?: any[];
+};
+
+const TaskTable = forwardRef<TaskTableRef, TaskTableProps>((props, ref) => {
+  const contextData = useData();
+  const tasks = props.tasks || contextData.tasks;
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   
@@ -45,7 +55,12 @@ const TaskTable = forwardRef<TaskTableRef>((props, ref) => {
       setSearchTerm('');
       setStatusFilter('all');
       setPriorityFilter('all');
-    }
+    },
+    getActiveFilters: () => ({
+      searchTerm,
+      statusFilter,
+      priorityFilter
+    })
   }));
 
   // Função para formatar datas de forma consistente, corrigindo o problema de fuso horário

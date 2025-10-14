@@ -1,10 +1,9 @@
-Ranking.tsx:124 Uncaught ReferenceError: Cannot access 'calculateRankingData' before initialization
-    at RankingPage (Ranking.tsx:124:7)
-Ranking.tsx:124 Uncaught ReferenceError: Cannot access 'calculateRankingData' before initialization
-    at RankingPage (Ranking.tsx:124:7)
-chunk-T2SWDQEL.js?v=7db4f822:14032 The above error occurred in the <RankingPage> component:
 
-    at RankingPage (http://localhost:8080/src/pages/Ranking.tsx?t=1760383385787:52:41)
+Dashboard.tsx:13 Uncaught ReferenceError: require is not defined
+    at Dashboard (Dashboard.tsx:13:30)
+chunk-T2SWDQEL.js?v=7db4f822:14032 The above error occurred in the <Dashboard> component:
+
+    at Dashboard (http://localhost:8080/src/pages/Dashboard.tsx?t=1760404066894:35:32)
     at RenderedRoute (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=7db4f822:4088:5)
     at Routes (http://localhost:8080/node_modules/.vite/deps/react-router-dom.js?v=7db4f822:4558:5)
     at div
@@ -24,5 +23,5 @@ chunk-T2SWDQEL.js?v=7db4f822:14032 The above error occurred in the <RankingPage>
 
 Consider adding an error boundary to your tree to customize error handling behavior.
 Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
-chunk-T2SWDQEL.js?v=7db4f822:19413 Uncaught ReferenceError: Cannot access 'calculateRankingData' before initialization
-    at RankingPage (Ranking.tsx:124:7)
+chunk-T2SWDQEL.js?v=7db4f822:19413 Uncaught ReferenceError: require is not defined
+    at Dashboard (Dashboard.tsx:13:30)

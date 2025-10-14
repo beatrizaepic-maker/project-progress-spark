@@ -50,18 +50,13 @@ const Dashboard = () => {
     doc.text(`Total de Tarefas: ${taskData.length}`, 20, y);
     y += 6;
     doc.text(`Tarefas Concluídas: ${taskData.filter(task => task.status === 'completed').length}`, 20, y);
-    y += 6;
-    doc.text(`Tarefas em Andamento: ${taskData.filter(task => task.status === 'in-progress').length}`, 20, y);
-    y += 6;
-    doc.text(`Tarefas Pendentes: ${taskData.filter(task => task.status === 'todo' || task.status === 'backlog').length}`, 20, y);
-    y += 15;
-    
-    // INDICADORES DE PERFORMANCE (KPIs)
-    doc.setFontSize(14);
-    doc.setTextColor(139, 92, 246);
-    doc.text('INDICADORES DE PERFORMANCE (KPIs)', 20, y);
-    y += 10;
-    
+              <SummaryCard>
+                <h3 className="text-lg font-semibold mb-2">Status Geral</h3>
+                <p className="text-muted-foreground">
+                  {taskData.length === 0 ? 'Sem tarefas cadastradas' : 
+                   `${taskData.filter(task => task.status === 'completed').length} de ${taskData.length} tarefas concluídas`}
+                </p>
+              </SummaryCard>
     doc.setFontSize(10);
     doc.setTextColor(0, 0, 0);
     doc.text(`Média de Produção: ${kpiData.averageProduction.toFixed(1)} dias`, 20, y);
@@ -230,34 +225,110 @@ const Dashboard = () => {
             <MetricsCards />
           </section>
 
-          {/* Resumo Rápido - Movido para baixo das Métricas Complementares */}
+          {/* Critical Players - Análise de Performance Individual */}
           <section>
             <div className="mb-6">
-              <h3 className="text-xl font-semibold text-foreground mb-2">Resumo Rápido</h3>
-              <p className="text-muted-foreground">Visão geral das principais informações do projeto</p>
+              <h3 className="text-xl font-semibold text-foreground mb-2">Critical Players</h3>
+              <p className="text-muted-foreground">Análise de performance individual dos membros da equipe</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <SummaryCard>
-                <h3 className="text-lg font-semibold mb-2">Status Geral</h3>
-                <p className="text-muted-foreground">
-                  {taskData.length === 0 ? 'Sem tarefas cadastradas' : 
-                   `${taskData.filter(task => task.status === 'completed').length} de ${taskData.length} tarefas concluídas`}
+                <h3 className="text-lg font-semibold mb-2 text-red-400">🔴 Mais Tarefas Atrasadas</h3>
+                <div className="mb-2">
+                  {(() => {
+                    const playerDelays = taskData.reduce((acc, task) => {
+                      if (task.responsavel && task.atrasoDiasUteis > 0) {
+                        acc[task.responsavel] = (acc[task.responsavel] || 0) + 1;
+                      }
+                      return acc;
+                    }, {});
+                    const worstPlayer = Object.entries(playerDelays).sort((a, b) => b[1] - a[1])[0];
+                    return worstPlayer ? 
+                      <><span className="text-2xl font-bold text-red-400">{worstPlayer[1]}</span><span className="text-sm text-muted-foreground ml-2">atrasos</span></> :
+                      <span className="text-green-400">Nenhum atraso registrado</span>;
+                  })()}
+                </div>
+                <p className="text-muted-foreground text-sm">
+                  {(() => {
+                    const playerDelays = taskData.reduce((acc, task) => {
+                      if (task.responsavel && task.atrasoDiasUteis > 0) {
+                        acc[task.responsavel] = (acc[task.responsavel] || 0) + 1;
+                      }
+                      return acc;
+                    }, {});
+                    const worstPlayer = Object.entries(playerDelays).sort((a, b) => b[1] - a[1])[0];
+                    return worstPlayer ? `${worstPlayer[0]}` : 'Todos os membros estão em dia';
+                  })()}
                 </p>
               </SummaryCard>
               <SummaryCard>
-                <h3 className="text-lg font-semibold mb-2">Próximas Ações</h3>
-                <p className="text-muted-foreground">
-                  {taskData.filter(task => task.status === 'in-progress').length === 0 ? 
-                    'Sem tarefas em andamento' : 
-                    `${taskData.filter(task => task.status === 'in-progress').length} tarefas em andamento`}
+                <h3 className="text-lg font-semibold mb-2 text-orange-400">📉 Pior Aproveitamento</h3>
+                <div className="mb-2">
+                  {(() => {
+                    const playerStats = taskData.reduce((acc, task) => {
+                      if (task.responsavel) {
+                        acc[task.responsavel] = acc[task.responsavel] || { total: 0, completed: 0 };
+                        acc[task.responsavel].total++;
+                        if (task.status === 'completed') acc[task.responsavel].completed++;
+                      }
+                      return acc;
+                    }, {});
+                    const playerRates = Object.entries(playerStats).map(([name, stats]) => [
+                      name, 
+                      stats.total > 0 ? (stats.completed / stats.total) * 100 : 0
+                    ]).sort((a, b) => a[1] - b[1]);
+                    const worstPlayer = playerRates[0];
+                    return worstPlayer && playerRates.length > 0 ? 
+                      <><span className="text-2xl font-bold text-orange-400">{worstPlayer[1].toFixed(0)}%</span></> :
+                      <span className="text-muted-foreground">Sem dados</span>;
+                  })()}
+                </div>
+                <p className="text-muted-foreground text-sm">
+                  {(() => {
+                    const playerStats = taskData.reduce((acc, task) => {
+                      if (task.responsavel) {
+                        acc[task.responsavel] = acc[task.responsavel] || { total: 0, completed: 0 };
+                        acc[task.responsavel].total++;
+                        if (task.status === 'completed') acc[task.responsavel].completed++;
+                      }
+                      return acc;
+                    }, {});
+                    const playerRates = Object.entries(playerStats).map(([name, stats]) => [
+                      name, 
+                      stats.total > 0 ? (stats.completed / stats.total) * 100 : 0
+                    ]).sort((a, b) => a[1] - b[1]);
+                    const worstPlayer = playerRates[0];
+                    return worstPlayer && playerRates.length > 0 ? `${worstPlayer[0]}` : 'Nenhum player avaliado';
+                  })()}
                 </p>
               </SummaryCard>
               <SummaryCard>
-                <h3 className="text-lg font-semibold mb-2">Alertas</h3>
-                <p className="text-muted-foreground">
-                  {taskData.filter(task => !task.atendeuPrazo).length === 0 ? 
-                    'Sem tarefas atrasadas' :
-                    `${taskData.filter(task => !task.atendeuPrazo).length} tarefas com atraso`}
+                <h3 className="text-lg font-semibold mb-2 text-yellow-400">🔄 Mais Refações</h3>
+                <div className="mb-2">
+                  {(() => {
+                    const playerRefacoes = taskData.reduce((acc, task) => {
+                      if (task.responsavel && task.status === 'refacao') {
+                        acc[task.responsavel] = (acc[task.responsavel] || 0) + 1;
+                      }
+                      return acc;
+                    }, {});
+                    const mostRefacoes = Object.entries(playerRefacoes).sort((a, b) => b[1] - a[1])[0];
+                    return mostRefacoes ? 
+                      <><span className="text-2xl font-bold text-yellow-400">{mostRefacoes[1]}</span><span className="text-sm text-muted-foreground ml-2">refações</span></> :
+                      <span className="text-green-400">Nenhuma refação</span>;
+                  })()}
+                </div>
+                <p className="text-muted-foreground text-sm">
+                  {(() => {
+                    const playerRefacoes = taskData.reduce((acc, task) => {
+                      if (task.responsavel && task.status === 'refacao') {
+                        acc[task.responsavel] = (acc[task.responsavel] || 0) + 1;
+                      }
+                      return acc;
+                    }, {});
+                    const mostRefacoes = Object.entries(playerRefacoes).sort((a, b) => b[1] - a[1])[0];
+                    return mostRefacoes ? `${mostRefacoes[0]}` : 'Qualidade mantida pela equipe';
+                  })()}
                 </p>
               </SummaryCard>
             </div>

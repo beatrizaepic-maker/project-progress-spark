@@ -2,6 +2,7 @@ export interface TaskData {
   id: number;
   tarefa: string;
   responsavel?: string;
+  userId?: string; // ID único do usuário responsável
   descricao?: string;
   inicio: string;
   fim?: string; // Campo opcional

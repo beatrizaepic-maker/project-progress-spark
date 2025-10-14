@@ -169,15 +169,17 @@ export function getTasksData(): TaskData[] {
 
 export function saveTasksData(tasks: TaskData[]): void {
   try {
-    localStorage.setItem(STORAGE_KEYS.TASKS_DATA, JSON.stringify(tasks));
+    // Aplica a migração automaticamente antes de salvar
+    const migratedTasks = migrateTaskResponsibles(tasks);
+    localStorage.setItem(STORAGE_KEYS.TASKS_DATA, JSON.stringify(migratedTasks));
     // Atualiza também as métricas calculadas
-    updateProjectMetrics(tasks);
+    updateProjectMetrics(migratedTasks);
     // Espelha as tarefas do editor no modelo de gamificação (para ranking)
     try {
       // Snapshot anterior das tarefas de gamificação
       const prevGamTasks = getGamificationTasks();
       // Novo snapshot a partir do TaskData atual
-      const gamTasks = mapTaskDataToGamification(tasks);
+      const gamTasks = mapTaskDataToGamification(migratedTasks);
 
       // Calcular delta de XP por usuário responsável
       const usersSet = new Set<string>();
@@ -321,6 +323,49 @@ export function getGamificationUsers(): User[] {
   }
 }
 
+// Função para mapear nome de usuário para ID no formato compatível com gamificação
+export function resolveUserIdByName(name?: string): string | undefined {
+  if (!name) return undefined;
+  try {
+    const authUsers = readAuthUsersDB();
+    const trimmed = name.trim().toLowerCase();
+    // 1) match exato por nome completo
+    let hit = authUsers.find(u => (u.name || u.email).trim().toLowerCase() === trimmed);
+    if (hit) return hit.id;
+    // 2) match por primeiro nome contido
+    const first = trimmed.split(' ')[0];
+    hit = authUsers.find(u => (u.name || '').toLowerCase().includes(first));
+    if (hit) return hit.id;
+    return undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+// Função para migrar tarefas existentes do formato antigo (por nome) para o novo (por ID)
+export function migrateTaskResponsibles(tasks: TaskData[]): TaskData[] {
+  return tasks.map(task => {
+    // Se já tem userId, mantém como está
+    if (task.userId) {
+      return task;
+    }
+    
+    // Caso contrário, tenta converter do nome para ID
+    if (task.responsavel) {
+      const userId = resolveUserIdByName(task.responsavel);
+      if (userId) {
+        return {
+          ...task,
+          userId
+        };
+      }
+    }
+    
+    // Se não conseguir converter, retorna a tarefa original
+    return task;
+  });
+}
+
 export function saveGamificationUsers(users: User[]): void {
   try {
     localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
@@ -348,23 +393,6 @@ export function saveGamificationTasks(tasks: Task[]): void {
 }
 
 // --------- Mapeamento TaskData -> Gamification Task ---------
-export function resolveUserIdByName(name?: string): string | undefined {
-  if (!name) return undefined;
-  try {
-    const authUsers = readAuthUsersDB();
-    const trimmed = name.trim().toLowerCase();
-    // 1) match exato por nome completo
-    let hit = authUsers.find(u => (u.name || u.email).trim().toLowerCase() === trimmed);
-    if (hit) return hit.id;
-    // 2) match por primeiro nome contido
-    const first = trimmed.split(' ')[0];
-    hit = authUsers.find(u => (u.name || '').toLowerCase().includes(first));
-    if (hit) return hit.id;
-    return undefined;
-  } catch {
-    return undefined;
-  }
-}
 
 export function mapTaskDataToGamification(tasks: TaskData[]): Task[] {
   const now = new Date();

@@ -187,6 +187,16 @@ type MissionType =
 
 
 const Settings = () => {
+  // Detecta se o usuário atual é DEV
+  const currentUser = (() => {
+    try {
+      const raw = localStorage.getItem('epic_user_data');
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  })();
+  const isDevUser = currentUser?.role === 'DEV' || currentUser?.access === 'DEV';
   const [pointsPerTask, setPointsPerTask] = useState(10);
   const [earlyTaskPercentage, setEarlyTaskPercentage] = useState(() => {
     const config = localStorage.getItem('epic_productivity_config_v1');
@@ -1277,15 +1287,20 @@ const Settings = () => {
           </div>
         )}
 
-        {/* Testador de sincronização */}
-        <div className="mt-8">
-          <UserSyncTester />
-        </div>
 
-        {/* Debug de dados do usuário */}
-        <div className="mt-8">
-          <UserDataDebug />
-        </div>
+        {/* Cards DEV-only: Testador de Sincronização de Usuário e Debug: Dados de Persistência */}
+        {isDevUser && (
+          <>
+            {/* Testador de sincronização */}
+            <div className="mt-8">
+              <UserSyncTester />
+            </div>
+            {/* Debug de dados do usuário */}
+            <div className="mt-8">
+              <UserDataDebug />
+            </div>
+          </>
+        )}
 
         {/* Toast de confirmação */}
         {showToast && (

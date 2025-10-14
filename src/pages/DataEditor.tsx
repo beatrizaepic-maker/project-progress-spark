@@ -5,6 +5,16 @@ import KPIDebugSection from "@/components/dashboard/KPIDebugSection";
 import React from "react";
 
 const DataEditorPage = () => {
+  // Detecta se o usuário atual é DEV
+  const currentUser = (() => {
+    try {
+      const raw = localStorage.getItem('epic_user_data');
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  })();
+  const isDevUser = currentUser?.role === 'DEV' || currentUser?.access === 'DEV';
   const [tasks, setTasks] = React.useState(() => getTasksData());
   React.useEffect(() => {
     const onChanged = () => setTasks(getTasksData());
@@ -26,14 +36,16 @@ const DataEditorPage = () => {
           {/* Instruções e Dicas */}
           {/* Cards removidos conforme solicitado */}
 
-          {/* Debug e Monitoramento */}
-          <section>
-            <div className="mb-6">
-              <h3 className="text-xl font-semibold text-foreground mb-2">Debug e Monitoramento</h3>
-              <p className="text-muted-foreground">Informações técnicas e métricas de performance dos KPIs</p>
-            </div>
-            <KPIDebugSection tasks={tasks} />
-          </section>
+          {/* Debug e Monitoramento - DEV only */}
+          {isDevUser && (
+            <section>
+              <div className="mb-6">
+                <h3 className="text-xl font-semibold text-foreground mb-2">Debug e Monitoramento</h3>
+                <p className="text-muted-foreground">Informações técnicas e métricas de performance dos KPIs</p>
+              </div>
+              <KPIDebugSection tasks={tasks} />
+            </section>
+          )}
       </main>
     </DataProvider>
   );

@@ -7,7 +7,6 @@ import { getSeasonConfig } from "@/config/season";
 import { toast } from "@/hooks/use-toast";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-
 // Hook para gerenciar filtros rápidos
 const useQuickFilters = () => {
   const taskTableRef = useRef<TaskTableRef>(null);
@@ -202,6 +201,55 @@ const TasksContent = () => {
       });
     }
   };
+
+  // Função para gerar dados do gráfico de tarefas ao longo do tempo
+  const generateChartData = useMemo(() => {
+    if (!selectedSeason?.startIso || !selectedSeason?.endIso) return [];
+
+    const startDate = new Date(selectedSeason.startIso);
+    const endDate = new Date(selectedSeason.endIso);
+    
+    // Gera array de dias entre as datas
+    const dateRange = [];
+    const currentDate = new Date(startDate);
+    while (currentDate <= endDate) {
+      dateRange.push(new Date(currentDate));
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    // Gera dados do gráfico
+    const chartData = dateRange.map(date => {
+      const dateString = date.toISOString().split('T')[0];
+      const day = date.getDate();
+      
+      // Conta tarefas concluídas até esta data
+      const completedTasks = filteredTasks.filter(task => {
+        if (!task.fim) return false;
+        const taskEndDate = new Date(task.fim);
+        return taskEndDate <= date;
+      }).length;
+      
+      // Tarefas pendentes até esta data
+      const pendingTasks = filteredTasks.filter(task => {
+        if (task.fim) return false; // Já foi concluída
+        // Verifica se a tarefa estava ativa durante este período
+        if (task.inicio) {
+          const taskStartDate = new Date(task.inicio);
+          return taskStartDate <= date; // Tarefa já tinha começado
+        }
+        return false;
+      }).length;
+      
+      return {
+        day,
+        date: dateString,
+        concluidas: completedTasks,
+        pendentes: pendingTasks
+      };
+    });
+
+    return chartData;
+  }, [filteredTasks, selectedSeason]);
 
   // Componente para cards com efeito de elevação
   const ActionCard = ({ children }: { children: React.ReactNode }) => {

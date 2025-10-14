@@ -43,10 +43,10 @@ const PlayerProfileView: React.FC<PlayerProfileViewProps> = ({
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<'overdue' | 'today'>('overdue');
   
-  // Mapeia os dados globais para as tarefas do usuário logado (por nome)
+  // Mapeia os dados globais para as tarefas do usuário logado (por ID do usuário)
   const userTasks = useMemo(() => {
-    return allTasks.filter(t => !t.responsavel || t.responsavel?.toLowerCase().includes(profile.name.split(' ')[0].toLowerCase()));
-  }, [allTasks, profile.name]);
+    return allTasks.filter(t => t.userId === profile.id);
+  }, [allTasks, profile.id]);
 
   // Utilidades de data
   const isToday = (isoLike: string) => {
