@@ -7,6 +7,16 @@ import { getSeasonConfig } from "@/config/season";
 import { toast } from "@/hooks/use-toast";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+// Chart components (visual style)
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+  type ChartConfig
+} from "../../dashi-touch/def-estilo/chart/line-chart";
+import { LineChart as ReLineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
 // Hook para gerenciar filtros rápidos
 const useQuickFilters = () => {
   const taskTableRef = useRef<TaskTableRef>(null);
@@ -79,6 +89,24 @@ const TasksContent = () => {
     return conclusion <= prazo;
   }).length;
   const pendingTasks = filteredTasks.filter(task => !task.fim).length;
+
+  // Config de cores/labels do gráfico seguindo o tema do sistema
+  const chartConfig: ChartConfig = {
+    concluidas: {
+      label: 'Concluídas',
+      theme: {
+        light: '#22c55e', // verde 500
+        dark: '#22c55e',
+      }
+    },
+    pendentes: {
+      label: 'Pendentes',
+      theme: {
+        light: '#ef4444', // red 500
+        dark: '#ef4444',
+      }
+    }
+  };
 
   // Função para exportar dados como JSON
   const handleExportData = () => {
@@ -312,17 +340,126 @@ const TasksContent = () => {
         </div>
         <TaskTable ref={taskTableRef} tasks={filteredTasks} />
       </section>
+
+      {/* Gráfico de Linhas - Detalhamento por Dia da Temporada */}
+      <section>
+        <div className="mt-6">
+          <h3 className="text-xl font-semibold text-foreground mb-2">Evolução por Dia (Temporada)</h3>
+          <p className="text-muted-foreground mb-4">Concluídas vs Pendentes ao longo dos dias da temporada selecionada</p>
+          <div className="w-full border-2 border-purple-500 bg-card p-4 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-all duration-200">
+            <ChartContainer
+              className="w-full h-[340px]"
+              config={chartConfig as ChartConfig}
+            >
+              <ReLineChart data={generateChartData} margin={{ top: 10, right: 24, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                <XAxis dataKey="day" tickLine={false} axisLine={false} tick={{ fill: 'currentColor' }} />
+                <YAxis allowDecimals={false} tickLine={false} axisLine={false} tick={{ fill: 'currentColor' }} />
+                <ChartTooltip content={(props: any) => <ChartTooltipContent {...props} />} />
+                <ChartLegend content={(props: any) => <ChartLegendContent {...props} />} />
+                <Line type="monotone" dataKey="concluidas" stroke="var(--color-concluidas)" strokeWidth={2} dot={false} name="Concluídas" />
+                <Line type="monotone" dataKey="pendentes" stroke="var(--color-pendentes)" strokeWidth={2} dot={false} name="Pendentes" />
+              </ReLineChart>
+            </ChartContainer>
+          </div>
+        </div>
+      </section>
     </main>
   );
 };
 
 const Tasks = () => {
-  const [tasks, setTasks] = React.useState(() => getTasksData());
+  const [tasks, setTasks] = React.useState(() => {
+    // Aplicar garantia de IDs únicos ao carregar do localStorage
+    const loadedTasks = getTasksData();
+    // Como não temos acesso direto a ensureUniqueIds aqui, vamos garantir IDs únicos manualmente
+    const idMap = new Map<number, boolean>();
+    let maxId = 0;
+
+    // Primeiro, encontrar o ID máximo e identificar duplicatas
+    for (const task of loadedTasks) {
+      maxId = Math.max(maxId, task.id);
+      if (idMap.has(task.id)) {
+        // Se encontrar um ID duplicado, marca para corrigir
+      } else {
+        idMap.set(task.id, true);
+      }
+    }
+
+    // Se houver IDs duplicados, reconstruir com IDs únicos
+    if (loadedTasks.length !== idMap.size) {
+      const uniqueTasks = [];
+      const usedIds = new Set<number>();
+      
+      for (const task of loadedTasks) {
+        if (usedIds.has(task.id)) {
+          // Gerar novo ID único
+          let newId = maxId + 1;
+          while (usedIds.has(newId)) {
+            newId++;
+          }
+          uniqueTasks.push({ ...task, id: newId });
+          usedIds.add(newId);
+          maxId = newId;
+        } else {
+          uniqueTasks.push(task);
+          usedIds.add(task.id);
+        }
+      }
+      
+      return uniqueTasks;
+    }
+    
+    return loadedTasks;
+  });
+  
   React.useEffect(() => {
-    const onChanged = () => setTasks(getTasksData());
+    const onChanged = () => {
+      const loadedTasks = getTasksData();
+      // Aplicar garantia de IDs únicos ao receber evento de atualização
+      const idMap = new Map<number, boolean>();
+      let maxId = 0;
+
+      // Primeiro, encontrar o ID máximo e identificar duplicatas
+      for (const task of loadedTasks) {
+        maxId = Math.max(maxId, task.id);
+        if (idMap.has(task.id)) {
+          // Se encontrar um ID duplicado, marca para corrigir
+        } else {
+          idMap.set(task.id, true);
+        }
+      }
+
+      // Se houver IDs duplicados, reconstruir com IDs únicos
+      if (loadedTasks.length !== idMap.size) {
+        const uniqueTasks = [];
+        const usedIds = new Set<number>();
+        
+        for (const task of loadedTasks) {
+          if (usedIds.has(task.id)) {
+            // Gerar novo ID único
+            let newId = maxId + 1;
+            while (usedIds.has(newId)) {
+              newId++;
+            }
+            uniqueTasks.push({ ...task, id: newId });
+            usedIds.add(newId);
+            maxId = newId;
+          } else {
+            uniqueTasks.push(task);
+            usedIds.add(task.id);
+          }
+        }
+        
+        setTasks(uniqueTasks);
+      } else {
+        setTasks(loadedTasks);
+      }
+    };
     window.addEventListener('tasks:changed', onChanged);
     return () => window.removeEventListener('tasks:changed', onChanged);
   }, []);
+  
   return (
     <DataProvider initialTasks={tasks}>
       <TasksContent />

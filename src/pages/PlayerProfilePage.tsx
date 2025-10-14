@@ -14,6 +14,7 @@ import { PlayerStats } from '@/types/player';
 import { calculatePlayerStats } from '@/services/playerService';
 import { fetchPlayerProfile, getTasksData } from '@/services/localStorageData';
 import { getUserXpHistory } from '@/services/xpHistoryService';
+import { getSeasonConfig, type SeasonConfig } from '@/config/season';
 // import { reportUrls, download } from '@/services/reports';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import HelpCircle from 'lucide-react/dist/esm/icons/help-circle';
@@ -67,6 +68,8 @@ const PlayerProfilePage: React.FC = () => {
   const [seasonMetrics, setSeasonMetrics] = useState<{ averagePercent: number; totalConsidered: number; label: string } | null>(null);
   const [deliveryDist, setDeliveryDist] = useState<{ early: number; on_time: number; late: number; refacao: number } | null>(null);
   const [notifications, setNotifications] = useState<UINotification[]>([]);
+  const [availableSeasons, setAvailableSeasons] = useState<SeasonConfig[]>([]);
+  const [selectedSeason, setSelectedSeason] = useState<string>('current');
   
   // Simular carregamento de dados do player
   useEffect(() => {
@@ -125,23 +128,67 @@ const PlayerProfilePage: React.FC = () => {
     loadProd();
   }, [user?.id]);
 
-  // Calcular produtividade da temporada em vigor (definido como mês corrente)
+  // Carregar temporadas disponíveis do sistema
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('epic_season_list_v1');
+      if (stored) {
+        const seasons = JSON.parse(stored) as SeasonConfig[];
+        setAvailableSeasons(seasons);
+      } else {
+        // Usar temporada atual como fallback
+        const currentSeason = getSeasonConfig();
+        setAvailableSeasons([currentSeason]);
+      }
+    } catch {
+      // Usar temporada atual como fallback
+      const currentSeason = getSeasonConfig();
+      setAvailableSeasons([currentSeason]);
+    }
+  }, []);
+
+  // Calcular produtividade da temporada selecionada
   useEffect(() => {
     if (!tasksBreakdown) return;
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = now.getMonth();
-    const inSeason = tasksBreakdown.filter(t => {
-      if (!t.completedDate) return false;
-      const d = new Date(t.completedDate);
-      return d.getFullYear() === y && d.getMonth() === m;
-    });
+    
+    let inSeason: TaskBreakdownItem[];
+    
+    if (selectedSeason === 'current') {
+      // Temporada atual (mês corrente)
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = now.getMonth();
+      inSeason = tasksBreakdown.filter(t => {
+        if (!t.completedDate) return false;
+        const d = new Date(t.completedDate);
+        return d.getFullYear() === y && d.getMonth() === m;
+      });
+    } else {
+      // Temporada específica selecionada
+      const season = availableSeasons.find(s => s.name === selectedSeason);
+      if (season) {
+        const startDate = new Date(season.startIso);
+        const endDate = new Date(season.endIso);
+        inSeason = tasksBreakdown.filter(t => {
+          if (!t.completedDate) return false;
+          const d = new Date(t.completedDate);
+          return d >= startDate && d <= endDate;
+        });
+      } else {
+        inSeason = [];
+      }
+    }
+    
     const count = inSeason.length;
     const sum = inSeason.reduce((acc, t) => acc + Math.max(0, Math.min(100, Number(t.percent) || 0)), 0);
     const avg = count ? Math.round(sum / count) : 0;
-    const label = now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    
+    const label = selectedSeason === 'current' 
+      ? new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+      : selectedSeason;
+    
     setSeasonMetrics({ averagePercent: avg, totalConsidered: count, label });
-  }, [tasksBreakdown]);
+  }, [tasksBreakdown, selectedSeason, availableSeasons]);
 
   // Se o player não estiver carregado, mostrar mensagem de carregamento
   if (!state.profile) {
@@ -280,26 +327,54 @@ const PlayerProfilePage: React.FC = () => {
         {/* Produtividade Média (apenas no perfil) */}
         {prodMetrics && (
           <div className="bg-[#181834] border border-[#7c3aed] rounded-none shadow-lg shadow-[#6A0DAD]/30 hover:shadow-[#6A0DAD]/50 transition-all duration-300 p-6 mt-6">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-[#7c3aed]">
-                <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="#7c3aed" strokeWidth="2" d="M4 12h16M12 4v16"/></svg>
-              </span>
-              <h2 className="text-xl font-bold text-white">Produtividade Média</h2>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[#7c3aed]">
+                  <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="#7c3aed" strokeWidth="2" d="M4 12h16M12 4v16"/></svg>
+                </span>
+                <h2 className="text-xl font-bold text-white">Produtividade Média</h2>
+              </div>
+              
+              {/* Seletor de Temporada */}
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-muted-foreground">Temporada:</label>
+                <select 
+                  className="bg-[#23234a] border border-[#7c3aed]/30 text-white text-sm px-3 py-1 rounded-none focus:outline-none focus:border-[#7c3aed]"
+                  value={selectedSeason}
+                  onChange={(e) => setSelectedSeason(e.target.value)}
+                >
+                  <option value="current">Temporada Atual</option>
+                  {availableSeasons.map((season, index) => (
+                    <option key={index} value={season.name}>
+                      {season.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
-            <p className="text-muted-foreground">Sua média de produtividade atual com base nas tarefas consideradas.</p>
+            <p className="text-muted-foreground">
+              {selectedSeason === 'current' 
+                ? 'Sua média de produtividade atual com base nas tarefas consideradas.'
+                : `Média de produtividade para a temporada: ${seasonMetrics?.label || selectedSeason}`
+              }
+            </p>
             <div className="mt-3 flex items-center gap-6">
               <div>
-                <div className="text-4xl font-bold text-white">{prodMetrics.averagePercent}%</div>
+                <div className="text-4xl font-bold text-white">
+                  {seasonMetrics ? `${seasonMetrics.averagePercent}%` : `${prodMetrics.averagePercent}%`}
+                </div>
                 <div className="text-sm text-muted-foreground">Média de produtividade</div>
               </div>
               <div>
-                <div className="text-4xl font-bold text-white">{prodMetrics.totalConsidered}</div>
+                <div className="text-4xl font-bold text-white">
+                  {seasonMetrics ? seasonMetrics.totalConsidered : prodMetrics.totalConsidered}
+                </div>
                 <div className="text-sm text-muted-foreground">Tarefas consideradas</div>
               </div>
             </div>
-            {prodMetrics.totalConsidered === 0 && (
+            {(seasonMetrics ? seasonMetrics.totalConsidered : prodMetrics.totalConsidered) === 0 && (
               <div className="mt-4 text-sm text-muted-foreground">
-                Sem tarefas consideradas no período. Ao concluir tarefas, sua média e XP serão atualizados.
+                Sem tarefas consideradas no período selecionado. Ao concluir tarefas, sua média e XP serão atualizados.
               </div>
             )}
           </div>
@@ -363,58 +438,7 @@ const PlayerProfilePage: React.FC = () => {
           )}
         </div>
 
-        {/* Card de Aproveitamento da Temporada (posicionado abaixo de Atividade Recente) */}
-        <div className="bg-[#181834] border border-[#7c3aed] rounded-none shadow-lg shadow-[#6A0DAD]/30 hover:shadow-[#6A0DAD]/50 transition-all duration-300 p-6 mt-6">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-[#7c3aed]">
-              <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="#7c3aed" strokeWidth="2" d="M4 12h16M12 4v16"/></svg>
-            </span>
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              Aproveitamento da Temporada
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-sm">
-                    <div className="text-sm">
-                      <p className="font-semibold mb-1">Como calculamos</p>
-                      <p>
-                        Consideramos as tarefas <strong>concluídas</strong> na temporada atual ({seasonMetrics?.label || 'mês atual'}).
-                        Cada tarefa recebe um percentual de produtividade (ex.: adiantada = 100%, no prazo = 90%, atrasada = 50%).
-                        Tarefas em <strong>refação</strong> não entram no cálculo até serem reconcluídas.
-                      </p>
-                      <p className="mt-2">
-                        Aproveitamento = soma dos percentuais ÷ total de tarefas consideradas.
-                      </p>
-                      <p className="font-semibold mt-2 mb-1">Reflexo no ranking</p>
-                      <p>
-                        O XP exibido é a <strong>média × 10</strong> com arredondamento half-up. Ex.: média 73% → 730 XP.
-                        O ranking usa o XP convertido; percentuais detalhados aparecem apenas no perfil.
-                      </p>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </h2>
-          </div>
-          <p className="text-muted-foreground">Percentual médio das tarefas concluídas na temporada atual ({seasonMetrics?.label || '-' }).</p>
-          <div className="mt-3 flex items-center gap-6">
-            <div>
-              <div className="text-4xl font-bold text-white">{seasonMetrics?.averagePercent ?? 0}%</div>
-              <div className="text-sm text-muted-foreground">Média de produtividade</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold text-white">{seasonMetrics?.totalConsidered ?? 0}</div>
-              <div className="text-sm text-muted-foreground">Tarefas consideradas</div>
-            </div>
-          </div>
-          {(seasonMetrics?.totalConsidered ?? 0) === 0 && (
-            <div className="mt-4 text-sm text-muted-foreground">
-              Nenhuma tarefa concluída nesta temporada até o momento.
-            </div>
-          )}
-        </div>
+
 
       {/* Modal de edição de perfil (reutilizável) */}
       <ProfileEditModal 

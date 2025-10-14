@@ -236,12 +236,12 @@ const Dashboard = () => {
                 <h3 className="text-lg font-semibold mb-2 text-red-400">🔴 Mais Tarefas Atrasadas</h3>
                 <div className="mb-2">
                   {(() => {
-                    const playerDelays = taskData.reduce((acc, task) => {
+                    const playerDelays: Record<string, number> = taskData.reduce((acc, task) => {
                       if (task.responsavel && task.atrasoDiasUteis > 0) {
                         acc[task.responsavel] = (acc[task.responsavel] || 0) + 1;
                       }
                       return acc;
-                    }, {});
+                    }, {} as Record<string, number>);
                     const worstPlayer = Object.entries(playerDelays).sort((a, b) => b[1] - a[1])[0];
                     return worstPlayer ? 
                       <><span className="text-2xl font-bold text-red-400">{worstPlayer[1]}</span><span className="text-sm text-muted-foreground ml-2">atrasos</span></> :
@@ -250,12 +250,12 @@ const Dashboard = () => {
                 </div>
                 <p className="text-muted-foreground text-sm">
                   {(() => {
-                    const playerDelays = taskData.reduce((acc, task) => {
+                    const playerDelays: Record<string, number> = taskData.reduce((acc, task) => {
                       if (task.responsavel && task.atrasoDiasUteis > 0) {
                         acc[task.responsavel] = (acc[task.responsavel] || 0) + 1;
                       }
                       return acc;
-                    }, {});
+                    }, {} as Record<string, number>);
                     const worstPlayer = Object.entries(playerDelays).sort((a, b) => b[1] - a[1])[0];
                     return worstPlayer ? `${worstPlayer[0]}` : 'Todos os membros estão em dia';
                   })()}
@@ -265,38 +265,38 @@ const Dashboard = () => {
                 <h3 className="text-lg font-semibold mb-2 text-orange-400">📉 Pior Aproveitamento</h3>
                 <div className="mb-2">
                   {(() => {
-                    const playerStats = taskData.reduce((acc, task) => {
+                    const playerStats: Record<string, { total: number; completed: number }> = taskData.reduce((acc, task) => {
                       if (task.responsavel) {
                         acc[task.responsavel] = acc[task.responsavel] || { total: 0, completed: 0 };
                         acc[task.responsavel].total++;
                         if (task.status === 'completed') acc[task.responsavel].completed++;
                       }
                       return acc;
-                    }, {});
+                    }, {} as Record<string, { total: number; completed: number }>);
                     const playerRates = Object.entries(playerStats).map(([name, stats]) => [
                       name, 
                       stats.total > 0 ? (stats.completed / stats.total) * 100 : 0
-                    ]).sort((a, b) => a[1] - b[1]);
+                    ] as [string, number]).sort((a, b) => a[1] - b[1]);
                     const worstPlayer = playerRates[0];
                     return worstPlayer && playerRates.length > 0 ? 
-                      <><span className="text-2xl font-bold text-orange-400">{worstPlayer[1].toFixed(0)}%</span></> :
+                      <><span className="text-2xl font-bold text-orange-400">{Number(worstPlayer[1]).toFixed(0)}%</span></> :
                       <span className="text-muted-foreground">Sem dados</span>;
                   })()}
                 </div>
                 <p className="text-muted-foreground text-sm">
                   {(() => {
-                    const playerStats = taskData.reduce((acc, task) => {
+                    const playerStats: Record<string, { total: number; completed: number }> = taskData.reduce((acc, task) => {
                       if (task.responsavel) {
                         acc[task.responsavel] = acc[task.responsavel] || { total: 0, completed: 0 };
                         acc[task.responsavel].total++;
                         if (task.status === 'completed') acc[task.responsavel].completed++;
                       }
                       return acc;
-                    }, {});
+                    }, {} as Record<string, { total: number; completed: number }>);
                     const playerRates = Object.entries(playerStats).map(([name, stats]) => [
                       name, 
                       stats.total > 0 ? (stats.completed / stats.total) * 100 : 0
-                    ]).sort((a, b) => a[1] - b[1]);
+                    ] as [string, number]).sort((a, b) => a[1] - b[1]);
                     const worstPlayer = playerRates[0];
                     return worstPlayer && playerRates.length > 0 ? `${worstPlayer[0]}` : 'Nenhum player avaliado';
                   })()}
@@ -306,12 +306,12 @@ const Dashboard = () => {
                 <h3 className="text-lg font-semibold mb-2 text-yellow-400">🔄 Mais Refações</h3>
                 <div className="mb-2">
                   {(() => {
-                    const playerRefacoes = taskData.reduce((acc, task) => {
+                    const playerRefacoes: Record<string, number> = taskData.reduce((acc, task) => {
                       if (task.responsavel && task.status === 'refacao') {
                         acc[task.responsavel] = (acc[task.responsavel] || 0) + 1;
                       }
                       return acc;
-                    }, {});
+                    }, {} as Record<string, number>);
                     const mostRefacoes = Object.entries(playerRefacoes).sort((a, b) => b[1] - a[1])[0];
                     return mostRefacoes ? 
                       <><span className="text-2xl font-bold text-yellow-400">{mostRefacoes[1]}</span><span className="text-sm text-muted-foreground ml-2">refações</span></> :
@@ -320,12 +320,12 @@ const Dashboard = () => {
                 </div>
                 <p className="text-muted-foreground text-sm">
                   {(() => {
-                    const playerRefacoes = taskData.reduce((acc, task) => {
+                    const playerRefacoes: Record<string, number> = taskData.reduce((acc, task) => {
                       if (task.responsavel && task.status === 'refacao') {
                         acc[task.responsavel] = (acc[task.responsavel] || 0) + 1;
                       }
                       return acc;
-                    }, {});
+                    }, {} as Record<string, number>);
                     const mostRefacoes = Object.entries(playerRefacoes).sort((a, b) => b[1] - a[1])[0];
                     return mostRefacoes ? `${mostRefacoes[0]}` : 'Qualidade mantida pela equipe';
                   })()}

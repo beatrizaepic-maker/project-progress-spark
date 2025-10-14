@@ -866,6 +866,22 @@ const Settings = () => {
                         placeholder="Digite o valor de XP"
                       />
                     </div>
+                    <div className="space-y-2 w-full">
+                      <label htmlFor="unique-level-name" className="block text-sm font-medium text-[#C0C0C0]">Nome do nível</label>
+                      <Input
+                        id="unique-level-name"
+                        type="text"
+                        value={levelRules[0]?.name || ''}
+                        onChange={e => {
+                          const newName = e.target.value;
+                          const updatedRules = [...levelRules];
+                          updatedRules[0] = { ...updatedRules[0], name: newName };
+                          setLevelRulesState(updatedRules);
+                        }}
+                        className="w-full border-[#6A0DAD] focus:border-[#FF0066] bg-[#1A1A2E]/60 text-white"
+                        placeholder="Digite o nome do nível"
+                      />
+                    </div>
                     <div className="flex items-end gap-2">
                       <ParticleButton onClick={() => setLevelRules(levelRules)} className="w-full bg-gradient-to-r from-[#FF0066] to-[#C8008F] text-white font-semibold px-4 py-2 rounded-none transition-colors shadow-lg hover:from-[#FF0066]/80 hover:to-[#C8008F]/80 hover:shadow-xl transform hover:scale-105">
                         <Save size={16} /> SALVAR

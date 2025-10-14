@@ -7,6 +7,7 @@ import KPILoadingIndicator from "@/components/ui/kpi-loading-indicator";
 import { motion, AnimatePresence } from "framer-motion";
 import { KPIVersionIndicator } from "@/components/ui/kpi-version-indicator";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Componente de partículas de explosão
 function SuccessParticles({ buttonRef }: { buttonRef: React.RefObject<HTMLButtonElement> }) {
@@ -57,7 +58,7 @@ function SuccessParticles({ buttonRef }: { buttonRef: React.RefObject<HTMLButton
 const AnalyticsContent = () => {
   const { tasks } = useData();
   // Importa o contexto de autenticação
-  const { user } = require("@/contexts/AuthContext").useAuth();
+  const { user } = useAuth();
   const [showParticles, setShowParticles] = useState(false);
   const [isButtonHidden, setIsButtonHidden] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);

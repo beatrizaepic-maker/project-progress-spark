@@ -7,6 +7,7 @@ import { Task, User, calculateRankingXpFromTasks } from './gamificationService';
 import { addSimpleXpHistory } from '@/services/xpHistoryService';
 import { toOrderedRankingDTO, toPlayerProfileDTO } from './dtoTransformers';
 import { RankingEntryDTO, PlayerProfileDTO } from '@/types/dto';
+import type { ActiveMission } from './missionService';
 
 // Chaves de localStorage e versionamento
 const STORAGE_KEYS = {
@@ -14,6 +15,7 @@ const STORAGE_KEYS = {
   PROJECT_METRICS: 'epic_project_metrics_v1',
   USERS: 'epic_users_v1',
   GAMIFICATION_TASKS: 'epic_gamification_tasks_v1',
+  USER_MISSIONS: 'epic_user_missions_v1',
   STORAGE_VERSION: 'epic_storage_version_v1',
 };
 
@@ -160,7 +162,54 @@ export function initializeLocalStorage(): void {
 export function getTasksData(): TaskData[] {
   try {
     const data = localStorage.getItem(STORAGE_KEYS.TASKS_DATA);
-    return data ? JSON.parse(data) : [];
+    let tasks: TaskData[] = data ? JSON.parse(data) : [];
+    
+    // Verificar e corrigir IDs duplicados
+    const idMap = new Map<number, boolean>();
+    let maxId = 0;
+
+    // Primeiro, encontrar o ID máximo e identificar duplicatas
+    for (const task of tasks) {
+      maxId = Math.max(maxId, task.id);
+      if (idMap.has(task.id)) {
+        // Se encontrar um ID duplicado, marca para corrigir
+      } else {
+        idMap.set(task.id, true);
+      }
+    }
+
+    // Se houver IDs duplicados, reconstruir com IDs únicos
+    if (tasks.length !== idMap.size) {
+      const uniqueTasks: TaskData[] = [];
+      const usedIds = new Set<number>();
+      
+      for (const task of tasks) {
+        if (usedIds.has(task.id)) {
+          // Gerar novo ID único
+          let newId = maxId + 1;
+          while (usedIds.has(newId)) {
+            newId++;
+          }
+          uniqueTasks.push({ ...task, id: newId });
+          usedIds.add(newId);
+          maxId = newId;
+        } else {
+          uniqueTasks.push(task);
+          usedIds.add(task.id);
+        }
+      }
+      
+      // Atualizar o localStorage com IDs únicos
+      try {
+        localStorage.setItem(STORAGE_KEYS.TASKS_DATA, JSON.stringify(uniqueTasks));
+      } catch (saveError) {
+        console.error('Erro ao salvar tarefas corrigidas no localStorage:', saveError);
+      }
+      
+      return uniqueTasks;
+    }
+    
+    return tasks;
   } catch (error) {
     console.error('Erro ao carregar tarefas do localStorage:', error);
     return [];
@@ -418,6 +467,31 @@ export function mapTaskDataToGamification(tasks: TaskData[]): Task[] {
       completedEarly: undefined,
     };
   });
+}
+
+// Exportar funções para armazenamento e recuperação de missões de usuário
+
+export function getUserMissions(userId: string): ActiveMission[] {
+  try {
+    const allMissions = localStorage.getItem(STORAGE_KEYS.USER_MISSIONS);
+    if (!allMissions) return [];
+    const allMissionsObj = JSON.parse(allMissions);
+    return allMissionsObj[userId] || [];
+  } catch (error) {
+    console.error('Erro ao carregar missões do usuário do localStorage:', error);
+    return [];
+  }
+}
+
+export function saveUserMissions(userId: string, missions: ActiveMission[]): void {
+  try {
+    const allMissions = localStorage.getItem(STORAGE_KEYS.USER_MISSIONS);
+    const allMissionsObj = allMissions ? JSON.parse(allMissions) : {};
+    allMissionsObj[userId] = missions;
+    localStorage.setItem(STORAGE_KEYS.USER_MISSIONS, JSON.stringify(allMissionsObj));
+  } catch (error) {
+    console.error('Erro ao salvar missões do usuário no localStorage:', error);
+  }
 }
 
 // Mock API service simulados com dados do localStorage

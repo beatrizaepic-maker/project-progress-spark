@@ -1,9 +1,18 @@
 import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 import { TaskData } from '@/data/projectData';
-import { getTasksData, saveTasksData } from '@/services/localStorageData';
+import { getTasksData, saveTasksData, getUserMissions, saveUserMissions } from '@/services/localStorageData';
 import { toast } from '@/hooks/use-toast';
 import { kpiCalculator, KPIResults } from '@/services/kpiCalculator';
 import { kpiErrorHandler } from '@/services/errorHandler';
+import { 
+  updateMissionProgress, 
+  processWeeklyMissions, 
+  createWeeklyMissionsForUser,
+  getAvailableMissions
+} from '@/services/missionService';
+import { Task, calculateRankingXpFromTasks } from '@/services/gamificationService';
+import { addSimpleXpHistory } from '@/services/xpHistoryService';
+import { resolveUserIdByName, getGamificationUsers, saveGamificationUsers } from '@/services/localStorageData';
 
 interface DataContextType {
   tasks: TaskData[];
@@ -117,8 +126,56 @@ const calculateMetrics = (tasks: TaskData[]) => {
   };
 };
 
+// Função para garantir IDs únicos
+const ensureUniqueIds = (tasks: TaskData[]): TaskData[] => {
+  const idMap = new Map<number, boolean>();
+  let maxId = 0;
+  
+  // Primeiro, encontrar o ID máximo
+  for (const task of tasks) {
+    maxId = Math.max(maxId, task.id);
+    if (idMap.has(task.id)) {
+      // Se encontrar um ID duplicado, vamos corrigir
+      let newId = maxId + 1;
+      while (idMap.has(newId)) {
+        newId++;
+      }
+      idMap.set(newId, true);
+      maxId = newId;
+    } else {
+      idMap.set(task.id, true);
+    }
+  }
+  
+  // Se houver IDs duplicados, reconstruir com IDs únicos
+  if (tasks.length !== idMap.size) {
+    const uniqueTasks: TaskData[] = [];
+    const usedIds = new Set<number>();
+    
+    for (const task of tasks) {
+      if (usedIds.has(task.id)) {
+        // Gerar novo ID único
+        let newId = maxId + 1;
+        while (usedIds.has(newId)) {
+          newId++;
+        }
+        uniqueTasks.push({ ...task, id: newId });
+        usedIds.add(newId);
+        maxId = newId;
+      } else {
+        uniqueTasks.push(task);
+        usedIds.add(task.id);
+      }
+    }
+    
+    return uniqueTasks;
+  }
+  
+  return tasks;
+};
+
 export const DataProvider: React.FC<DataProviderProps> = ({ children, initialTasks }) => {
-  const [tasks, setTasks] = useState<TaskData[]>(initialTasks);
+  const [tasks, setTasks] = useState<TaskData[]>(ensureUniqueIds(initialTasks));
   const [metrics, setMetrics] = useState(calculateMetrics(initialTasks));
   const [kpiResults, setKpiResults] = useState<KPIResults | null>(null);
   const [dataQuality, setDataQuality] = useState({
@@ -223,10 +280,13 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, initialTas
       atendeuPrazo: new Date(task.fim) <= new Date(task.prazo)
     }));
     
-    setTasks(updatedTasks);
+    // Garantir IDs únicos
+    const uniqueTasks = ensureUniqueIds(updatedTasks);
+    
+    setTasks(uniqueTasks);
     // Persistir e notificar
-    try { saveTasksData(updatedTasks); } catch {}
-  }, []);
+    try { saveTasksData(uniqueTasks); } catch {}
+  }, [ensureUniqueIds]);
 
   const addTask = useCallback((task: Omit<TaskData, 'id'> & { fim?: string }) => {
     // Valida dados da nova tarefa
@@ -240,9 +300,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, initialTas
     }
 
     // Gera ID único mais robusto
-    const existingIds = tasks.map(t => t.id);
-    const maxId = existingIds.length > 0 ? Math.max(...existingIds) : 0;
-    const newId = maxId + 1;
+    let newId = tasks.length > 0 ? Math.max(...tasks.map(t => t.id)) + 1 : 1;
+    while (tasks.some(t => t.id === newId)) {
+      newId++;
+    }
     const newTask: TaskData = {
       ...task,
       id: newId,
@@ -265,6 +326,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, initialTas
     });
   }, [tasks]);
 
+
+
   const editTask = useCallback((id: number, updates: Partial<TaskData>) => {
     setTasks(prev => {
       const next = prev.map(task => {
@@ -279,15 +342,152 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, initialTas
       }
         return task;
       });
-      try { saveTasksData(next); } catch {}
-      return next;
+      
+      // Garantir IDs únicos antes de salvar
+      const uniqueTasks = ensureUniqueIds(next);
+      
+      try { 
+        // Salvar antes de processar missões
+        saveTasksData(uniqueTasks); 
+        
+        // Processar missões se o status da tarefa mudou para 'completed'
+        const originalTask = prev.find(t => t.id === id);
+        const updatedTask = uniqueTasks.find(t => t.id === id);
+        
+        if (originalTask && updatedTask && 
+            originalTask.status !== 'completed' && 
+            updatedTask.status === 'completed' &&
+            updatedTask.responsavel) {
+            
+          // Resolver ID do usuário com base no nome do responsável
+          const userId = resolveUserIdByName(updatedTask.responsavel);
+          if (userId) {
+            try {
+              // Converter TaskData para o formato Task necessário para o sistema de missões
+              const gamificationTask: Task = {
+                id: String(updatedTask.id),
+                title: updatedTask.tarefa,
+                status: 'completed',
+                completedDate: updatedTask.fim ? new Date(updatedTask.fim).toISOString() : undefined,
+                dueDate: updatedTask.prazo ? new Date(updatedTask.prazo).toISOString() : '',
+                assignedTo: userId,
+                completedEarly: updatedTask.fim && updatedTask.prazo 
+                  ? new Date(updatedTask.fim) < new Date(updatedTask.prazo) 
+                  : undefined,
+              };
+              
+              // Obter missões ativas do usuário
+              let userMissions = getUserMissions(userId);
+              
+              // Garantir que o usuário tenha instâncias de missões configuradas que possam ser afetadas por tarefas completadas
+              const allMissionConfigs = getAvailableMissions();
+              const taskRelatedTypes = ['complete_tasks', 'complete_early', 'review_peer_tasks', 'no_delays']; // Tipos afetados por tarefas completadas
+              
+              for (const config of allMissionConfigs) {
+                if (taskRelatedTypes.includes(config.type) && config.isActive) {
+                  // Verificar se o usuário já tem uma instância dessa configuração
+                  const existingMission = userMissions.find(m => m.configId === config.type && !m.completed);
+                  
+                  if (!existingMission) {
+                    // Criar uma nova instância dessa missão para o usuário
+                    const newMissionId = `mission-${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${config.type}`;
+                    const today = new Date();
+                    const endOfWeek = new Date(today);
+                    endOfWeek.setDate(today.getDate() + (7 - today.getDay()));
+                    endOfWeek.setHours(23, 59, 59, 999);
+                    
+                    userMissions.push({
+                      id: newMissionId,
+                      userId,
+                      configId: config.type,
+                      type: config.type as any,
+                      name: config.name,
+                      description: config.description,
+                      target: config.target,
+                      currentProgress: 0,
+                      xpReward: config.xpReward,
+                      deadline: endOfWeek.toISOString(),
+                      completed: false,
+                      createdAt: new Date().toISOString()
+                    });
+                  }
+                }
+              }
+              
+              // Processar as missões com a nova tarefa
+              const user = getGamificationUsers().find(u => u.id === userId);
+              if (user) {
+                // Atualizar progresso de missões individualmente com base na nova tarefa
+                const updatedMissions = userMissions.map(mission => {
+                  if (!mission.completed) {
+                    return updateMissionProgress(mission, gamificationTask);
+                  }
+                  return mission;
+                });
+                
+                // Verificar se alguma missão foi completada e adicionar XP
+                let missionsCompletedCount = 0;
+                for (const mission of updatedMissions) {
+                  if (!mission.completed && mission.currentProgress >= mission.target) {
+                    // Marcar como completada
+                    mission.completed = true;
+                    mission.completedAt = new Date().toISOString();
+                    
+                    // Adicionar XP ao histórico
+                    addSimpleXpHistory(userId, mission.xpReward, 'mission', mission.name, { missionId: mission.id });
+                    
+                    missionsCompletedCount++;
+                  }
+                }
+                
+                // Salvar missões atualizadas
+                saveUserMissions(userId, updatedMissions);
+                
+                // Atualizar o XP total e missões completadas do usuário
+                const allUsers = getGamificationUsers();
+                const userIndex = allUsers.findIndex(u => u.id === userId);
+                if (userIndex !== -1) {
+                  // Recalcular XP baseado nas tarefas
+                  const userTasks = uniqueTasks.filter(t => resolveUserIdByName(t.responsavel) === userId).map(t => {
+                    const taskId = String(t.id);
+                    return {
+                      id: taskId,
+                      title: t.tarefa,
+                      status: t.status === 'completed' ? 'completed' : t.status === 'refacao' ? 'refacao' : t.prazo && new Date(t.prazo) < new Date() ? 'overdue' : 'pending',
+                      completedDate: t.fim ? new Date(t.fim).toISOString() : undefined,
+                      dueDate: t.prazo ? new Date(t.prazo).toISOString() : '',
+                      assignedTo: userId,
+                      completedEarly: t.fim && t.prazo ? new Date(t.fim) < new Date(t.prazo) : undefined,
+                    };
+                  });
+                  
+                  // Recalcular XP baseado nas tarefas
+                  const newXp = calculateRankingXpFromTasks(userTasks);
+                  allUsers[userIndex].xp = newXp;
+                  
+                  // Incrementar missões completadas
+                  allUsers[userIndex].missionsCompleted = (allUsers[userIndex].missionsCompleted || 0) + missionsCompletedCount;
+                  
+                  saveGamificationUsers(allUsers);
+                }
+              }
+            } catch (error) {
+              console.error('Erro ao processar missões:', error);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao salvar tarefas ou processar missões:', error);
+      }
+      
+      return uniqueTasks;
     });
     
     toast({
       title: "Tarefa atualizada",
       description: "As informações foram salvas com sucesso."
     });
-  }, []);
+  }, [ensureUniqueIds, resolveUserIdByName, getUserMissions, getGamificationUsers, createWeeklyMissionsForUser, updateMissionProgress, addSimpleXpHistory, saveUserMissions, saveGamificationUsers, calculateRankingXpFromTasks]);
 
   const deleteTask = useCallback((id: number) => {
     setTasks(prev => {
@@ -319,12 +519,14 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, initialTas
       return;
     }
 
-    updateTasks(data);
+    // Garantir IDs únicos ao importar
+    const uniqueData = ensureUniqueIds(data);
+    updateTasks(uniqueData);
     toast({
       title: "Dados importados",
-      description: `${data.length} tarefas foram importadas com sucesso.`
+      description: `${uniqueData.length} tarefas foram importadas com sucesso.`
     });
-  }, [updateTasks]);
+  }, [updateTasks, ensureUniqueIds]);
 
   const exportData = useCallback(() => {
     return JSON.stringify(tasks, null, 2);
