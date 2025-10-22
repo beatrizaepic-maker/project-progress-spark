@@ -19,8 +19,20 @@ interface PlayerStatsCardProps {
 }
 
 const PlayerStatsCard: React.FC<PlayerStatsCardProps> = ({ stats, className }) => {
-  // Calcula o progresso para o próximo nível
-  const levelProgress = getLevelProgress(stats.totalXp);
+  // Calcula o progresso para o próximo nível com base nos dados de xp recebidos
+  // Fórmula simplificada: 100 XP por nível (isso pode ser ajustado conforme necessário)
+  const xpForCurrentLevel = 100 * stats.currentLevel; // XP necessário para o nível atual
+  const xpForNextLevel = 100 * (stats.currentLevel + 1); // XP necessário para o próximo nível
+  const xpInCurrentLevel = stats.totalXp - xpForCurrentLevel;
+  const nextLevelXp = xpForNextLevel - xpForCurrentLevel;
+  const progressPercentage = nextLevelXp > 0 ? (xpInCurrentLevel / nextLevelXp) * 100 : 0;
+
+  const levelProgress = {
+    currentLevel: stats.currentLevel,
+    currentLevelXp: xpInCurrentLevel,
+    nextLevelXp: nextLevelXp,
+    progressPercentage: Math.max(0, Math.min(100, progressPercentage)) // Limitar entre 0 e 100
+  };
 
   return (
     <Card className={`bg-gradient-to-br from-primary/5 to-accent/5 border border-[#6A0DAD] rounded-none shadow-lg shadow-[#6A0DAD]/30 hover:shadow-[#6A0DAD]/50 transition-all duration-300 ${className}`}>

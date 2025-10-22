@@ -9,7 +9,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useAppState } from '@/services/appStateManager';
 import { DataProvider } from '@/contexts/DataContext';
 import { TaskData } from '@/data/projectData';
-import { getTasksData } from '@/services/localStorageData';
+import { getTasksData } from '@/services/supabaseDataService';
 import { useToast } from '@/hooks/use-toast';
 
 interface GlobalContextValue {
@@ -96,7 +96,7 @@ export const GlobalProvider: React.FC<GlobalProviderProps> = ({ children }) => {
       // Simular carregamento de dados (em produção seria uma API call)
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Carregar dados do localStorage
+      // Carregar dados do Supabase
       const freshData = [...getTasksData()];
       updateTasks(freshData);
 

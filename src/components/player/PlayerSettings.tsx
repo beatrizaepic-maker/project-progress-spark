@@ -17,6 +17,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User, Upload, Save, Settings } from 'lucide-react';
 import { PlayerProfile } from '@/types/player';
 import { updatePlayerProfile } from '@/services/playerService';
+import { supabase } from '@/lib/supabase';
+import { useToast } from '@/hooks/use-toast';
 
 interface PlayerSettingsProps {
   profile: PlayerProfile;
@@ -27,12 +29,69 @@ interface PlayerSettingsProps {
 const PlayerSettings: React.FC<PlayerSettingsProps> = ({ profile, onSave, className }) => {
   const [editedProfile, setEditedProfile] = useState<PlayerProfile>(profile);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const { toast } = useToast();
 
   const handleChange = (field: keyof PlayerProfile, value: any) => {
     setEditedProfile(prev => ({
       ...prev,
       [field]: value
     }));
+  };
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Erro',
+        description: 'Por favor, selecione uma imagem válida.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    try {
+      const fileName = `${profile.id || 'temp'}_${Date.now()}_${file.name}`;
+      const { data, error } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+
+      if (error) {
+        console.error('Erro ao fazer upload do avatar:', error);
+        toast({
+          title: 'Erro ao fazer upload',
+          description: error.message,
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      handleChange('avatar', publicUrl);
+      
+      toast({
+        title: 'Sucesso',
+        description: 'Avatar enviado com sucesso!'
+      });
+    } catch (err) {
+      console.error('Erro ao fazer upload do avatar:', err);
+      toast({
+        title: 'Erro',
+        description: 'Falha ao fazer upload do avatar.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsUploadingAvatar(false);
+    }
   };
 
   const handleNotificationChange = (field: keyof PlayerProfile['notificationPreferences'], value: boolean) => {

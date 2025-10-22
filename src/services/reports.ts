@@ -1,15 +1,45 @@
 // src/services/reports.ts
-// Helpers para URLs de exportação/relatórios
+// Helpers para geração e download de relatórios CSV via Supabase
 
-const BASE = 'http://localhost:3001';
+import { supabase } from '@/lib/supabase';
 
-export const reportUrls = {
-  rankingCsv: () => `${BASE}/api/reports/ranking.csv`,
-  productivityCsv: () => `${BASE}/api/reports/productivity.csv`,
-  incorrectCsv: () => `${BASE}/api/reports/incorrect.csv`,
+// Função auxiliar para converter array de objetos em CSV
+function convertToCSV(data: any[]): string {
+  if (!data.length) return '';
+  const headers = Object.keys(data[0]);
+  const csv = [headers.join(','), ...data.map(row => headers.map(h => `"${row[h] || ''}"`).join(','))].join('\n');
+  return csv;
+}
+
+// Funções para gerar dados dos relatórios
+export const reportGenerators = {
+  rankingCsv: async () => {
+    const { data, error } = await supabase.from('user_gamification_profiles').select('*');
+    if (error) throw error;
+    return convertToCSV(data || []);
+  },
+  productivityCsv: async () => {
+    const { data, error } = await supabase.from('xp_history').select('*');
+    if (error) throw error;
+    return convertToCSV(data || []);
+  },
+  incorrectCsv: async () => {
+    const { data, error } = await supabase.from('tasks').select('*').eq('status', 'incorrect');
+    if (error) throw error;
+    return convertToCSV(data || []);
+  },
 };
 
-export function download(url: string) {
-  // Abre em nova aba; pode ser substituído por fetch+Blob se preferir
-  window.open(url, '_blank');
+// Função para baixar o relatório como CSV
+export async function download(reportType: keyof typeof reportGenerators) {
+  const csv = await reportGenerators[reportType]();
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${reportType.replace('Csv', '')}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }

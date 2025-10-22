@@ -57,32 +57,10 @@ const ProjectDeadlineCard: React.FC<ProjectDeadlineCardProps> = ({
     }
   };
 
-  // Calcula tendência baseada no status (simulado - em implementação real viria de dados históricos)
+  // Calcula tendência baseada no status (em implementação real viria de dados históricos)  
   const getTrend = (status: 'on-time' | 'at-risk' | 'delayed') => {
     // Em uma implementação real, isso viria de dados históricos
-    // Por agora, vamos simular baseado no status atual
-    switch (status) {
-      case 'on-time':
-        return {
-          direction: 'stable' as const,
-          value: '0%',
-          isPositive: true
-        };
-      case 'at-risk':
-        return {
-          direction: 'up' as const,
-          value: '5%',
-          isPositive: false
-        };
-      case 'delayed':
-        return {
-          direction: 'up' as const,
-          value: '15%',
-          isPositive: false
-        };
-      default:
-        return undefined;
-    }
+    return undefined; // Removendo a simulação para usar apenas dados reais
   };
 
   return (

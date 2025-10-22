@@ -243,6 +243,7 @@ export const useAnalyticsKPIs = (tasks: TaskData[], options?: UseKPIsOptions) =>
     cacheType: 'analytics',
     cacheTTL: options?.cacheTTL || 10 * 60 * 1000, // 10 minutos para analytics
     debounceMs: options?.debounceMs || 500, // Maior debounce para analytics
+    enableCache: false, // Desativado para usar Supabase
     onCalculationStart: () => {
       console.log('📊 Recalculando KPIs de Analytics...');
       options?.onCalculationStart?.();
@@ -329,8 +330,8 @@ export const useKPIMonitoring = () => {
   }, []);
 
   const onCalculationComplete = useCallback((results: KPIResults) => {
-    // Simula tempo de cálculo (em produção, seria medido)
-    const calculationTime = Math.random() * 100 + 50; // 50-150ms simulado
+    // Usa o tempo de processamento real dos resultados
+    const calculationTime = results.processingTime || 0; 
     
     calculationTimes.current.push(calculationTime);
     if (calculationTimes.current.length > 10) {

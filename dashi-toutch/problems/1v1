@@ -1,0 +1,1 @@
+Uncaught SyntaxError: The requested module '/src/services/supabaseUserService.ts' does not provide an export named 'getUserMissions' (at DataContext.tsx:17:3)

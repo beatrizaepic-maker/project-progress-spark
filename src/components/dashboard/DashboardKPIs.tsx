@@ -80,7 +80,6 @@ const DashboardKPIs: React.FC<DashboardKPIsProps> = ({ tasks }) => {
           averageDelay={kpis.averageDelay}
           lastUpdated={kpis.lastUpdated}
           // Em uma implementação real, previousAverageDelay viria de dados históricos
-          previousAverageDelay={kpis.averageDelay * 1.1} // Simulando valor anterior
           isCalculating={kpis.isCalculating}
           calculationId={kpis.calculationId}
           processingTime={kpis.processingTime}

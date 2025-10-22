@@ -18,7 +18,7 @@ const AnalyticsContent = () => {
   const analyticsKPIs = useAnalyticsKPIs(tasks, {
     debounceMs: 500,
     cacheTTL: 10 * 60 * 1000,
-    enableCache: true,
+    enableCache: false, // Desativado para usar Supabase
     onCalculationStart: () => {
       toast({
         title: "Atualizando Analytics",
@@ -63,7 +63,7 @@ const AnalyticsContent = () => {
               
               <Badge variant="outline" className="flex items-center space-x-1">
                 <TrendingUp className="h-3 w-3" />
-                <span>Cache: {analyticsKPIs.isCalculating ? 'Calculando...' : 'Ativo'}</span>
+                <span>Supabase: {analyticsKPIs.isCalculating ? 'Calculando...' : 'Ativo'}</span>
               </Badge>
             </div>
             
@@ -192,9 +192,9 @@ const AnalyticsContent = () => {
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Cache:</span>
+              <span className="text-sm text-muted-foreground">Fonte:</span>
               <span className="text-sm font-medium text-purple-400">
-                {analyticsKPIs.cacheHit ? '💾 Cache' : '🔄 Recalculado'}
+                {analyticsKPIs.cacheHit ? '💾 Supabase' : '🔄 Recalculado'}
               </span>
             </div>
             <div className="flex items-center justify-between">

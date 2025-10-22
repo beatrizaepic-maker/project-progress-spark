@@ -2,8 +2,9 @@ import React, { useState, useRef, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import TaskTable, { TaskTableRef } from "@/components/dashboard/TaskTable";
 import { DataProvider, useData } from "@/contexts/DataContext";
-import { getTasksData } from "@/services/localStorageData";
-import { getSeasonConfig } from "@/config/season";
+import { useAuth } from "@/contexts/AuthContext";
+
+import { getSeasonConfig, getDefaultSeason } from "@/config/season";
 import { toast } from "@/hooks/use-toast";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -15,7 +16,7 @@ import {
   ChartLegend,
   ChartLegendContent,
   type ChartConfig
-} from "../../dashi-touch/def-estilo/chart/line-chart";
+} from "@/components/ui/chart";
 import { LineChart as ReLineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
 // Hook para gerenciar filtros rápidos
 const useQuickFilters = () => {
@@ -48,19 +49,17 @@ const useQuickFilters = () => {
 
 const TasksContent = () => {
   const { tasks, exportData, importData } = useData();
+  const { user } = useAuth();
   const { taskTableRef, applyQuickFilter } = useQuickFilters();
 
+  // Verificar se o usuário é admin
+  const isAdmin = user?.role === 'admin';
+
   // Temporadas
-  const [seasonList, setSeasonList] = useState(() => {
-    try {
-      const stored = localStorage.getItem('epic_season_list_v1');
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [seasonList, setSeasonList] = useState([]);
   const [selectedSeasonIdx, setSelectedSeasonIdx] = useState(0);
-  const selectedSeason = seasonList[selectedSeasonIdx] || getSeasonConfig();
+  // Evita usar função assíncrona diretamente; usa default quando lista está vazia
+  const selectedSeason = seasonList[selectedSeasonIdx] || getDefaultSeason();
 
   // Filtrar tarefas por temporada
   const filteredTasks = useMemo(() => {
@@ -342,123 +341,38 @@ const TasksContent = () => {
       </section>
 
       {/* Gráfico de Linhas - Detalhamento por Dia da Temporada */}
-      <section>
-        <div className="mt-6">
-          <h3 className="text-xl font-semibold text-foreground mb-2">Evolução por Dia (Temporada)</h3>
-          <p className="text-muted-foreground mb-4">Concluídas vs Pendentes ao longo dos dias da temporada selecionada</p>
-          <div className="w-full border-2 border-purple-500 bg-card p-4 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-all duration-200">
-            <ChartContainer
-              className="w-full h-[340px]"
-              config={chartConfig as ChartConfig}
-            >
-              <ReLineChart data={generateChartData} margin={{ top: 10, right: 24, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                <XAxis dataKey="day" tickLine={false} axisLine={false} tick={{ fill: 'currentColor' }} />
-                <YAxis allowDecimals={false} tickLine={false} axisLine={false} tick={{ fill: 'currentColor' }} />
-                <ChartTooltip content={(props: any) => <ChartTooltipContent {...props} />} />
-                <ChartLegend content={(props: any) => <ChartLegendContent {...props} />} />
-                <Line type="monotone" dataKey="concluidas" stroke="var(--color-concluidas)" strokeWidth={2} dot={false} name="Concluídas" />
-                <Line type="monotone" dataKey="pendentes" stroke="var(--color-pendentes)" strokeWidth={2} dot={false} name="Pendentes" />
-              </ReLineChart>
-            </ChartContainer>
+      {isAdmin && (
+        <section>
+          <div className="mt-6">
+            <h3 className="text-xl font-semibold text-foreground mb-2">Evolução por Dia (Temporada)</h3>
+            <p className="text-muted-foreground mb-4">Concluídas vs Pendentes ao longo dos dias da temporada selecionada</p>
+            <div className="w-full border-2 border-purple-500 bg-card p-4 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-all duration-200">
+              <ChartContainer
+                className="w-full h-[340px]"
+                config={chartConfig as ChartConfig}
+              >
+                <ReLineChart data={generateChartData} margin={{ top: 10, right: 24, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                  <XAxis dataKey="day" tickLine={false} axisLine={false} tick={{ fill: 'currentColor' }} />
+                  <YAxis allowDecimals={false} tickLine={false} axisLine={false} tick={{ fill: 'currentColor' }} />
+                  <ChartTooltip content={(props: any) => <ChartTooltipContent {...props} />} />
+                  <ChartLegend content={(props: any) => <ChartLegendContent {...props} />} />
+                  <Line type="monotone" dataKey="concluidas" stroke="var(--color-concluidas)" strokeWidth={2} dot={false} name="Concluídas" />
+                  <Line type="monotone" dataKey="pendentes" stroke="var(--color-pendentes)" strokeWidth={2} dot={false} name="Pendentes" />
+                </ReLineChart>
+              </ChartContainer>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
     </main>
   );
 };
 
 const Tasks = () => {
-  const [tasks, setTasks] = React.useState(() => {
-    // Aplicar garantia de IDs únicos ao carregar do localStorage
-    const loadedTasks = getTasksData();
-    // Como não temos acesso direto a ensureUniqueIds aqui, vamos garantir IDs únicos manualmente
-    const idMap = new Map<number, boolean>();
-    let maxId = 0;
-
-    // Primeiro, encontrar o ID máximo e identificar duplicatas
-    for (const task of loadedTasks) {
-      maxId = Math.max(maxId, task.id);
-      if (idMap.has(task.id)) {
-        // Se encontrar um ID duplicado, marca para corrigir
-      } else {
-        idMap.set(task.id, true);
-      }
-    }
-
-    // Se houver IDs duplicados, reconstruir com IDs únicos
-    if (loadedTasks.length !== idMap.size) {
-      const uniqueTasks = [];
-      const usedIds = new Set<number>();
-      
-      for (const task of loadedTasks) {
-        if (usedIds.has(task.id)) {
-          // Gerar novo ID único
-          let newId = maxId + 1;
-          while (usedIds.has(newId)) {
-            newId++;
-          }
-          uniqueTasks.push({ ...task, id: newId });
-          usedIds.add(newId);
-          maxId = newId;
-        } else {
-          uniqueTasks.push(task);
-          usedIds.add(task.id);
-        }
-      }
-      
-      return uniqueTasks;
-    }
-    
-    return loadedTasks;
-  });
+  const [tasks, setTasks] = React.useState([]);
   
-  React.useEffect(() => {
-    const onChanged = () => {
-      const loadedTasks = getTasksData();
-      // Aplicar garantia de IDs únicos ao receber evento de atualização
-      const idMap = new Map<number, boolean>();
-      let maxId = 0;
 
-      // Primeiro, encontrar o ID máximo e identificar duplicatas
-      for (const task of loadedTasks) {
-        maxId = Math.max(maxId, task.id);
-        if (idMap.has(task.id)) {
-          // Se encontrar um ID duplicado, marca para corrigir
-        } else {
-          idMap.set(task.id, true);
-        }
-      }
-
-      // Se houver IDs duplicados, reconstruir com IDs únicos
-      if (loadedTasks.length !== idMap.size) {
-        const uniqueTasks = [];
-        const usedIds = new Set<number>();
-        
-        for (const task of loadedTasks) {
-          if (usedIds.has(task.id)) {
-            // Gerar novo ID único
-            let newId = maxId + 1;
-            while (usedIds.has(newId)) {
-              newId++;
-            }
-            uniqueTasks.push({ ...task, id: newId });
-            usedIds.add(newId);
-            maxId = newId;
-          } else {
-            uniqueTasks.push(task);
-            usedIds.add(task.id);
-          }
-        }
-        
-        setTasks(uniqueTasks);
-      } else {
-        setTasks(loadedTasks);
-      }
-    };
-    window.addEventListener('tasks:changed', onChanged);
-    return () => window.removeEventListener('tasks:changed', onChanged);
-  }, []);
   
   return (
     <DataProvider initialTasks={tasks}>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,28 +34,64 @@ const UserProfileEdit: React.FC<UserProfileEditProps> = ({ onClose }) => {
 
   const handleSave = async () => {
     if (!user) return;
-
     setIsSaving(true);
     try {
-      const response = await updateProfile(editedUser);
+      // Garante que o campo avatar está presente
+      const payload = { ...editedUser };
+      if (!payload.avatar) {
+        toast({
+          title: 'Selecione um avatar',
+          description: 'Escolha uma imagem para o avatar antes de salvar.',
+          variant: 'destructive',
+        });
+        setIsSaving(false);
+        return;
+      }
+      const response = await updateProfile(payload);
       if (response.success) {
-        // Força atualização dos dados em todo o sistema
+        toast({
+          title: 'Perfil atualizado!',
+          description: 'Seu avatar foi salvo com sucesso.',
+          variant: 'success',
+        });
         refreshUser();
-        
-        // Pequeno delay para garantir que os dados foram atualizados
         setTimeout(() => {
           onClose?.();
-        }, 100);
+        }, 300);
+      } else {
+        toast({
+          title: 'Erro ao salvar perfil',
+          description: response.error || 'Tente novamente.',
+          variant: 'destructive',
+        });
       }
     } catch (error) {
       console.error('Erro ao atualizar perfil:', error);
+      toast({
+        title: 'Erro inesperado',
+        description: 'Não foi possível salvar o perfil.',
+        variant: 'destructive',
+      });
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleAvatarUpload = () => {
-    // Simulação de upload - em produção, integraria com serviço de upload
+  const handleAvatarUpload = async (e?: React.ChangeEvent<HTMLInputElement>) => {
+    // Se for upload de arquivo
+    if (e && e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      // Aqui você pode integrar com Supabase Storage ou outro serviço
+      // Exemplo: upload para Supabase Storage
+      // const { data, error } = await supabase.storage.from('avatars').upload(`public/${user.id}.png`, file);
+      // if (!error && data?.path) {
+      //   handleChange('avatar', data.path);
+      // }
+      // Simulação: apenas usa URL local
+      handleChange('avatar', URL.createObjectURL(file));
+      return;
+    }
+    // Simulação de avatar aleatório
     const avatarUrls = [
       '/avatars/user1.png',
       '/avatars/user2.png',
@@ -63,7 +100,6 @@ const UserProfileEdit: React.FC<UserProfileEditProps> = ({ onClose }) => {
       'https://api.dicebear.com/7.x/avataaars/svg?seed=' + Math.random(),
       'https://api.dicebear.com/7.x/personas/svg?seed=' + Math.random()
     ];
-    
     const randomAvatar = avatarUrls[Math.floor(Math.random() * avatarUrls.length)];
     handleChange('avatar', randomAvatar);
   };
@@ -98,6 +134,21 @@ const UserProfileEdit: React.FC<UserProfileEditProps> = ({ onClose }) => {
         <CardContent className="space-y-4">
           {/* Seção de identidade */}
           <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <Avatar className="h-16 w-16">
+                <AvatarImage src={editedUser.avatar || '/avatars/user1.png'} alt="Avatar" />
+                <AvatarFallback><User /></AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col gap-2">
+                <input type="file" accept="image/*" style={{ display: 'none' }} id="avatar-upload-input" onChange={handleAvatarUpload} />
+                <Button type="button" onClick={() => document.getElementById('avatar-upload-input')?.click()} variant="secondary" size="sm">
+                  Upload
+                </Button>
+                <Button type="button" onClick={() => handleAvatarUpload()} variant="outline" size="sm">
+                  Aleatório
+                </Button>
+              </div>
+            </div>
             <h3 className="text-lg font-semibold text-foreground">Identidade</h3>
             
             <div className="flex items-center gap-4">

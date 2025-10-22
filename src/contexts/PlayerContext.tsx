@@ -1,6 +1,6 @@
 // src/contexts/PlayerContext.tsx
 
-import React, { createContext, useContext, useReducer, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
 import { PlayerProfile, PlayerStats, XpHistory } from '@/types/player';
 import { 
   createPlayerProfile, 
@@ -115,6 +115,31 @@ interface PlayerProviderProps {
 
 export const PlayerProvider: React.FC<PlayerProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(playerReducer, initialState);
+
+  // Efeito para escutar o evento de atualização de streak
+  useEffect(() => {
+    const handleStreakUpdate = (event: CustomEvent) => {
+      const { userId, streakXp } = event.detail;
+      if (state.profile && state.profile.id === userId) {
+        // Atualizar o XP e estatísticas do jogador
+        const updatedProfile = {
+          ...state.profile,
+          xp: (state.profile.xp || 0) + streakXp,
+          streak: (state.profile.streak || 0) + 1
+        };
+        dispatch({ type: 'SET_PROFILE', payload: updatedProfile });
+      }
+    };
+
+    // Tipo para o evento personalizado
+    const eventHandler = (e: Event) => handleStreakUpdate(e as CustomEvent);
+    
+    window.addEventListener('streakUpdated', eventHandler);
+
+    return () => {
+      window.removeEventListener('streakUpdated', eventHandler);
+    };
+  }, [state.profile]);
 
   // Inicializa o player com perfil básico
   const initPlayer = (name: string, avatar: string, role?: string) => {

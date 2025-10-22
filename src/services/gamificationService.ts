@@ -1,6 +1,7 @@
 // src/services/gamificationService.ts
 import { getPercentageForClass } from '@/config/gamification';
 import { getUserStreakXpLifetime, getUserStreakXpThisMonth, getUserStreakXpThisWeek, getStreakIncludeIn } from '@/config/streak';
+import { supabase } from '@/lib/supabase';
 
 // Interface para representar uma tarefa
 export interface Task {
@@ -17,7 +18,7 @@ export interface Task {
 export interface User {
   id: string;
   name: string;
-  avatar: string;
+  avatar?: string;
   xp: number;
   level: number;
   weeklyXp: number;
@@ -64,24 +65,35 @@ const XP_RULES = {
   penalty_late: -5            // Penalização por atraso significativo
 };
 
-// Função para obter as regras de níveis do localStorage
-export function getLevelRules(): LevelRule[] {
+// Função para obter as regras de níveis do Supabase
+export async function getLevelRules(): Promise<LevelRule[]> {
   try {
-    const stored = localStorage.getItem('epic_level_rules_v1');
-    if (stored) {
-      return JSON.parse(stored);
-    }
-    return []; // Retorna array vazio se não há dados configurados
+    const { data, error } = await supabase.from('level_rules').select('*');
+    if (error) throw error;
+    return data as LevelRule[];
   } catch (error) {
-    console.error('Erro ao carregar regras de níveis:', error);
-    return [];
+    console.warn('Tabela level_rules não encontrada ou erro, usando regras padrão:', error);
+    // Retorna regras de nível padrão se a tabela não existir
+    return [
+      { level: 1, xpRequired: 0, name: "Iniciante" },
+      { level: 2, xpRequired: 100, name: "Aprendiz" },
+      { level: 3, xpRequired: 300, name: "Estagiário" },
+      { level: 4, xpRequired: 600, name: "Júnior" },
+      { level: 5, xpRequired: 1000, name: "Pleno" },
+      { level: 6, xpRequired: 1500, name: "Sênior" },
+      { level: 7, xpRequired: 2100, name: "Especialista" },
+      { level: 8, xpRequired: 2800, name: "Líder" },
+      { level: 9, xpRequired: 3600, name: "Especialista Sênior" },
+      { level: 10, xpRequired: 4500, name: "Diretor" }
+    ];
   }
 }
 
-// Função para definir as regras de níveis no localStorage
-export function setLevelRules(newRules: LevelRule[]): void {
+// Função para definir as regras de níveis no Supabase
+export async function setLevelRules(newRules: LevelRule[]): Promise<void> {
   try {
-    localStorage.setItem('epic_level_rules_v1', JSON.stringify(newRules));
+    const { error } = await supabase.from('level_rules').upsert(newRules, { onConflict: 'level' });
+    if (error) throw error;
   } catch (error) {
     console.error('Erro ao salvar regras de níveis:', error);
   }
@@ -143,17 +155,17 @@ export function classifyTaskDelivery(task: Task): 'early' | 'on_time' | 'late' |
 /**
  * Retorna o percentual de produtividade por tarefa conforme a classificação.
  */
-export function calculateProductivityPercentForTask(task: Task): number {
+export async function calculateProductivityPercentForTask(task: Task): Promise<number> {
   const cls = classifyTaskDelivery(task);
   switch (cls) {
     case 'early':
-      return getPercentageForClass('early');
+      return await getPercentageForClass('early');
     case 'on_time':
-      return getPercentageForClass('on_time');
+      return await getPercentageForClass('on_time');
     case 'late':
-      return getPercentageForClass('late');
+      return await getPercentageForClass('late');
     case 'refacao':
-      return getPercentageForClass('refacao');
+      return await getPercentageForClass('refacao');
     default:
       return NaN; // Ignorar na média
   }
@@ -170,11 +182,11 @@ export function roundHalfUp(value: number): number {
  * Calcula o XP de ranking do usuário a partir da média percentual das tarefas
  * XP = roundHalfUp((somaPercentuais / totalTarefas) * 10)
  */
-export function calculateRankingXpFromTasks(tasks: Task[]): number {
+export async function calculateRankingXpFromTasks(tasks: Task[]): Promise<number> {
   let sum = 0;
   let count = 0;
   for (const t of tasks) {
-    const pct = calculateProductivityPercentForTask(t);
+    const pct = await calculateProductivityPercentForTask(t);
     if (!Number.isNaN(pct)) {
       // clamp 0–100
       const clamped = Math.max(0, Math.min(100, pct));
@@ -193,16 +205,16 @@ export function calculateRankingXpFromTasks(tasks: Task[]): number {
  * Retorna total de tarefas consideradas, soma dos percentuais, média (raw) e média arredondada.
  * Importante: ignora tarefas não concluídas, overdue não concluídas e em refação (até reconclusão).
  */
-export function calculateUserProductivity(tasks: Task[]): {
+export async function calculateUserProductivity(tasks: Task[]): Promise<{
   totalConsidered: number;
   sumPercent: number;
   averagePercentRaw: number;
   averagePercentRounded: number;
-} {
+}> {
   let sum = 0;
   let count = 0;
   for (const t of tasks) {
-    const pct = calculateProductivityPercentForTask(t);
+    const pct = await calculateProductivityPercentForTask(t);
     if (!Number.isNaN(pct)) {
       const clamped = Math.max(0, Math.min(100, pct));
       sum += clamped;
@@ -219,16 +231,48 @@ export function calculateUserProductivity(tasks: Task[]): {
 }
 
 /**
- * Calcula o nível baseado no XP acumulado
+ * Calcula o nível do usuário com base no XP acumulado (ASYNC versão)
  * @param xp XP acumulado
  * @returns O nível do usuário
  */
-export function calculateLevelFromXp(xp: number): number {
+export async function calculateLevelFromXp(xp: number): Promise<number> {
   // Encontrar o maior nível com XP necessário menor ou igual ao XP do usuário
-  const levelRules = getLevelRules();
+  const levelRules = await getLevelRules();
   let level = 1;
   
   for (const rule of levelRules) {
+    if (xp >= rule.xpRequired) {
+      level = rule.level;
+    } else {
+      break;
+    }
+  }
+  return level;
+}
+
+/**
+ * Calcula o nível do usuário com base no XP acumulado (SINCRONOUS versão)
+ * Usa regras padrão de nível para funcionamento sincronous sem await
+ * @param xp XP acumulado
+ * @returns O nível do usuário
+ */
+export function calculateLevelFromXpSync(xp: number): number {
+  // Regras de nível padrão (sem fazer query ao banco)
+  const defaultLevelRules = [
+    { level: 1, xpRequired: 0 },
+    { level: 2, xpRequired: 100 },
+    { level: 3, xpRequired: 300 },
+    { level: 4, xpRequired: 600 },
+    { level: 5, xpRequired: 1000 },
+    { level: 6, xpRequired: 1500 },
+    { level: 7, xpRequired: 2100 },
+    { level: 8, xpRequired: 2800 },
+    { level: 9, xpRequired: 3600 },
+    { level: 10, xpRequired: 4500 }
+  ];
+
+  let level = 1;
+  for (const rule of defaultLevelRules) {
     if (xp >= rule.xpRequired) {
       level = rule.level;
     } else {
@@ -243,14 +287,14 @@ export function calculateLevelFromXp(xp: number): number {
  * @param xp XP acumulado
  * @returns Um objeto com o nível atual, XP atual, XP necessário e percentual de progresso
  */
-export function getLevelProgress(xp: number): { 
+export async function getLevelProgress(xp: number): Promise<{ 
   currentLevel: number, 
   currentLevelXp: number, 
   nextLevelXp: number, 
   progressPercentage: number 
-} {
-  const levelRules = getLevelRules();
-  const currentLevel = calculateLevelFromXp(xp);
+}> {
+  const levelRules = await getLevelRules();
+  const currentLevel = await calculateLevelFromXp(xp);
   const currentLevelRule = levelRules.find(rule => rule.level === currentLevel);
   const nextLevelRule = levelRules.find(rule => rule.level === currentLevel + 1);
   
@@ -356,44 +400,48 @@ export function checkWeeklyMissionCompletion(tasks: Task[], mission: Mission): b
  * @param tasks Tarefas recentes
  * @returns Usuários atualizados com novos XP e níveis
  */
-export function updateRanking(users: User[], tasks: Task[]): User[] {
-  return users.map(user => {
-    const streakInclude = getStreakIncludeIn();
+export async function updateRanking(users: User[], tasks: Task[]): Promise<User[]> {
+  const updatedUsers = [];
+  
+  for (const user of users) {
+    const streakInclude = await getStreakIncludeIn();
     // Encontra tarefas do usuário
     const userTasks = tasks.filter(task => task.assignedTo === user.id);
     
     // Novo cálculo: XP de ranking baseado na média percentual das tarefas concluídas
-  const rankingXpBase = calculateRankingXpFromTasks(userTasks);
-  const streakLifetime = getUserStreakXpLifetime(user.id);
-  const rankingXp = rankingXpBase + (streakInclude.total ? streakLifetime : 0);
+    const rankingXpBase = await calculateRankingXpFromTasks(userTasks);
+    const streakLifetime = await getUserStreakXpLifetime(user.id);
+    const rankingXp = rankingXpBase + (streakInclude.total ? streakLifetime : 0);
 
-  // XP semanal calculado com base apenas nas tarefas da semana
+    // XP semanal calculado com base apenas nas tarefas da semana
     const weeklyTasks = userTasks.filter(t => isThisWeek(t.completedDate || t.dueDate));
-  const weeklyXpBase = calculateRankingXpFromTasks(weeklyTasks);
-  const weeklyStreak = getUserStreakXpThisWeek(user.id);
-  const weeklyXp = weeklyXpBase + (streakInclude.weekly ? weeklyStreak : 0);
+    const weeklyXpBase = await calculateRankingXpFromTasks(weeklyTasks);
+    const weeklyStreak = await getUserStreakXpThisWeek(user.id);
+    const weeklyXp = weeklyXpBase + (streakInclude.weekly ? weeklyStreak : 0);
 
-  // XP mensal calculado com base nas tarefas do mês corrente
-  const monthlyTasks = userTasks.filter(t => isThisMonth(t.completedDate || t.dueDate));
-  const monthlyXpBase = calculateRankingXpFromTasks(monthlyTasks);
-  const monthlyStreak = getUserStreakXpThisMonth(user.id);
-  const monthlyXp = monthlyXpBase + (streakInclude.monthly ? monthlyStreak : 0);
+    // XP mensal calculado com base nas tarefas do mês corrente
+    const monthlyTasks = userTasks.filter(t => isThisMonth(t.completedDate || t.dueDate));
+    const monthlyXpBase = await calculateRankingXpFromTasks(monthlyTasks);
+    const monthlyStreak = await getUserStreakXpThisMonth(user.id);
+    const monthlyXp = monthlyXpBase + (streakInclude.monthly ? monthlyStreak : 0);
 
     // Nível calculado a partir do XP de ranking
-    const newLevel = calculateLevelFromXp(rankingXp);
+    const newLevel = await calculateLevelFromXp(rankingXp);
     
     // Calcula o bônus de consistência
     const consistencyBonus = calculateConsistencyBonus(user.streak);
     
-    return {
+    updatedUsers.push({
       ...user,
       xp: rankingXp,
       level: newLevel,
       weeklyXp,
       monthlyXp,
       consistencyBonus
-    };
-  });
+    });
+  }
+  
+  return updatedUsers;
 }
 
 /**

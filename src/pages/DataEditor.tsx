@@ -1,23 +1,17 @@
 import DataEditor from "@/components/dashboard/DataEditor";
 import { DataProvider } from "@/contexts/DataContext";
-import { getTasksData } from "@/services/localStorageData";
+import { getTasksData } from "@/services/supabaseDataService"; // Função para usar Supabase
 import KPIDebugSection from "@/components/dashboard/KPIDebugSection";
 import React from "react";
+import { authService } from "@/services/authService";
 
 const DataEditorPage = () => {
   // Detecta se o usuário atual é DEV
-  const currentUser = (() => {
-    try {
-      const raw = localStorage.getItem('epic_user_data');
-      return raw ? JSON.parse(raw) : null;
-    } catch {
-      return null;
-    }
-  })();
+  const currentUser = authService.getCurrentUser();
   const isDevUser = currentUser?.role === 'DEV' || currentUser?.access === 'DEV';
   const [tasks, setTasks] = React.useState(() => {
-    // Aplicar garantia de IDs únicos ao carregar do localStorage
-    const loadedTasks = getTasksData();
+    // Aplicar garantia de IDs únicos ao carregar do Supabase
+    const loadedTasks = []; // getTasksData() agora é assíncrono e deve ser chamado no useEffect
     const idMap = new Map<number, boolean>();
     let maxId = 0;
 
@@ -59,8 +53,53 @@ const DataEditorPage = () => {
   });
   
   React.useEffect(() => {
-    const onChanged = () => {
-      const loadedTasks = getTasksData();
+    const loadTasks = async () => {
+      const loadedTasks = await getTasksData(); // Chamada assíncrona para Supabase
+      // Aplicar garantia de IDs únicos ao receber evento de atualização
+      const idMap = new Map<number, boolean>();
+      let maxId = 0;
+
+      // Primeiro, encontrar o ID máximo e identificar duplicatas
+      for (const task of loadedTasks) {
+        maxId = Math.max(maxId, task.id);
+        if (idMap.has(task.id)) {
+          // Se encontrar um ID duplicado, marca para corrigir
+        } else {
+          idMap.set(task.id, true);
+        }
+      }
+
+      // Se houver IDs duplicados, reconstruir com IDs únicos
+      if (loadedTasks.length !== idMap.size) {
+        const uniqueTasks = [];
+        const usedIds = new Set<number>();
+        
+        for (const task of loadedTasks) {
+          if (usedIds.has(task.id)) {
+            // Gerar novo ID único
+            let newId = maxId + 1;
+            while (usedIds.has(newId)) {
+              newId++;
+            }
+            uniqueTasks.push({ ...task, id: newId });
+            usedIds.add(newId);
+            maxId = newId;
+          } else {
+            uniqueTasks.push(task);
+            usedIds.add(task.id);
+          }
+        }
+        
+        setTasks(uniqueTasks);
+      } else {
+        setTasks(loadedTasks);
+      }
+    };
+    
+    loadTasks();
+    
+    const onChanged = async () => {
+      const loadedTasks = await getTasksData(); // Chamada assíncrona para Supabase
       // Aplicar garantia de IDs únicos ao receber evento de atualização
       const idMap = new Map<number, boolean>();
       let maxId = 0;
@@ -103,6 +142,22 @@ const DataEditorPage = () => {
     };
     window.addEventListener('tasks:changed', onChanged);
     return () => window.removeEventListener('tasks:changed', onChanged);
+  }, []);
+  
+  // Atualizar a função de manipulação de eventos para usar Supabase
+  React.useEffect(() => {
+    const handleStorageChange = async () => {
+      const loadedTasks = await getTasksData();
+      setTasks(loadedTasks);
+    };
+    
+    // Escuta mudanças no Supabase (quando implementado)
+    // Por enquanto, usando evento personalizado
+    window.addEventListener('tasks:changed', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('tasks:changed', handleStorageChange);
+    };
   }, []);
   return (
     <DataProvider initialTasks={tasks}>

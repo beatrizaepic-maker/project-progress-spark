@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { getUserDisplayName } from "@/utils/userSync";
 import Navigation from "./components/Navigation";
 import {
@@ -111,24 +112,41 @@ const LogoSection = () => {
   );
 };
 
-// Renderiza os links da sidebar com filtro por papel do usuário
+// Renderiza os links da sidebar - agora todos os usuários podem ver todas as páginas
 const SidebarLinks: React.FC = () => {
-  const { user } = useAuth();
-  const rawRole = String((user as any)?.role || '').toLowerCase();
-  const role: 'admin' | 'dev' | 'user' | 'manager' = (['admin','dev','user','manager'] as const).includes(rawRole as any) ? (rawRole as any) : 'user';
-  const allowedForUser = new Set(['/tasks', '/ranking', '/profile/current']);
-  const filtered = role === 'user'
-    ? sidebarLinks.filter(l => allowedForUser.has(l.href) || l.href.startsWith('/profile'))
-    : sidebarLinks; // admin/dev veem tudo
-
   return (
     <>
-      {filtered.map((link) => (
+      {sidebarLinks.map((link) => (
         <CustomSidebarLink key={link.href} link={link} />
       ))}
     </>
   );
 };
+
+// Componente de layout compartilhado para rotas protegidas
+const ProtectedLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <ProtectedRoute>
+    <div className="min-h-screen bg-background">
+      <CustomSidebar>
+        <CustomSidebarBody className="gap-4">
+          <LogoSection />
+
+          {/* Navigation Links */}
+          <div className="flex-1 px-2">
+            <SidebarLinks />
+          </div>
+        </CustomSidebarBody>
+      </CustomSidebar>
+
+      <div className="md:ml-[60px] transition-all duration-300">
+        <Navigation />
+        <div className="pt-20">
+          {children}
+        </div>
+      </div>
+    </div>
+  </ProtectedRoute>
+);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -136,55 +154,41 @@ const App = () => (
       <AuthProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter
-        future={{
-          v7_startTransition: true,
-          v7_relativeSplatPath: true
-        }}
-      >
+        {/* ✅ Error Boundary para capturar erros não esperados */}
+        <ErrorBoundary>
+          <BrowserRouter
+          future={{
+            v7_startTransition: true,
+            v7_relativeSplatPath: true
+          }}
+        >
         <Routes>
-          {/* Rota de login sem layout (sem sidebar e header) */}
+          {/* Rota de login sem proteção */}
           <Route path="/login" element={<LoginPage />} />
-          
-          {/* Todas as outras rotas com layout principal - Protegidas */}
-          <Route path="/*" element={
-            <ProtectedRoute>
-              <div className="min-h-screen bg-background">
-                <CustomSidebar>
-                  <CustomSidebarBody className="gap-4">
-                    <LogoSection />
 
-                    {/* Navigation Links */}
-                    <div className="flex-1 px-2">
-                      <SidebarLinks />
-                    </div>
-                  </CustomSidebarBody>
-                </CustomSidebar>
-
-                <div className="md:ml-[60px] transition-all duration-300">
-                  <Navigation />
-                  <div className="pt-20">
-                    <Routes>
-                      <Route path="/" element={<Dashboard />} />
-                      <Route path="/dashboard" element={<Dashboard />} />
-                      <Route path="/analytics" element={<Analytics />} />
-                      <Route path="/tasks" element={<Tasks />} />
-                      <Route path="/editor" element={<DataEditorPage />} />
-                      <Route path="/ranking" element={<RankingPage />} />
-                      <Route path="/profile/:playerId" element={<PlayerProfilePage />} />
-                      <Route path="/profile" element={<PlayerProfilePage />} />
-                      <Route path="/settings" element={<SettingsPage />} />
-                      <Route path="/controle" element={<ProtectedRoute requireRole="manager"><ControlPage /></ProtectedRoute>} />
-                      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </div>
-                </div>
-              </div>
-            </ProtectedRoute>
+          {/* Rotas protegidas com layout compartilhado */}
+          <Route path="/" element={<ProtectedLayout><Dashboard /></ProtectedLayout>} />
+          <Route path="/dashboard" element={<ProtectedLayout><Dashboard /></ProtectedLayout>} />
+          <Route path="/analytics" element={<ProtectedLayout><Analytics /></ProtectedLayout>} />
+          <Route path="/tasks" element={<ProtectedLayout><Tasks /></ProtectedLayout>} />
+          <Route path="/editor" element={<ProtectedLayout><DataEditorPage /></ProtectedLayout>} />
+          <Route path="/ranking" element={<ProtectedLayout><RankingPage /></ProtectedLayout>} />
+          <Route path="/profile/:playerId" element={<ProtectedLayout><PlayerProfilePage /></ProtectedLayout>} />
+          <Route path="/profile" element={<ProtectedLayout><PlayerProfilePage /></ProtectedLayout>} />
+          <Route path="/settings" element={<ProtectedLayout><SettingsPage /></ProtectedLayout>} />
+          <Route path="/controle" element={
+            <ProtectedLayout>
+              <ProtectedRoute requireRole="manager">
+                <ControlPage />
+              </ProtectedRoute>
+            </ProtectedLayout>
           } />
+
+          {/* Rota catch-all para 404 */}
+          <Route path="*" element={<ProtectedLayout><NotFound /></ProtectedLayout>} />
         </Routes>
       </BrowserRouter>
+        </ErrorBoundary>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>

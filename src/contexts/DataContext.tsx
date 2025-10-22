@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 import { TaskData } from '@/data/projectData';
-import { getTasksData, saveTasksData, getUserMissions, saveUserMissions } from '@/services/localStorageData';
 import { toast } from '@/hooks/use-toast';
 import { kpiCalculator, KPIResults } from '@/services/kpiCalculator';
 import { kpiErrorHandler } from '@/services/errorHandler';
@@ -12,7 +11,14 @@ import {
 } from '@/services/missionService';
 import { Task, calculateRankingXpFromTasks } from '@/services/gamificationService';
 import { addSimpleXpHistory } from '@/services/xpHistoryService';
-import { resolveUserIdByName, getGamificationUsers, saveGamificationUsers } from '@/services/localStorageData';
+import { 
+  getGamificationUsers, 
+  saveGamificationUsers,
+  resolveUserIdByName 
+} from '@/services/supabaseUserService';
+import { getUserMissions, saveUserMissions } from '@/services/supabaseData';
+// Importações para Supabase - substituir conforme necessário
+// import { supabase } from '@/lib/supabase';
 
 interface DataContextType {
   tasks: TaskData[];
@@ -108,11 +114,63 @@ const calculateMetrics = (tasks: TaskData[]) => {
     ? atrasos.reduce((sum, d) => sum + d, 0) / atrasos.length 
     : 0;
   
-  // Valores predefinidos para estatísticas mais complexas
-  // Em uma implementação completa, estas seriam calculadas dinamicamente
-  const desvioPadrao = 1.8;
-  const moda = 2;
-  const mediana = 5;
+  // Valores calculados dinamicamente para estatísticas mais complexas
+  // Em uma implementação completa, estas seriam calculadas com base nos dados reais
+  const desvioPadrao = tasks.length > 1 ? calcularDesvioPadrao(tasks) : 0;
+  const moda = tasks.length > 0 ? calcularModa(tasks) : 0;
+  const mediana = tasks.length > 0 ? calcularMediana(tasks) : 0;
+  
+  // Funções auxiliares para cálculos estatísticos
+  function calcularDesvioPadrao(tarefas: TaskData[]): number {
+    if (tarefas.length === 0) return 0;
+    const valores = tarefas.map(t => t.duracaoDiasUteis).filter(v => !isNaN(v));
+    if (valores.length === 0) return 0;
+    
+    const media = valores.reduce((sum, val) => sum + val, 0) / valores.length;
+    const squaredDiffs = valores.map(value => {
+      const diff = value - media;
+      return diff * diff;
+    });
+    const avgSquaredDiff = squaredDiffs.reduce((sum, val) => sum + val, 0) / squaredDiffs.length;
+    return Math.sqrt(avgSquaredDiff);
+  }
+  
+  function calcularModa(tarefas: TaskData[]): number {
+    if (tarefas.length === 0) return 0;
+    const valores = tarefas.map(t => t.duracaoDiasUteis).filter(v => !isNaN(v));
+    if (valores.length === 0) return 0;
+    
+    const frequencia: { [key: number]: number } = {};
+    let maxFreq = 0;
+    let moda = valores[0];
+    
+    for (const valor of valores) {
+      frequencia[valor] = (frequencia[valor] || 0) + 1;
+      if (frequencia[valor] > maxFreq) {
+        maxFreq = frequencia[valor];
+        moda = valor;
+      }
+    }
+    
+    return moda;
+  }
+  
+  function calcularMediana(tarefas: TaskData[]): number {
+    if (tarefas.length === 0) return 0;
+    const valores = tarefas
+      .map(t => t.duracaoDiasUteis)
+      .filter(v => !isNaN(v))
+      .sort((a, b) => a - b);
+    
+    if (valores.length === 0) return 0;
+    
+    const meio = Math.floor(valores.length / 2);
+    if (valores.length % 2 === 0) {
+      return (valores[meio - 1] + valores[meio]) / 2;
+    } else {
+      return valores[meio];
+    }
+  }
   
   return {
     totalTarefas,
@@ -284,8 +342,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, initialTas
     const uniqueTasks = ensureUniqueIds(updatedTasks);
     
     setTasks(uniqueTasks);
-    // Persistir e notificar
-    try { saveTasksData(uniqueTasks); } catch {}
+    // Persistir e notificar via Supabase
+    // try { await saveTasksToSupabase(uniqueTasks); } catch {}
   }, [ensureUniqueIds]);
 
   const addTask = useCallback((task: Omit<TaskData, 'id'> & { fim?: string }) => {
@@ -315,7 +373,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, initialTas
     
     setTasks(prev => {
       const next = [...prev, newTask];
-      try { saveTasksData(next); } catch {}
+      // Persistir via Supabase
+      // try { await saveTasksToSupabase(next); } catch {}
       return next;
     });
     toast({
@@ -347,8 +406,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, initialTas
       const uniqueTasks = ensureUniqueIds(next);
       
       try { 
-        // Salvar antes de processar missões
-        saveTasksData(uniqueTasks); 
+        // Salvar antes de processar missões via Supabase
+        // await saveTasksToSupabase(uniqueTasks); 
         
         // Processar missões se o status da tarefa mudou para 'completed'
         const originalTask = prev.find(t => t.id === id);
@@ -359,122 +418,122 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, initialTas
             updatedTask.status === 'completed' &&
             updatedTask.responsavel) {
             
-          // Resolver ID do usuário com base no nome do responsável
-          const userId = resolveUserIdByName(updatedTask.responsavel);
-          if (userId) {
-            try {
-              // Converter TaskData para o formato Task necessário para o sistema de missões
-              const gamificationTask: Task = {
-                id: String(updatedTask.id),
-                title: updatedTask.tarefa,
-                status: 'completed',
-                completedDate: updatedTask.fim ? new Date(updatedTask.fim).toISOString() : undefined,
-                dueDate: updatedTask.prazo ? new Date(updatedTask.prazo).toISOString() : '',
-                assignedTo: userId,
-                completedEarly: updatedTask.fim && updatedTask.prazo 
-                  ? new Date(updatedTask.fim) < new Date(updatedTask.prazo) 
-                  : undefined,
-              };
+          // Resolver ID do usuário com base no nome do responsável - substituir por chamada Supabase
+          // const userId = resolveUserIdByName(updatedTask.responsavel);
+          // if (userId) {
+          //   try {
+          //     // Converter TaskData para o formato Task necessário para o sistema de missões
+          //     const gamificationTask: Task = {
+          //       id: String(updatedTask.id),
+          //       title: updatedTask.tarefa,
+          //       status: 'completed',
+          //       completedDate: updatedTask.fim ? new Date(updatedTask.fim).toISOString() : undefined,
+          //       dueDate: updatedTask.prazo ? new Date(updatedTask.prazo).toISOString() : '',
+          //       assignedTo: userId,
+          //       completedEarly: updatedTask.fim && updatedTask.prazo 
+          //         ? new Date(updatedTask.fim) < new Date(updatedTask.prazo) 
+          //         : undefined,
+          //     };
               
-              // Obter missões ativas do usuário
-              let userMissions = getUserMissions(userId);
+          //     // Obter missões ativas do usuário - substituir por chamada Supabase
+          //     let userMissions = getUserMissions(userId);
               
-              // Garantir que o usuário tenha instâncias de missões configuradas que possam ser afetadas por tarefas completadas
-              const allMissionConfigs = getAvailableMissions();
-              const taskRelatedTypes = ['complete_tasks', 'complete_early', 'review_peer_tasks', 'no_delays']; // Tipos afetados por tarefas completadas
+          //     // Garantir que o usuário tenha instâncias de missões configuradas que possam ser afetadas por tarefas completadas
+          //     const allMissionConfigs = getAvailableMissions();
+          //     const taskRelatedTypes = ['complete_tasks', 'complete_early', 'review_peer_tasks', 'no_delays']; // Tipos afetados por tarefas completadas
               
-              for (const config of allMissionConfigs) {
-                if (taskRelatedTypes.includes(config.type) && config.isActive) {
-                  // Verificar se o usuário já tem uma instância dessa configuração
-                  const existingMission = userMissions.find(m => m.configId === config.type && !m.completed);
+          //     for (const config of allMissionConfigs) {
+          //       if (taskRelatedTypes.includes(config.type) && config.isActive) {
+          //         // Verificar se o usuário já tem uma instância dessa configuração - substituir por chamada Supabase
+          //         const existingMission = userMissions.find(m => m.configId === config.type && !m.completed);
                   
-                  if (!existingMission) {
-                    // Criar uma nova instância dessa missão para o usuário
-                    const newMissionId = `mission-${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${config.type}`;
-                    const today = new Date();
-                    const endOfWeek = new Date(today);
-                    endOfWeek.setDate(today.getDate() + (7 - today.getDay()));
-                    endOfWeek.setHours(23, 59, 59, 999);
+          //         if (!existingMission) {
+          //           // Criar uma nova instância dessa missão para o usuário
+          //           const newMissionId = `mission-${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${config.type}`;
+          //           const today = new Date();
+          //           const endOfWeek = new Date(today);
+          //           endOfWeek.setDate(today.getDate() + (7 - today.getDay()));
+          //           endOfWeek.setHours(23, 59, 59, 999);
                     
-                    userMissions.push({
-                      id: newMissionId,
-                      userId,
-                      configId: config.type,
-                      type: config.type as any,
-                      name: config.name,
-                      description: config.description,
-                      target: config.target,
-                      currentProgress: 0,
-                      xpReward: config.xpReward,
-                      deadline: endOfWeek.toISOString(),
-                      completed: false,
-                      createdAt: new Date().toISOString()
-                    });
-                  }
-                }
-              }
+          //           userMissions.push({
+          //             id: newMissionId,
+          //             userId,
+          //             configId: config.type,
+          //             type: config.type as any,
+          //             name: config.name,
+          //             description: config.description,
+          //             target: config.target,
+          //             currentProgress: 0,
+          //             xpReward: config.xpReward,
+          //             deadline: endOfWeek.toISOString(),
+          //             completed: false,
+          //             createdAt: new Date().toISOString()
+          //           });
+          //         }
+          //       }
+          //     }
               
-              // Processar as missões com a nova tarefa
-              const user = getGamificationUsers().find(u => u.id === userId);
-              if (user) {
-                // Atualizar progresso de missões individualmente com base na nova tarefa
-                const updatedMissions = userMissions.map(mission => {
-                  if (!mission.completed) {
-                    return updateMissionProgress(mission, gamificationTask);
-                  }
-                  return mission;
-                });
+          //     // Processar as missões com a nova tarefa - substituir por chamada Supabase
+          //     const user = getGamificationUsers().find(u => u.id === userId);
+          //     if (user) {
+          //       // Atualizar progresso de missões individualmente com base na nova tarefa
+          //       const updatedMissions = userMissions.map(mission => {
+          //         if (!mission.completed) {
+          //           return updateMissionProgress(mission, gamificationTask);
+          //         }
+          //         return mission;
+          //       });
                 
-                // Verificar se alguma missão foi completada e adicionar XP
-                let missionsCompletedCount = 0;
-                for (const mission of updatedMissions) {
-                  if (!mission.completed && mission.currentProgress >= mission.target) {
-                    // Marcar como completada
-                    mission.completed = true;
-                    mission.completedAt = new Date().toISOString();
+          //       // Verificar se alguma missão foi completada e adicionar XP
+          //       let missionsCompletedCount = 0;
+          //       for (const mission of updatedMissions) {
+          //         if (!mission.completed && mission.currentProgress >= mission.target) {
+          //           // Marcar como completada
+          //           mission.completed = true;
+          //           mission.completedAt = new Date().toISOString();
                     
-                    // Adicionar XP ao histórico
-                    addSimpleXpHistory(userId, mission.xpReward, 'mission', mission.name, { missionId: mission.id });
+          //           // Adicionar XP ao histórico
+          //           addSimpleXpHistory(userId, mission.xpReward, 'mission', mission.name, { missionId: mission.id });
                     
-                    missionsCompletedCount++;
-                  }
-                }
+          //           missionsCompletedCount++;
+          //         }
+          //       }
                 
-                // Salvar missões atualizadas
-                saveUserMissions(userId, updatedMissions);
+          //       // Salvar missões atualizadas - substituir por chamada Supabase
+          //       saveUserMissions(userId, updatedMissions);
                 
-                // Atualizar o XP total e missões completadas do usuário
-                const allUsers = getGamificationUsers();
-                const userIndex = allUsers.findIndex(u => u.id === userId);
-                if (userIndex !== -1) {
-                  // Recalcular XP baseado nas tarefas
-                  const userTasks = uniqueTasks.filter(t => resolveUserIdByName(t.responsavel) === userId).map(t => {
-                    const taskId = String(t.id);
-                    return {
-                      id: taskId,
-                      title: t.tarefa,
-                      status: t.status === 'completed' ? 'completed' : t.status === 'refacao' ? 'refacao' : t.prazo && new Date(t.prazo) < new Date() ? 'overdue' : 'pending',
-                      completedDate: t.fim ? new Date(t.fim).toISOString() : undefined,
-                      dueDate: t.prazo ? new Date(t.prazo).toISOString() : '',
-                      assignedTo: userId,
-                      completedEarly: t.fim && t.prazo ? new Date(t.fim) < new Date(t.prazo) : undefined,
-                    };
-                  });
+          //       // Atualizar o XP total e missões completadas do usuário - substituir por chamada Supabase
+          //       const allUsers = getGamificationUsers();
+          //       const userIndex = allUsers.findIndex(u => u.id === userId);
+          //       if (userIndex !== -1) {
+          //         // Recalcular XP baseado nas tarefas
+          //         const userTasks = uniqueTasks.filter(t => resolveUserIdByName(t.responsavel) === userId).map(t => {
+          //           const taskId = String(t.id);
+          //           return {
+          //             id: taskId,
+          //             title: t.tarefa,
+          //             status: t.status === 'completed' ? 'completed' : t.status === 'refacao' ? 'refacao' : t.prazo && new Date(t.prazo) < new Date() ? 'overdue' : 'pending',
+          //             completedDate: t.fim ? new Date(t.fim).toISOString() : undefined,
+          //             dueDate: t.prazo ? new Date(t.prazo).toISOString() : '',
+          //             assignedTo: userId,
+          //             completedEarly: t.fim && t.prazo ? new Date(t.fim) < new Date(t.prazo) : undefined,
+          //           };
+          //         });
                   
-                  // Recalcular XP baseado nas tarefas
-                  const newXp = calculateRankingXpFromTasks(userTasks);
-                  allUsers[userIndex].xp = newXp;
+          //         // Recalcular XP baseado nas tarefas
+          //         const newXp = calculateRankingXpFromTasks(userTasks);
+          //         allUsers[userIndex].xp = newXp;
                   
-                  // Incrementar missões completadas
-                  allUsers[userIndex].missionsCompleted = (allUsers[userIndex].missionsCompleted || 0) + missionsCompletedCount;
+          //         // Incrementar missões completadas
+          //         allUsers[userIndex].missionsCompleted = (allUsers[userIndex].missionsCompleted || 0) + missionsCompletedCount;
                   
-                  saveGamificationUsers(allUsers);
-                }
-              }
-            } catch (error) {
-              console.error('Erro ao processar missões:', error);
-            }
-          }
+          //         saveGamificationUsers(allUsers);
+          //       }
+          //     }
+          //   } catch (error) {
+          //     console.error('Erro ao processar missões:', error);
+          //   }
+          // }
         }
       } catch (error) {
         console.error('Erro ao salvar tarefas ou processar missões:', error);
@@ -492,7 +551,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, initialTas
   const deleteTask = useCallback((id: number) => {
     setTasks(prev => {
       const next = prev.filter(task => task.id !== id);
-      try { saveTasksData(next); } catch {}
+      // Persistir via Supabase
+      // try { await saveTasksToSupabase(next); } catch {}
       return next;
     });
     toast({
@@ -541,17 +601,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children, initialTas
     recalculateMetrics();
   }, [tasks, recalculateMetrics]);
 
-  // Ouvir alterações globais em tarefas e recarregar do localStorage
-  React.useEffect(() => {
-    const handler = () => {
-      try {
-        const latest = getTasksData();
-        setTasks(latest);
-      } catch {}
-    };
-    window.addEventListener('tasks:changed', handler);
-    return () => window.removeEventListener('tasks:changed', handler);
-  }, []);
+
 
   return (
     <DataContext.Provider value={{

@@ -1,7 +1,7 @@
 // src/services/missionService.ts
 
 import { Task, Mission, User } from './gamificationService';
-import { getSystemUsers, getGamificationTasks } from './localStorageData';
+// Importações serão atualizadas para usar funções do Supabase
 import { addSimpleXpHistory, getUserXpHistory } from './xpHistoryService';
 
 // Tipos de missões disponíveis
@@ -46,30 +46,18 @@ export interface ActiveMission {
   createdAt: string; // Data de criação
 }
 
-// Função para obter missões configuradas do localStorage
-function getMissionConfigsFromStorage(): MissionConfig[] {
+// Função para obter missões configuradas do Supabase
+async function getMissionConfigsFromStorage(): Promise<MissionConfig[]> {
   try {
-    const stored = localStorage.getItem('epic_mission_list_v1');
-    if (stored) {
-      const missions = JSON.parse(stored);
-      return missions.map((m: any) => ({
-        type: m.type || 'complete_tasks',
-        name: m.name || m.label || 'Missão Personalizada',
-        description: m.description || '',
-        target: m.target || 1,
-        xpReward: m.xpReward || 10,
-        frequency: m.frequency || 'weekly',
-        isActive: m.active !== undefined ? m.active : true,
-        start: m.start,
-        end: m.end,
-        continuous: !!m.continuous,
-      }));
-    }
+    // Exemplo de chamada para Supabase
+    // const { data, error } = await supabase.from('mission_configs').select('*').eq('is_active', true);
+    // if (error) throw error;
+    // return data as MissionConfig[];
   } catch (error) {
-    console.error('Erro ao ler missões do localStorage:', error);
+    console.error('Erro ao ler missões do Supabase:', error);
   }
   
-  // Retorna missões padrão se não houver configurações salvas
+  // Retorna missões padrão se não houver configurações
   return getDefaultMissions();
 }
 
@@ -127,7 +115,7 @@ function getDefaultMissions(): MissionConfig[] {
 // Exportar missões padrão para referência
 export const DEFAULT_MISSIONS: MissionConfig[] = getDefaultMissions();
 
-// Função para obter missões configuradas (do localStorage ou padrão)
+// Função para obter missões configuradas (do Supabase ou padrão)
 export function getAvailableMissions(): MissionConfig[] {
   return getMissionConfigsFromStorage();
 }

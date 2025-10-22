@@ -1,6 +1,8 @@
 // src/config/gamification.ts
 // Configuração editável dos percentuais de produtividade por classificação
 
+import { supabase } from '@/lib/supabase';
+
 export type DeliveryClass = 'early' | 'on_time' | 'late' | 'refacao';
 
 export interface ProductivityConfig {
@@ -17,23 +19,57 @@ const DEFAULTS: ProductivityConfig = {
   refacao: 40,
 };
 
-const LS_KEY = 'epic_productivity_config_v1';
+const CONFIG_TABLE = 'productivity_config';
 
-export function getProductivityConfig(): ProductivityConfig {
+export async function getProductivityConfig(): Promise<ProductivityConfig> {
   try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (!raw) return { ...DEFAULTS };
-    const parsed = JSON.parse(raw);
-    return validateConfig({ ...DEFAULTS, ...parsed });
-  } catch {
+    const { data, error } = await supabase
+      .from(CONFIG_TABLE)
+      .select('*')
+      .single();
+    
+    if (error) {
+      console.warn('Erro ao carregar configuração de produtividade, usando padrões:', error);
+      return { ...DEFAULTS };
+    }
+    
+    if (!data) {
+      // Configuração não encontrada, retornar padrões
+      return { ...DEFAULTS };
+    }
+    
+    const config: ProductivityConfig = {
+      early: data.early || DEFAULTS.early,
+      on_time: data.on_time || DEFAULTS.on_time,
+      late: data.late || DEFAULTS.late,
+      refacao: data.refacao || DEFAULTS.refacao,
+    };
+    
+    return validateConfig(config);
+  } catch (error) {
+    console.error('Erro inesperado ao carregar configuração de produtividade:', error);
     return { ...DEFAULTS };
   }
 }
 
-export function setProductivityConfig(cfg: Partial<ProductivityConfig>) {
-  const current = getProductivityConfig();
-  const merged = validateConfig({ ...current, ...cfg });
-  localStorage.setItem(LS_KEY, JSON.stringify(merged));
+export async function setProductivityConfig(cfg: Partial<ProductivityConfig>) {
+  try {
+    const current = await getProductivityConfig();
+    const merged = validateConfig({ ...current, ...cfg });
+    
+    // Atualizar ou inserir configuração no Supabase
+    const { error } = await supabase
+      .from(CONFIG_TABLE)
+      .upsert({ id: 1, ...merged }, { onConflict: 'id' }); // Assuming id=1 for the main config
+    
+    if (error) {
+      console.error('Erro ao salvar configuração de produtividade:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Erro inesperado ao salvar configuração de produtividade:', error);
+    throw error;
+  }
 }
 
 function validateConfig(cfg: ProductivityConfig): ProductivityConfig {
@@ -46,7 +82,7 @@ function validateConfig(cfg: ProductivityConfig): ProductivityConfig {
   };
 }
 
-export function getPercentageForClass(cls: DeliveryClass): number {
-  const cfg = getProductivityConfig();
+export async function getPercentageForClass(cls: DeliveryClass): Promise<number> {
+  const cfg = await getProductivityConfig();
   return cfg[cls];
 }

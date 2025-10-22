@@ -1,8 +1,10 @@
 // src/config/streak.ts
 // Configuração e registro do bônus diário de login (streak)
 
+import { supabase } from '@/lib/supabase';
+
 export interface StreakAwardEntry {
-  userId: string;
+  user_id: string;
   date: string; // YYYY-MM-DD
   xp: number;
 }
@@ -14,68 +16,132 @@ interface StreakState {
   awards: StreakAwardEntry[];
 }
 
-const LS_KEY = 'epic_streak_state_v1';
-const DEFAULTS: StreakState = {
+const STREAK_CONFIG_TABLE = 'streak_config';
+const STREAK_AWARDS_TABLE = 'streak_awards';
+
+const DEFAULTS = {
   dailyBonusXp: 10,
   enabled: true,
   includeIn: { total: true, weekly: true, monthly: true },
-  awards: [],
 };
 
-function loadState(): StreakState {
+  async function loadConfig(): Promise<StreakState> {
+    try {
+      const { data, error } = await supabase
+        .from(STREAK_CONFIG_TABLE)
+        .select('config_key, config_value');
+
+      if (error) {
+        console.warn('Erro ao carregar configuração de streak, usando padrões:', error);
+        return { ...DEFAULTS, awards: [] } as StreakState;
+      }
+
+      if (!data || data.length === 0) {
+        // Configuração não encontrada, usar padrões
+        return { ...DEFAULTS, awards: [] } as StreakState;
+      }
+
+      // Converter dados da tabela em objeto de configuração
+      const config: any = {};
+      data.forEach(item => {
+        config[item.config_key] = item.config_value;
+      });
+
+      // Básica validação e merge com defaults
+      return {
+        dailyBonusXp: typeof config.daily_login_xp === 'string' ? parseInt(config.daily_login_xp) : DEFAULTS.dailyBonusXp,
+        enabled: true, // Sempre habilitado por padrão
+        includeIn: DEFAULTS.includeIn, // Usar defaults por enquanto
+        awards: []
+      } as StreakState;
+    } catch (error) {
+      console.warn('Erro inesperado ao carregar configuração de streak:', error);
+      return { ...DEFAULTS, awards: [] } as StreakState;
+    }
+  }
+
+async function loadAwards(): Promise<StreakAwardEntry[]> {
   try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (!raw) return { ...DEFAULTS };
-    const parsed = JSON.parse(raw);
-    // Básica validação e merge com defaults
-    return {
-      dailyBonusXp: typeof parsed.dailyBonusXp === 'number' ? parsed.dailyBonusXp : DEFAULTS.dailyBonusXp,
-      enabled: typeof parsed.enabled === 'boolean' ? parsed.enabled : DEFAULTS.enabled,
-      includeIn: parsed.includeIn && typeof parsed.includeIn === 'object' ? {
-        total: !!parsed.includeIn.total,
-        weekly: !!parsed.includeIn.weekly,
-        monthly: !!parsed.includeIn.monthly,
-      } : { ...DEFAULTS.includeIn },
-      awards: Array.isArray(parsed.awards) ? parsed.awards : [],
-    };
-  } catch {
-    return { ...DEFAULTS };
+    const { data, error } = await supabase
+      .from(STREAK_AWARDS_TABLE)
+      .select('*');
+    
+    if (error) {
+      console.warn('Erro ao carregar prêmios de streak, retornando vazio:', error);
+      return [];
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error('Erro inesperado ao carregar prêmios de streak:', error);
+    return [];
   }
 }
 
-function saveState(state: StreakState) {
-  localStorage.setItem(LS_KEY, JSON.stringify(state));
+async function saveConfig(config: Omit<StreakState, 'awards'>) {
+  try {
+    const { error } = await supabase
+      .from(STREAK_CONFIG_TABLE)
+      .upsert({ id: 1, ...config }, { onConflict: 'id' });
+    
+    if (error) {
+      console.error('Erro ao salvar configuração de streak:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Erro inesperado ao salvar configuração de streak:', error);
+    throw error;
+  }
 }
 
-export function getDailyStreakBonusXp(): number {
-  return loadState().dailyBonusXp;
+async function saveAward(award: StreakAwardEntry) {
+  try {
+    const { error } = await supabase
+      .from(STREAK_AWARDS_TABLE)
+      .insert([award]);
+
+    if (error) {
+      console.error('Erro ao salvar prêmio de streak:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Erro inesperado ao salvar prêmio de streak:', error);
+    throw error;
+  }
 }
 
-export function setDailyStreakBonusXp(xp: number) {
-  const s = loadState();
+export async function getDailyStreakBonusXp(): Promise<number> {
+  const config = await loadConfig();
+  return config.dailyBonusXp;
+}
+
+export async function setDailyStreakBonusXp(xp: number) {
+  const config = await loadConfig();
   const safe = Math.max(0, Math.round(xp));
-  s.dailyBonusXp = safe;
-  saveState(s);
+  config.dailyBonusXp = safe;
+  await saveConfig(config);
 }
 
-export function isStreakEnabled(): boolean {
-  return loadState().enabled;
+export async function isStreakEnabled(): Promise<boolean> {
+  const config = await loadConfig();
+  return config.enabled;
 }
 
-export function setStreakEnabled(enabled: boolean) {
-  const s = loadState();
-  s.enabled = !!enabled;
-  saveState(s);
+export async function setStreakEnabled(enabled: boolean) {
+  const config = await loadConfig();
+  config.enabled = !!enabled;
+  await saveConfig(config);
 }
 
-export function getStreakIncludeIn(): { total: boolean; weekly: boolean; monthly: boolean } {
-  return loadState().includeIn;
+export async function getStreakIncludeIn(): Promise<{ total: boolean; weekly: boolean; monthly: boolean }> {
+  const config = await loadConfig();
+  return config.includeIn;
 }
 
-export function setStreakIncludeIn(includeIn: Partial<{ total: boolean; weekly: boolean; monthly: boolean }>) {
-  const s = loadState();
-  s.includeIn = { ...s.includeIn, ...includeIn };
-  saveState(s);
+export async function setStreakIncludeIn(includeIn: Partial<{ total: boolean; weekly: boolean; monthly: boolean }>) {
+  const config = await loadConfig();
+  config.includeIn = { ...config.includeIn, ...includeIn };
+  await saveConfig(config);
 }
 
 function formatDate(d: Date): string {
@@ -85,28 +151,70 @@ function formatDate(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
-export function addStreakAwardIfNeeded(userId: string): { awarded: boolean; xp: number } {
-  const state = loadState();
-  if (!state.enabled) return { awarded: false, xp: 0 };
+export async function addStreakAwardIfNeeded(userId: string): Promise<{ awarded: boolean; xp: number }> {
+  const config = await loadConfig();
+  if (!config.enabled) return { awarded: false, xp: 0 };
+  
   const today = formatDate(new Date());
-  const already = state.awards.find(a => a.userId === userId && a.date === today);
-  if (already) return { awarded: false, xp: already.xp };
-  const xp = state.dailyBonusXp;
-  state.awards.push({ userId, date: today, xp });
-  saveState(state);
-  return { awarded: true, xp };
+  
+  // Verificar se já existe um prêmio para este usuário hoje
+  try {
+    const { data, error } = await supabase
+      .from(STREAK_AWARDS_TABLE)
+      .select('*')
+      .eq('user_id', userId)
+      .eq('date', today)
+      .single();
+    
+    if (data) {
+      // O usuário já recebeu o prêmio hoje
+      return { awarded: false, xp: data.xp };
+    }
+    
+    if (error && error.code !== 'PGRST116') { // PGRST116 means no rows returned
+      console.error('Erro ao verificar prêmio de streak existente:', error);
+    }
+  } catch (error) {
+    console.error('Erro inesperado ao verificar prêmio de streak existente:', error);
+  }
+  
+  // Adicionar novo prêmio
+  const xp = config.dailyBonusXp;
+  try {
+    await saveAward({ user_id: userId, date: today, xp });
+    return { awarded: true, xp };
+  } catch (error) {
+    console.error('Erro ao adicionar prêmio de streak:', error);
+    return { awarded: false, xp: 0 };
+  }
 }
 
-export function getUserStreakAwards(userId: string): StreakAwardEntry[] {
-  return loadState().awards.filter(a => a.userId === userId);
+export async function getUserStreakAwards(userId: string): Promise<StreakAwardEntry[]> {
+  try {
+    const { data, error } = await supabase
+      .from(STREAK_AWARDS_TABLE)
+      .select('*')
+      .eq('user_id', userId);
+    
+    if (error) {
+      console.error('Erro ao carregar prêmios de streak do usuário:', error);
+      return [];
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error('Erro inesperado ao carregar prêmios de streak do usuário:', error);
+    return [];
+  }
 }
 
-export function getUserStreakXpLifetime(userId: string): number {
-  return getUserStreakAwards(userId).reduce((acc, a) => acc + a.xp, 0);
+export async function getUserStreakXpLifetime(userId: string): Promise<number> {
+  const awards = await getUserStreakAwards(userId);
+  return awards.reduce((acc, a) => acc + a.xp, 0);
 }
 
-export function getUserStreakXpThisWeek(userId: string): number {
-  const awards = getUserStreakAwards(userId);
+export async function getUserStreakXpThisWeek(userId: string): Promise<number> {
+  const awards = await getUserStreakAwards(userId);
   const today = new Date();
   const firstDay = new Date(today);
   firstDay.setDate(today.getDate() - today.getDay());
@@ -119,8 +227,8 @@ export function getUserStreakXpThisWeek(userId: string): number {
     .reduce((acc, _, idx, arr) => acc + awards[idx].xp, 0);
 }
 
-export function getUserStreakXpThisMonth(userId: string): number {
-  const awards = getUserStreakAwards(userId);
+export async function getUserStreakXpThisMonth(userId: string): Promise<number> {
+  const awards = await getUserStreakAwards(userId);
   const today = new Date();
   const year = today.getFullYear();
   const month = today.getMonth();

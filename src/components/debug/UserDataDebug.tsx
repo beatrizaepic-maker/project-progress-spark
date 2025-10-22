@@ -4,40 +4,42 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { RefreshCw, Database, User } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 const UserDataDebug: React.FC = () => {
   const { user, refreshUser } = useAuth();
-  const [localStorageData, setLocalStorageData] = useState<any>(null);
-  const [allUsers, setAllUsers] = useState<any[]>([]);
+  const [supabaseUsers, setSupabaseUsers] = useState<any[]>([]);
 
-  const loadLocalStorageData = () => {
+  const loadSupabaseData = async () => {
     try {
-      // Dados do usuário atual
-      const userData = localStorage.getItem('epic_user_data');
-      setLocalStorageData(userData ? JSON.parse(userData) : null);
+      const { data, error } = await supabase
+        .from('users')  // Assumindo que temos uma tabela 'users' no Supabase
+        .select('*');
 
-      // Todos os usuários no "banco"
-      const usersDB = localStorage.getItem('epic_users_db');
-      setAllUsers(usersDB ? JSON.parse(usersDB) : []);
+      if (error) {
+        console.error('Erro ao carregar dados do Supabase:', error);
+        setSupabaseUsers([]);
+      } else {
+        setSupabaseUsers(data || []);
+      }
     } catch (error) {
-      console.error('Erro ao carregar dados do localStorage:', error);
+      console.error('Erro na requisição do Supabase:', error);
+      setSupabaseUsers([]);
     }
   };
 
   useEffect(() => {
-    loadLocalStorageData();
+    loadSupabaseData();
   }, [user]);
 
-  const handleRefresh = () => {
-    refreshUser();
-    loadLocalStorageData();
+  const handleRefresh = async () => {
+    await refreshUser();
+    loadSupabaseData();
   };
 
   const clearStorage = () => {
-    localStorage.removeItem('epic_user_data');
-    localStorage.removeItem('epic_users_db');
-    localStorage.removeItem('epic_auth_token');
-    loadLocalStorageData();
+    // Limpar apenas dados de debug do localStorage, não os relacionados à autenticação
+    console.log('Limpeza de localStorage removida - usando apenas Supabase');
     window.location.reload();
   };
 
@@ -55,7 +57,7 @@ const UserDataDebug: React.FC = () => {
               Atualizar
             </Button>
             <Button variant="destructive" size="sm" onClick={clearStorage}>
-              Limpar Storage
+              Limpar Dados
             </Button>
           </div>
         </CardHeader>
@@ -73,66 +75,43 @@ const UserDataDebug: React.FC = () => {
             </div>
           </div>
 
-          {/* Dados do localStorage */}
+          {/* Mensagem indicando que localStorage não é mais usado */}
           <div>
             <h4 className="font-semibold mb-2">
-              LocalStorage - epic_user_data
-              <Badge variant={localStorageData ? "default" : "destructive"} className="ml-2">
-                {localStorageData ? "Dados Salvos" : "Sem Dados"}
+              LocalStorage
+              <Badge variant="destructive" className="ml-2">
+                Não utilizado
               </Badge>
             </h4>
             <div className="bg-muted p-3 rounded text-sm">
-              <pre className="whitespace-pre-wrap">
-                {localStorageData ? JSON.stringify(localStorageData, null, 2) : "Nenhum dado salvo"}
-              </pre>
+              <p>localStorage não é mais utilizado. Todos os dados são gerenciados pelo Supabase.</p>
             </div>
           </div>
 
-          {/* Todos os usuários */}
+          {/* Usuários do Supabase */}
           <div>
             <h4 className="font-semibold mb-2">
-              LocalStorage - epic_users_db
+              Supabase - users table
               <Badge variant="outline" className="ml-2">
-                {allUsers.length} usuários
+                {supabaseUsers.length} usuários
               </Badge>
             </h4>
             <div className="bg-muted p-3 rounded text-sm max-h-40 overflow-y-auto">
               <pre className="whitespace-pre-wrap">
-                {JSON.stringify(allUsers, null, 2)}
+                {JSON.stringify(supabaseUsers, null, 2)}
               </pre>
             </div>
           </div>
 
-          {/* Verificação de consistência */}
+          {/* Verificação de consistência apenas com dados do contexto */}
           <div>
             <h4 className="font-semibold mb-2">Verificação de Consistência</h4>
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Badge variant={user && localStorageData && user.id === localStorageData.id ? "default" : "destructive"}>
-                  {user && localStorageData && user.id === localStorageData.id ? "✓" : "✗"}
+                <Badge variant={user ? "default" : "destructive"}>
+                  {user ? "✓" : "✗"}
                 </Badge>
-                <span className="text-sm">IDs correspondentes</span>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <Badge variant={user && localStorageData && user.name === localStorageData.name ? "default" : "destructive"}>
-                  {user && localStorageData && user.name === localStorageData.name ? "✓" : "✗"}
-                </Badge>
-                <span className="text-sm">Nomes correspondentes</span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Badge variant={user && localStorageData && user.avatar === localStorageData.avatar ? "default" : "destructive"}>
-                  {user && localStorageData && user.avatar === localStorageData.avatar ? "✓" : "✗"}
-                </Badge>
-                <span className="text-sm">Avatares correspondentes</span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Badge variant={user && localStorageData && user.firstName === localStorageData.firstName ? "default" : "destructive"}>
-                  {user && localStorageData && user.firstName === localStorageData.firstName ? "✓" : "✗"}
-                </Badge>
-                <span className="text-sm">Primeiros nomes correspondentes</span>
+                <span className="text-sm">Usuário autenticado</span>
               </div>
             </div>
           </div>

@@ -2,13 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Font Face - Ethnocentric */
-@font-face {
-  font-family: 'Ethnocentric';
-  src: url('./assets/fonts/ethnocentric rg.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
+/* Fonte alternativa para Ethnocentric */
+@import url('https://fonts.googleapis.com/css2?family=Oxanium:wght@200;300;400;500;600;700;800&display=swap');
+
+.ethnocentric-header {
+  font-family: 'Oxanium', sans-serif !important;
 }
 
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
@@ -421,12 +419,8 @@ html,
   background-color: #1A1A2E !important;
 }
 
-@font-face {
-  font-family: 'Ethnocentric';
-  src: url('./assets/fonts/ethnocentric rg.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-}
+/* Esta definição de fonte foi substituída por uma fonte da web para evitar erros de carregamento */
+/* Veja a definição em .ethnocentric-header acima */
 
 /* Classe específica para o header */
 .ethnocentric-header {

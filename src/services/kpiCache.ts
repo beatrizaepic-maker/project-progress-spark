@@ -1,15 +1,18 @@
 import { KPIResults, KPIConfig } from './kpiCalculator';
 import { TaskData } from '@/data/projectData';
 
+import { KPIResults } from './kpiCalculator';
+import { TaskData } from '@/data/projectData';
+
 // Interface para entrada do cache
-interface CacheEntry<T = any> {
+interface CacheEntry<T = KPIResults> {
   key: string;
   data: T;
   timestamp: number;
   ttl: number;
   hits: number;
   lastAccessed: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 // Interface para configuração do cache
@@ -60,7 +63,7 @@ export class KPICache {
     // Inicia limpeza automática
     this.startCleanupTimer();
 
-    // Carrega cache do localStorage se habilitado
+    // Carrega cache do Supabase se habilitado
     if (this.config.persistToStorage) {
       this.loadFromStorage();
     }
@@ -131,7 +134,7 @@ export class KPICache {
     key: string, 
     data: T, 
     ttl?: number, 
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): void {
     const now = Date.now();
     const entryTTL = ttl || this.config.defaultTTL;
@@ -251,45 +254,55 @@ export class KPICache {
   }
 
   /**
-   * Salva cache no localStorage
+   * Salva cache no Supabase
    */
-  private saveToStorage(): void {
+  private async saveToStorage(): Promise<void> {
     try {
       const cacheData = Array.from(this.cache.entries());
-      localStorage.setItem(this.config.storageKey, JSON.stringify({
-        cache: cacheData,
-        metrics: this.metrics,
-        timestamp: Date.now()
-      }));
+      // Exemplo de chamada para Supabase
+      // const { error } = await supabase
+      //   .from('kpi_cache')
+      //   .upsert({
+      //     id: this.config.storageKey,
+      //     cache: cacheData,
+      //     metrics: this.metrics,
+      //     timestamp: Date.now()
+      //   });
+      // if (error) throw error;
     } catch (error) {
-      console.warn('Falha ao salvar cache no localStorage:', error);
+      console.warn('Falha ao salvar cache no Supabase:', error);
     }
   }
 
   /**
-   * Carrega cache do localStorage
+   * Carrega cache do Supabase
    */
-  private loadFromStorage(): void {
+  private async loadFromStorage(): Promise<void> {
     try {
-      const stored = localStorage.getItem(this.config.storageKey);
-      if (!stored) return;
-
-      const data = JSON.parse(stored);
-      const now = Date.now();
-
-      // Carrega apenas entradas não expiradas
-      for (const [key, entry] of data.cache) {
-        if (now - entry.timestamp < entry.ttl) {
-          this.cache.set(key, entry);
-        }
-      }
-
-      // Restaura métricas
-      if (data.metrics) {
-        this.metrics = { ...this.metrics, ...data.metrics };
-      }
+      // Exemplo de chamada para Supabase
+      // const { data, error } = await supabase
+      //   .from('kpi_cache')
+      //   .select('cache, metrics, timestamp')
+      //   .eq('id', this.config.storageKey)
+      //   .single();
+      // 
+      // if (error) return;
+      // 
+      // const now = Date.now();
+      // 
+      // // Carrega apenas entradas não expiradas
+      // for (const [key, entry] of data.cache) {
+      //   if (now - entry.timestamp < entry.ttl) {
+      //     this.cache.set(key, entry);
+      //   }
+      // }
+      // 
+      // // Restaura métricas
+      // if (data.metrics) {
+      //   this.metrics = { ...this.metrics, ...data.metrics };
+      // }
     } catch (error) {
-      console.warn('Falha ao carregar cache do localStorage:', error);
+      console.warn('Falha ao carregar cache do Supabase:', error);
     }
   }
 

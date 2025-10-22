@@ -4,7 +4,7 @@ import Charts from "@/components/dashboard/Charts";
 import TaskTable from "@/components/dashboard/TaskTable";
 import DataEditor from "@/components/dashboard/DataEditor";
 import { DataProvider, useData } from "@/contexts/DataContext";
-import { getTasksData } from "@/services/localStorageData";
+import { getTasksData } from "@/services/supabaseDataService";
 import { InsufficientDataDisplay, DataQualityIndicator } from "@/components/ui/empty-state";
 
 const DashboardContent = () => {

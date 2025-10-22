@@ -3,91 +3,95 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { getProductivityConfig, setProductivityConfig } from '@/config/gamification';
+import { supabase } from '@/lib/supabase';
 
 const ControlPage: React.FC = () => {
   const cfg = getProductivityConfig();
   const [form, setForm] = useState({ ...cfg });
   const [season, setSeason] = useState<string>('Q4-2025');
-  const [allowDueDateRecalc, setAllowDueDateRecalc] = useState<boolean>(() => {
-    try { return localStorage.getItem('epic_flag_allow_due_recalc') === '1'; } catch { return false; }
-  });
+  const [allowDueDateRecalc, setAllowDueDateRecalc] = useState<boolean>(false);
   const [scoringMode, setScoringMode] = useState<'productivity' | 'legacy'>('productivity');
   const [health, setHealth] = useState<any>(null);
   const [metrics, setMetrics] = useState<any>(null);
   const [competitionFlags, setCompetitionFlags] = useState<Record<string, { enabled: boolean; scoringMode: 'productivity' | 'legacy'; rolloutPercent: number }>>({});
   const [compForm, setCompForm] = useState<{ id: string; enabled: boolean; scoringMode: 'productivity' | 'legacy'; rolloutPercent: number }>({ id: '', enabled: true, scoringMode: 'productivity', rolloutPercent: 100 });
 
-  useEffect(() => {
-    try { localStorage.setItem('epic_flag_allow_due_recalc', allowDueDateRecalc ? '1' : '0'); } catch {}
-  }, [allowDueDateRecalc]);
+
 
   useEffect(() => {
     // carrega flags atuais do servidor
-    fetch('http://localhost:3001/api/admin/flags')
-      .then(r => r.json())
-      .then(f => {
-        setScoringMode(f.scoringMode || 'productivity');
-        if (f.perCompetition) setCompetitionFlags(f.perCompetition);
-      })
-      .catch(() => {});
-    fetch('http://localhost:3001/api/health').then(r => r.json()).then(setHealth).catch(() => {});
-    fetch('http://localhost:3001/api/metrics').then(r => r.json()).then(setMetrics).catch(() => {});
+    (supabase.from('system_settings').select('scoringMode, perCompetition').single() as unknown as Promise<any>).then(({ data, error }: any) => {
+      if (!error && data) {
+        setScoringMode(data.scoringMode || 'productivity');
+        if (data?.perCompetition) setCompetitionFlags(data.perCompetition);
+      }
+    }).catch(() => {});
+    // Calcular saúde
+    (Promise.all([
+      supabase.from('users').select('*', { count: 'exact', head: true }),
+      supabase.from('tasks').select('*', { count: 'exact', head: true }),
+      supabase.from('user_gamification_profiles').select('*').limit(1)
+    ]) as Promise<any>).then(([users, tasks, profiles]: any) => {
+      setHealth({
+        users: users.count || 0,
+        tasks: tasks.count || 0,
+        cacheHasData: profiles.data && profiles.data.length > 0
+      });
+    }).catch(() => {});
+    // Buscar métricas
+    (supabase.from('project_metrics').select('*').single() as unknown as Promise<any>).then(({ data, error }: any) => {
+      if (!error) setMetrics(data);
+    }).catch(() => {});
     const iv = setInterval(() => {
-      fetch('http://localhost:3001/api/metrics').then(r => r.json()).then(setMetrics).catch(() => {});
+      (supabase.from('project_metrics').select('*').single() as unknown as Promise<any>).then(({ data, error }: any) => {
+        if (!error) setMetrics(data);
+      }).catch(() => {});
     }, 10000);
     return () => clearInterval(iv);
   }, []);
 
   const handleSave = () => {
-    setProductivityConfig(form);
+    setProductivityConfig(form as any);
     alert('Configurações de produtividade salvas.');
   };
 
   const handleReprocess = () => {
-    // Disparar job manual de reprocesso (dev server)
-    fetch('http://localhost:3001/api/reprocess', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ season })
-    })
-      .then(r => r.json())
-      .then(() => alert(`Reprocesso manual iniciado para a temporada: ${season}`))
-      .catch(() => alert('Falha ao iniciar reprocesso. Verifique o servidor.'));
+    (supabase.rpc('reprocess_ranking', { season }) as unknown as Promise<any>).then(({ data, error }: any) => {
+      if (error) throw error;
+      alert(`Reprocesso manual iniciado para a temporada: ${season}`);
+    }).catch(() => alert('Falha ao iniciar reprocesso. Verifique o banco.'));
   };
 
   const handleDryRun = () => {
-    fetch('http://localhost:3001/api/reprocess', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ season, dryRun: true })
-    }).then(r => r.json()).then(data => alert(`Dry-run: ${data.previewCount} registros no ranking pré-calculado`)).catch(() => alert('Falha no dry-run.'));
+    (supabase.rpc('reprocess_ranking', { season, dryRun: true }) as unknown as Promise<any>).then(({ data, error }: any) => {
+      if (error) throw error;
+      alert(`Dry-run: ${data?.previewCount || 0} registros no ranking pré-calculado`);
+    }).catch(() => alert('Falha no dry-run.'));
   };
 
   const handleApplyScoring = () => {
-    fetch('http://localhost:3001/api/admin/flags', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ scoringMode })
-    }).then(r => r.json()).then(() => alert(`Modo de pontuação aplicado: ${scoringMode}`)).catch(() => alert('Falha ao aplicar modo.'));
+    (supabase.from('system_settings').update({ scoringMode }).eq('id', 1) as unknown as Promise<any>).then(({ error }: any) => {
+      if (error) throw error;
+      alert(`Modo de pontuação aplicado: ${scoringMode}`);
+    }).catch(() => alert('Falha ao aplicar modo.'));
   };
 
   const handleSaveCompetitionFlag = () => {
     if (!compForm.id) { alert('Informe o ID da competição'); return; }
-    fetch('http://localhost:3001/api/admin/flags/competition', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
-        id: compForm.id,
-        enabled: compForm.enabled,
-        scoringMode: compForm.scoringMode,
-        rolloutPercent: compForm.rolloutPercent,
-      })
-    }).then(r => r.json()).then((data) => {
-      if (data?.perCompetition) setCompetitionFlags(data.perCompetition);
+    (supabase.from('system_settings').update({ perCompetition: { ...competitionFlags, [compForm.id]: { enabled: compForm.enabled, scoringMode: compForm.scoringMode, rolloutPercent: compForm.rolloutPercent } } }).eq('id', 1) as unknown as Promise<any>).then(({ data, error }: any) => {
+      if (error) throw error;
+      if (data && data[0]?.perCompetition) setCompetitionFlags(data[0].perCompetition);
       alert('Flag de competição salva.');
     }).catch(() => alert('Falha ao salvar flag.'));
   };
 
   const handleDeleteCompetitionFlag = (id: string) => {
-    fetch(`http://localhost:3001/api/admin/flags/competition/${encodeURIComponent(id)}`, { method: 'DELETE' })
-      .then(r => r.json()).then((data) => {
-        if (data?.perCompetition) setCompetitionFlags(data.perCompetition);
-      }).catch(() => {});
+    const updated = { ...competitionFlags };
+    delete updated[id];
+    (supabase.from('system_settings').update({ perCompetition: updated }).eq('id', 1) as unknown as Promise<any>).then(({ data, error }: any) => {
+      if (error) throw error;
+      if (data && data[0]?.perCompetition) setCompetitionFlags(data[0].perCompetition);
+    }).catch(() => {});
   };
 
   return (
@@ -160,9 +164,6 @@ const ControlPage: React.FC = () => {
                 <div>Idade cache ms: {metrics.cacheAgeMs ?? '-'}</div>
               </div>
             ) : 'carregando métricas...'}
-            <div className="mt-1 underline">
-              <a href="http://localhost:3001/api/metrics/prom" target="_blank" rel="noreferrer">Exportar Prometheus</a>
-            </div>
           </div>
         </CardContent>
       </Card>

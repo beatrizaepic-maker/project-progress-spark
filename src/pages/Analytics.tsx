@@ -1,13 +1,12 @@
 import React, { useState, useRef, Fragment } from 'react';
 import Charts from "@/components/dashboard/Charts";
-import { DataProvider, useData } from "@/contexts/DataContext";
-import { getTasksData } from "@/services/localStorageData";
 import { useAnalyticsKPIs } from "@/hooks/useKPIs";
 import KPILoadingIndicator from "@/components/ui/kpi-loading-indicator";
 import { motion, AnimatePresence } from "framer-motion";
 import { KPIVersionIndicator } from "@/components/ui/kpi-version-indicator";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useGlobalContext } from "@/contexts/GlobalContext";
 
 // Componente de partículas de explosão
 function SuccessParticles({ buttonRef }: { buttonRef: React.RefObject<HTMLButtonElement> }) {
@@ -56,7 +55,7 @@ function SuccessParticles({ buttonRef }: { buttonRef: React.RefObject<HTMLButton
 }
 
 const AnalyticsContent = () => {
-  const { tasks } = useData();
+  const { tasks, refreshData } = useGlobalContext();
   // Importa o contexto de autenticação
   const { user } = useAuth();
   const [showParticles, setShowParticles] = useState(false);
@@ -74,7 +73,7 @@ const AnalyticsContent = () => {
   const analyticsKPIs = useAnalyticsKPIs(validTasks, {
     debounceMs: 500, // Maior debounce para analytics (gráficos mais pesados)
     cacheTTL: 10 * 60 * 1000, // 10 minutos de cache
-    enableCache: true,
+    enableCache: false, // Desativado para usar Supabase
     onCalculationStart: () => {
       toast({
         title: "Atualizando Analytics",
@@ -106,6 +105,9 @@ const AnalyticsContent = () => {
     setIsButtonHidden(true);
     
     analyticsKPIs.invalidateCache();
+    
+    // Atualizar dados do backend
+    refreshData();
     
     // Partículas desaparecem em 1.6 segundos
     setTimeout(() => {
@@ -170,7 +172,7 @@ const AnalyticsContent = () => {
                   {analyticsKPIs.cacheHit ? (
                     <span className="inline-flex items-center gap-1">
                       <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-                      Cache
+                      Supabase
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1">
@@ -291,7 +293,7 @@ const AnalyticsContent = () => {
             <div className="flex justify-between items-center">
               <span className="card-content text-light-gray text-sm">Fonte dos Dados:</span>
               <span className="kpi-value text-white text-lg">
-                {analyticsKPIs.cacheHit ? '💾 Cache' : '🔄 Recalculado'}
+                {analyticsKPIs.cacheHit ? '💾 Supabase' : '🔄 Recalculado'}
               </span>
             </div>
             <div className="flex justify-between items-center">
@@ -324,11 +326,8 @@ const AnalyticsContent = () => {
 };
 
 const Analytics = () => {
-  const taskData = getTasksData();
   return (
-    <DataProvider initialTasks={taskData}>
-      <AnalyticsContent />
-    </DataProvider>
+    <AnalyticsContent />
   );
 };
 

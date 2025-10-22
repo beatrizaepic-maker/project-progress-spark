@@ -14,7 +14,7 @@ import { TaskData } from '@/data/projectData';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { toast } from '@/hooks/use-toast';
 import KanbanBoard from './KanbanBoard';
-import { getTasksData, saveTasksData, getSystemUsers, resolveUserIdByName } from '@/services/localStorageData';
+
 
 interface TaskFormData {
   tarefa: string;
@@ -74,7 +74,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, tasks, onSubmit, onCancel }) 
     // Converter nome para userId se estiver vazio
     const updatedFormData = {
       ...formData,
-      userId: formData.userId || resolveUserIdByName(formData.responsavel)
+      userId: formData.userId || formData.responsavel
     };
     
     onSubmit(updatedFormData);
@@ -105,10 +105,10 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, tasks, onSubmit, onCancel }) 
       <div>
         <Label htmlFor="responsavel">Responsável</Label>
         <Select
-          value={formData.userId || (formData.responsavel ? resolveUserIdByName(formData.responsavel) || undefined : undefined)}
+          value={formData.userId || (formData.responsavel || undefined)}
           onValueChange={(value) => {
             // Obter o nome do usuário com base no ID selecionado
-            const selectedUser = getSystemUsers().find(u => u.id === value);
+            const selectedUser = tasks.map(t => t.userId).filter(id => id).map(id => ({ id, name: id as string })).find(u => u.id === value);
             setFormData(prev => ({
               ...prev,
               userId: value,
@@ -120,8 +120,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, tasks, onSubmit, onCancel }) 
             <SelectValue placeholder="Selecione o responsável" />
           </SelectTrigger>
           <SelectContent>
-            {getSystemUsers().map(user => (
-              <SelectItem key={user.id} value={user.id}>{user.name}</SelectItem>
+            {Array.from(new Set(tasks.map(t => t.userId).filter(id => id))).map(userId => (
+              <SelectItem key={userId} value={userId as string}>{userId as string}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -209,14 +209,14 @@ const DataEditor: React.FC = () => {
   const [viewMode, setViewMode] = useState<'table' | 'kanban' | 'player'>('table');
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
 
-  // Resetar dados do localStorage com confirmação
+  // Resetar dados com confirmação
   const handleResetData = () => {
     if (!confirm('Tem certeza que deseja limpar todas as tarefas e métricas do projeto? Esta ação não pode ser desfeita.')) return;
     try {
       // Limpa tarefas e métricas
-      saveTasksData([]);
+      deleteTaskData(); // Esta função deve ser implementada para apagar todas as tarefas no Supabase
       // Atualiza contexto com o novo estado vazio
-      updateTasks(getTasksData());
+      updateTasks([]);
       toast({
         title: 'Dados resetados',
         description: 'Todas as tarefas e métricas foram limpas com sucesso.',

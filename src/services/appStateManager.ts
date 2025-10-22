@@ -10,6 +10,7 @@
 
 import React from 'react';
 import { TaskData } from '@/data/projectData';
+import { supabase } from '@/lib/supabase';
 
 export interface AppState {
   tasks: TaskData[];
@@ -39,17 +40,17 @@ export interface NavigationContext {
 class AppStateManager {
   private state: AppState;
   private listeners: Set<(state: AppState) => void> = new Set();
-  private storageKey = 'bea-system-app-state';
+  private userId: string | null = null; // ID do usuário atual para persistência no Supabase
 
   constructor() {
     this.state = this.initializeState();
-    this.loadFromStorage();
+    this.loadFromSupabase();
     
     // Configurar salvamento automático
-    window.addEventListener('beforeunload', () => this.saveToStorage());
+    window.addEventListener('beforeunload', () => this.saveToSupabase());
     
     // Salvar estado a cada 30 segundos
-    setInterval(() => this.saveToStorage(), 30000);
+    setInterval(() => this.saveToSupabase(), 30000);
   }
 
   private initializeState(): AppState {
@@ -105,13 +106,13 @@ class AppStateManager {
   }
 
   // Gerenciamento de Preferências
-  updateUserPreferences(preferences: Partial<UserPreferences>): void {
+  async updateUserPreferences(preferences: Partial<UserPreferences>): Promise<void> {
     this.state.userPreferences = {
       ...this.state.userPreferences,
       ...preferences
     };
     this.notifyListeners();
-    this.saveToStorage();
+    await this.saveToSupabase();
   }
 
   getUserPreferences(): UserPreferences {
@@ -170,26 +171,70 @@ class AppStateManager {
     });
   }
 
-  // Persistência
-  private saveToStorage(): void {
+  // Persistência via Supabase
+  private async saveToSupabase(): Promise<void> {
     try {
+      // Importar o cliente supabase apenas quando necessário para evitar ciclos de importação
+      const { supabase } = await import('@/lib/supabase');
+      
+      // Verificar se o usuário está autenticado
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        // Se não houver usuário autenticado, não faz sentido persistir preferências
+        return;
+      }
+      
+      const userId = session.user.id;
       const stateToSave = {
         userPreferences: this.state.userPreferences,
-        navigationContext: this.state.navigationContext,
+        navigationContext: {
+          ...this.state.navigationContext,
+          timestamp: this.state.navigationContext.timestamp.toISOString()
+        },
         lastUpdate: this.state.lastUpdate.toISOString()
       };
       
-      localStorage.setItem(this.storageKey, JSON.stringify(stateToSave));
+      const { error } = await supabase
+        .from('user_preferences')
+        .upsert({
+          user_id: userId,
+          preferences: stateToSave,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id' });
+      
+      if (error) throw error;
     } catch (error) {
-      console.warn('Erro ao salvar estado no localStorage:', error);
+      console.warn('Erro ao salvar estado no Supabase:', error);
     }
   }
 
-  private loadFromStorage(): void {
+  private async loadFromSupabase(): Promise<void> {
     try {
-      const saved = localStorage.getItem(this.storageKey);
-      if (saved) {
-        const parsedState = JSON.parse(saved);
+      // Importar o cliente supabase apenas quando necessário para evitar ciclos de importação
+      const { supabase } = await import('@/lib/supabase');
+      
+      // Verificar se o usuário está autenticado
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        // Se não houver usuário autenticado, usar configurações padrão
+        return;
+      }
+      
+      const userId = session.user.id;
+      
+      const { data, error } = await supabase
+        .from('user_preferences')
+        .select('preferences')
+        .eq('user_id', userId)
+        .single();
+      
+      if (error) {
+        // Se não encontrar preferências salvas, continuar com padrões
+        return;
+      }
+      
+      if (data && data.preferences) {
+        const parsedState = data.preferences;
         
         if (parsedState.userPreferences) {
           this.state.userPreferences = {
@@ -211,7 +256,7 @@ class AppStateManager {
         }
       }
     } catch (error) {
-      console.warn('Erro ao carregar estado do localStorage:', error);
+      console.warn('Erro ao carregar estado do Supabase:', error);
     }
   }
 
@@ -236,9 +281,36 @@ class AppStateManager {
   }
 
   // Limpeza e Reset
-  reset(): void {
+  async reset(): Promise<void> {
     this.state = this.initializeState();
-    localStorage.removeItem(this.storageKey);
+    
+    try {
+      // Importar o cliente supabase apenas quando necessário para evitar ciclos de importação
+      const { supabase } = await import('@/lib/supabase');
+      
+      // Verificar se o usuário está autenticado
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        // Se não houver usuário autenticado, apenas reiniciar o estado local
+        this.notifyListeners();
+        return;
+      }
+      
+      const userId = session.user.id;
+      
+      // Remover as preferências do usuário do Supabase
+      const { error } = await supabase
+        .from('user_preferences')
+        .delete()
+        .eq('user_id', userId);
+      
+      if (error) {
+        console.error('Erro ao remover preferências do usuário do Supabase:', error);
+      }
+    } catch (error) {
+      console.error('Erro ao remover preferências do usuário do Supabase:', error);
+    }
+    
     this.notifyListeners();
   }
 
@@ -263,8 +335,8 @@ export function useAppState() {
   return {
     state,
     updateTasks: (tasks: TaskData[]) => appStateManager.updateTasks(tasks),
-    updatePreferences: (prefs: Partial<UserPreferences>) => 
-      appStateManager.updateUserPreferences(prefs),
+    updatePreferences: async (prefs: Partial<UserPreferences>) => 
+      await appStateManager.updateUserPreferences(prefs),
     updateNavigation: (page: string, action?: string) => 
       appStateManager.updateNavigationContext(page, action),
     getMetrics: () => appStateManager.getAppMetrics(),

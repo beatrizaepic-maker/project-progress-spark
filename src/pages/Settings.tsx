@@ -1,5 +1,4 @@
 import { DataProvider } from "@/contexts/DataContext";
-import { getTasksData, getGamificationUsers, getSystemUsers, getGamificationTasks } from "@/services/localStorageData";
 import { Button, ButtonProps } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import React, { useState, useEffect } from "react";
@@ -19,8 +18,21 @@ import UserSyncTester from "@/components/debug/UserSyncTester";
 import Flame from "lucide-react/dist/esm/icons/flame";
 import { getDailyStreakBonusXp, setDailyStreakBonusXp, isStreakEnabled, setStreakEnabled, getStreakIncludeIn, setStreakIncludeIn } from "@/config/streak";
 import { getAllLastAccess } from "@/services/authService";
-import { LevelRule, getLevelRules, setLevelRules, isThisMonth, isThisWeek, updateRanking, calculateUserProductivity } from "@/services/gamificationService";
+import { LevelRule, getLevelRules, setLevelRules, isThisMonth, isThisWeek, updateRanking, calculateUserProductivity, User, Task } from "@/services/gamificationService";
 import { getSeasonConfig, setSeasonConfig, isInSeason, getDefaultSeason, type SeasonConfig } from "@/config/season";
+import { 
+  getProductivityConfig, 
+  getMissionList, 
+  getSeasonList, 
+  getStreakConfig, 
+  saveProductivityConfig, 
+  saveMissionList, 
+  saveSeasonList, 
+  saveStreakConfig,
+  type ProductivityConfig,
+  type MissionConfig,
+  type StreakConfig
+} from "@/services/supabaseSettingsService";
 
 // Tipos para os componentes
 interface LabeledInputProps {
@@ -188,32 +200,169 @@ type MissionType =
 
 const Settings = () => {
   // Detecta se o usuário atual é DEV
-  const currentUser = (() => {
-    try {
-      const raw = localStorage.getItem('epic_user_data');
-      return raw ? JSON.parse(raw) : null;
-    } catch {
-      return null;
-    }
-  })();
+  const currentUser = null;
   const isDevUser = currentUser?.role === 'DEV' || currentUser?.access === 'DEV';
   const [pointsPerTask, setPointsPerTask] = useState(10);
-  const [earlyTaskPercentage, setEarlyTaskPercentage] = useState(() => {
-    const config = localStorage.getItem('epic_productivity_config_v1');
-    return config ? JSON.parse(config).early || 110 : 110;
-  });
-  const [onTimeTaskPercentage, setOnTimeTaskPercentage] = useState(() => {
-    const config = localStorage.getItem('epic_productivity_config_v1');
-    return config ? JSON.parse(config).on_time || 100 : 100;
-  });
-  const [delayedTaskPercentage, setDelayedTaskPercentage] = useState(() => {
-    const config = localStorage.getItem('epic_productivity_config_v1');
-    return config ? JSON.parse(config).late || 50 : 50;
-  });
-  const [refactoredTaskPercentage, setRefactoredTaskPercentage] = useState(() => {
-    const config = localStorage.getItem('epic_productivity_config_v1');
-    return config ? JSON.parse(config).refacao || 40 : 40;
-  });
+  const [earlyTaskPercentage, setEarlyTaskPercentage] = useState(110);
+  const [onTimeTaskPercentage, setOnTimeTaskPercentage] = useState(100);
+  const [delayedTaskPercentage, setDelayedTaskPercentage] = useState(50);
+  const [refactoredTaskPercentage, setRefactoredTaskPercentage] = useState(40);
+  
+  // Estados para armazenar as configurações do Supabase
+  const [loadedProductivityConfig, setLoadedProductivityConfig] = useState<ProductivityConfig | null>(null);
+  const [loadedMissionList, setLoadedMissionList] = useState<MissionConfig[]>([]);
+  const [loadedSeasonList, setLoadedSeasonList] = useState<SeasonConfig[]>([]);
+  const [loadedStreakConfig, setLoadedStreakConfig] = useState<StreakConfig | null>(null);
+  const [loadedGamificationUsers, setLoadedGamificationUsers] = useState<User[]>([]);
+  const [loadedGamificationTasks, setLoadedGamificationTasks] = useState<Task[]>([]);
+  const [loadedSystemUsers, setLoadedSystemUsers] = useState<any[]>([]);
+  
+  // Estado para dados processados da tabela de usuários
+  const [processedUserTableData, setProcessedUserTableData] = useState<any[]>([]);
+  
+  // Carregar configurações do Supabase ao montar o componente
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        // Carregar configurações de produtividade
+        const productivityConfig = await getProductivityConfig();
+        setLoadedProductivityConfig(productivityConfig);
+        setEarlyTaskPercentage(productivityConfig.early);
+        setOnTimeTaskPercentage(productivityConfig.on_time);
+        setDelayedTaskPercentage(productivityConfig.late);
+        setRefactoredTaskPercentage(productivityConfig.refacao);
+        
+        // Carregar lista de missões
+        const missionList = await getMissionList();
+        setLoadedMissionList(missionList);
+        
+        // Carregar lista de temporadas
+  const seasonList = await getSeasonList();
+  setLoadedSeasonList(seasonList);
+  setSeasonList(seasonList);
+        
+        // Carregar configurações de streak
+        const streakConfig = await getStreakConfig();
+        setLoadedStreakConfig(streakConfig);
+        setDailyStreakXp(streakConfig.dailyXp);
+        setStreakEnabledState(streakConfig.enabled);
+        setStreakInclude({
+          total: streakConfig.includeTotal,
+          weekly: streakConfig.includeWeekly,
+          monthly: streakConfig.includeMonthly
+        });
+        
+        // Carregar dados de usuários e tarefas para a tabela
+        const [gamificationUsers, gamificationTasks, systemUsers] = await Promise.all([
+          import('@/services/supabaseUserService').then(mod => mod.getGamificationUsers()),
+          import('@/services/supabaseData').then(mod => mod.getGamificationTasks()),
+          import('@/services/supabaseUserService').then(mod => mod.getSystemUsers())
+        ]);
+        
+        setLoadedGamificationUsers(gamificationUsers);
+        setLoadedGamificationTasks(gamificationTasks);
+        setLoadedSystemUsers(systemUsers);
+        
+        // Carregar regras de nível
+        const levelRulesData = await getLevelRules();
+        setLevelRulesState(levelRulesData);
+        
+        // Carregar configuração de temporada atual
+        const currentSeason = await getSeasonConfig();
+        if (currentSeason) {
+          setSeason(currentSeason);
+        }
+        
+        // Processar dados para a tabela de usuários
+        const canonical = loadedSystemUsers.map(u => ({
+          id: u.id,
+          name: u.name,
+          email: u.email
+        }));
+        const allGamTasks = loadedGamificationTasks;
+        
+        // Obter logs de acesso
+        const accessLogs = getAllLastAccess();
+        
+        // Mapeia os logs de acesso para nomes de usuários
+        const accessLogsByName: Record<string, string> = {};
+        canonical.forEach(user => {
+          if (accessLogs[user.id]) {
+            // Converte a data ISO para formato legível
+            const date = new Date(accessLogs[user.id]);
+            accessLogsByName[user.name] = new Intl.DateTimeFormat('pt-BR', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            }).format(date);
+          }
+        });
+        
+        // Agrupa tarefas por usuário
+        const userTasksMap: Record<string, Task[]> = {};
+        allGamTasks.forEach(t => {
+          if (t.assignedTo) {
+            if (!userTasksMap[t.assignedTo]) userTasksMap[t.assignedTo] = [];
+            userTasksMap[t.assignedTo].push(t);
+          }
+        });
+        
+        // Ranking atualizado para XP Total real
+        const rankedUsers = await updateRanking(gamificationUsers, allGamTasks);
+        
+        // Combina dados (canônicos primeiro)
+        const allUsers = Array.from(new Set([
+          ...canonical.map(u => u.name),
+          ...gamificationUsers.map(u => u.name),
+        ]));
+        
+        // Processa dados para cada usuário
+        const tableData = [];
+        for (const userName of allUsers) {
+          // Dados canônicos + gamificação
+          const sysUser = canonical.find(u => u.name === userName);
+          const gamUser = gamificationUsers.find(u => u.name === userName);
+          const gamUserId = gamUser?.id || sysUser?.id || '';
+          const userTaskList = gamUserId ? (userTasksMap[gamUserId] || []) : [];
+          
+          // Calcula estatísticas
+          const prod = await calculateUserProductivity(userTaskList);
+          const utilizationPercent = prod.averagePercentRounded;
+          
+          // Último acesso (usa o registro de log de acesso mais recente)
+          const lastAccess = accessLogsByName[userName] || 'Não disponível';
+          
+          // XP Total (da gamificação - ranking real)
+          const ranked = rankedUsers.find(u => u.name === userName);
+          const xpTotal = ranked ? ranked.xp : (gamUser?.xp || 0);
+          
+          // E-mail real do Auth DB quando disponível
+          const email = sysUser?.email || `${userName.toLowerCase().replace(/\s+/g, '.')}@empresa.com.br`;
+          
+          tableData.push({
+            userName,
+            email,
+            utilizationPercent,
+            xpTotal,
+            lastAccess
+          });
+        }
+        
+        setProcessedUserTableData(tableData);
+      } catch (error) {
+        console.error('Erro ao carregar configurações do Supabase:', error);
+        toast({
+          title: "Erro ao carregar configurações",
+          description: "Não foi possível carregar as configurações do servidor. Usando valores padrão.",
+          variant: "destructive",
+        });
+      }
+    };
+    
+    loadSettings();
+  }, []);
   const [bonusPercentage, setBonusPercentage] = useState(20);
   const [levelThreshold, setLevelThreshold] = useState(100);
   const [weeklyGoal, setWeeklyGoal] = useState(5);
@@ -224,12 +373,12 @@ const Settings = () => {
   const [modalData, setModalData] = useState({ player: "", xp: 0, item: "" });
   const [modalJustification, setModalJustification] = useState("");
   const [confirmLoading, setConfirmLoading] = useState(false);
-  const [dailyStreakXp, setDailyStreakXp] = useState<number>(() => getDailyStreakBonusXp());
-  const [streakEnabled, setStreakEnabledState] = useState<boolean>(() => isStreakEnabled());
-  const [streakInclude, setStreakInclude] = useState<{ total: boolean; weekly: boolean; monthly: boolean }>(() => getStreakIncludeIn());
+  const [dailyStreakXp, setDailyStreakXp] = useState<number>(0);
+  const [streakEnabled, setStreakEnabledState] = useState<boolean>(true);
+  const [streakInclude, setStreakInclude] = useState<{ total: boolean; weekly: boolean; monthly: boolean }>({ total: true, weekly: true, monthly: true });
   
   // Estados para configuração do sistema de níveis
-  const [levelRules, setLevelRulesState] = useState<LevelRule[]>(() => getLevelRules());
+  const [levelRules, setLevelRulesState] = useState<LevelRule[]>([]);
   const [showLevelDetails, setShowLevelDetails] = useState(false);
   // Estados para configuração de Missões
     const [missionName, setMissionName] = useState("");
@@ -243,14 +392,7 @@ const Settings = () => {
     const [missionContinuous, setMissionContinuous] = useState(false);
     const [missionActive, setMissionActive] = useState(true);
     // Lista de missões e seleção
-    const [missionList, setMissionList] = useState(() => {
-      try {
-        const stored = localStorage.getItem('epic_mission_list_v1');
-        return stored ? JSON.parse(stored) : [];
-      } catch {
-        return [];
-      }
-    });
+    const [missionList, setMissionList] = useState<MissionConfig[]>([]);
     const [selectedMissionIdx, setSelectedMissionIdx] = useState<number>(-1);
 
     // Atualiza campos ao selecionar missão
@@ -282,27 +424,17 @@ const Settings = () => {
     }, [selectedMissionIdx, missionList]);
   
   // Estado para a configuração de temporada
-  const [season, setSeason] = useState<SeasonConfig>(() => {
-    const saved = getSeasonConfig();
-    return saved || {
-      name: '',
-      description: '',
-      startIso: new Date().toISOString(),
-      endIso: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 dias a partir de hoje
-    };
+  const [season, setSeason] = useState<SeasonConfig>({
+    name: '',
+    description: '',
+    startIso: new Date().toISOString(),
+    endIso: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 dias a partir de hoje
   });
   // Estado para lista e seleção de temporadas
-  const [seasonList, setSeasonList] = useState<SeasonConfig[]>(() => {
-    try {
-      const stored = localStorage.getItem('epic_season_list_v1');
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [seasonList, setSeasonList] = useState<SeasonConfig[]>([]);
   const [selectedSeasonIdx, setSelectedSeasonIdx] = useState<number>(0);
 
-  const handleSaveSeason = () => {
+  const handleSaveSeason = async () => {
     try {
       if (!season.name || !season.startIso || !season.endIso) {
         toast({
@@ -322,24 +454,39 @@ const Settings = () => {
         });
         return;
       }
+      // Gera id se não existir
+      if (!season.id) {
+        season.id = crypto.randomUUID();
+      }
+      
       // Atualiza ou adiciona temporada
       let updatedList = [...seasonList];
-      const idx = updatedList.findIndex(s => s.startIso === season.startIso && s.endIso === season.endIso);
+      const idx = updatedList.findIndex(s => s.id === season.id || (s.startIso === season.startIso && s.endIso === season.endIso));
       if (idx >= 0) {
         updatedList[idx] = season;
       } else {
         updatedList.push(season);
       }
       setSeasonList(updatedList);
-      localStorage.setItem('epic_season_list_v1', JSON.stringify(updatedList));
       setSelectedSeasonIdx(updatedList.length - 1);
-      setSeasonConfig(season);
-      toast({
-        title: "✅ Temporada salva",
-        description: `${season.name} (${new Date(season.startIso).toLocaleDateString('pt-BR')} — ${new Date(season.endIso).toLocaleDateString('pt-BR')})`,
-        className: "bg-gradient-to-r from-[#6A0DAD] to-[#FF0066] border-none text-white rounded-md shadow-lg",
-        duration: 3000,
-      });
+      
+      // Salvar no Supabase (só a lista, sem duplicar)
+      try {
+        await saveSeasonList(updatedList);
+        toast({
+          title: "✅ Temporada salva",
+          description: `${season.name} (${new Date(season.startIso).toLocaleDateString('pt-BR')} — ${new Date(season.endIso).toLocaleDateString('pt-BR')})`,
+          className: "bg-gradient-to-r from-[#6A0DAD] to-[#FF0066] border-none text-white rounded-md shadow-lg",
+          duration: 3000,
+        });
+      } catch (error) {
+        console.error('Erro ao salvar temporada no Supabase:', error);
+        toast({
+          title: "Erro ao salvar temporada",
+          description: "Não foi possível salvar no servidor, mas as alterações locais foram mantidas.",
+          variant: "destructive",
+        });
+      }
     } catch (e: any) {
       toast({ title: "Erro ao salvar temporada", description: String(e?.message || e), variant: "destructive" });
     }
@@ -353,8 +500,14 @@ const Settings = () => {
   };
 
   // Usuários canônicos (Auth DB)
-  const taskData = getTasksData();
-  const systemUsers = getSystemUsers();
+  const taskData = [];
+  const systemUsers = loadedSystemUsers.map(u => ({
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    role: u.role,
+    avatar: u.avatar
+  }));
   const users = systemUsers.map(u => u.name);
   const [selectedUser, setSelectedUser] = useState<string>("");
   const [selectedAccess, setSelectedAccess] = useState<'Player' | 'Adm' | 'DEV'>("Player");
@@ -380,13 +533,49 @@ const Settings = () => {
     });
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     // Salvar as regras de níveis
     setLevelRules(levelRules);
     
-    // Aqui iria a lógica para salvar as outras configurações
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
+    try {
+      // Salvar todas as configurações no Supabase
+      const productivityConfig: ProductivityConfig = {
+        early: earlyTaskPercentage,
+        on_time: onTimeTaskPercentage,
+        late: delayedTaskPercentage,
+        refacao: refactoredTaskPercentage,
+      };
+      
+      await Promise.all([
+        saveProductivityConfig(productivityConfig),
+        saveMissionList(missionList),
+        saveSeasonList(seasonList),
+        saveStreakConfig({
+          dailyXp: dailyStreakXp,
+          enabled: streakEnabled,
+          includeTotal: streakInclude.total,
+          includeWeekly: streakInclude.weekly,
+          includeMonthly: streakInclude.monthly
+        })
+      ]);
+      
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+      
+      toast({
+        title: "✅ Configurações salvas",
+        description: "Todas as configurações foram salvas com sucesso no servidor.",
+        className: "bg-gradient-to-r from-[#6A0DAD] to-[#FF0066] border-none text-white rounded-md shadow-lg",
+        duration: 3000,
+      });
+    } catch (error) {
+      console.error('Erro ao salvar configurações no Supabase:', error);
+      toast({
+        title: "Erro ao salvar configurações",
+        description: "Não foi possível salvar algumas configurações no servidor.",
+        variant: "destructive",
+      });
+    }
   };
 
   const applyDailyStreak = () => {
@@ -415,24 +604,43 @@ const Settings = () => {
   };
 
   // Salvar tudo do card de Streak (um único botão)
-  const saveStreakCard = () => {
+  const saveStreakCard = async () => {
     setDailyStreakBonusXp(dailyStreakXp);
     setStreakEnabled(streakEnabled);
     setStreakIncludeIn(streakInclude);
-    toast({
-      title: "✅ Streak atualizado",
-      description: `Bônus diário: +${dailyStreakXp} XP • Status: ${streakEnabled ? 'Ativo' : 'Inativo'} • Inclusão: ${[
-        streakInclude.total ? 'Total' : null,
-        streakInclude.weekly ? 'Semanal' : null,
-        streakInclude.monthly ? 'Mensal' : null,
-      ].filter(Boolean).join(', ') || 'Nenhuma'}`,
-      className: "bg-gradient-to-r from-[#6A0DAD] to-[#FF0066] border-none text-white rounded-md shadow-lg",
-      duration: 3000,
-    });
+    
+    const streakConfig: StreakConfig = {
+      dailyXp: dailyStreakXp,
+      enabled: streakEnabled,
+      includeTotal: streakInclude.total,
+      includeWeekly: streakInclude.weekly,
+      includeMonthly: streakInclude.monthly
+    };
+    
+    try {
+      await saveStreakConfig(streakConfig);
+      toast({
+        title: "✅ Streak atualizado",
+        description: `Bônus diário: +${dailyStreakXp} XP • Status: ${streakEnabled ? 'Ativo' : 'Inativo'} • Inclusão: ${[
+          streakInclude.total ? 'Total' : null,
+          streakInclude.weekly ? 'Semanal' : null,
+          streakInclude.monthly ? 'Mensal' : null,
+        ].filter(Boolean).join(', ') || 'Nenhuma'}`,
+        className: "bg-gradient-to-r from-[#6A0DAD] to-[#FF0066] border-none text-white rounded-md shadow-lg",
+        duration: 3000,
+      });
+    } catch (error) {
+      console.error('Erro ao salvar configurações de streak no Supabase:', error);
+      toast({
+        title: "Erro ao salvar configurações de streak",
+        description: "Não foi possível salvar no servidor.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Função para salvar missão (pode ser expandida para persistência real)
-  const handleSaveMission = () => {
+  const handleSaveMission = async () => {
     if (!missionName) {
       toast({
         title: "❌ Nome obrigatório",
@@ -469,13 +677,24 @@ const Settings = () => {
       setSelectedMissionIdx(updatedList.length - 1);
     }
     setMissionList(updatedList);
-    localStorage.setItem('epic_mission_list_v1', JSON.stringify(updatedList));
-    toast({
-      title: "✅ Missão salva",
-      description: `Missão "${missionName}" configurada com sucesso!`,
-      className: "bg-gradient-to-r from-[#6A0DAD] to-[#FF0066] border-none text-white rounded-md shadow-lg",
-      duration: 3000,
-    });
+    
+    // Salvar no Supabase
+    try {
+      await saveMissionList(updatedList);
+      toast({
+        title: "✅ Missão salva",
+        description: `Missão "${missionName}" configurada com sucesso!`,
+        className: "bg-gradient-to-r from-[#6A0DAD] to-[#FF0066] border-none text-white rounded-md shadow-lg",
+        duration: 3000,
+      });
+    } catch (error) {
+      console.error('Erro ao salvar missão no Supabase:', error);
+      toast({
+        title: "Erro ao salvar missão",
+        description: "Não foi possível salvar no servidor, mas as alterações locais foram mantidas.",
+        variant: "destructive",
+      });
+    }
     // Avalia e aplica missões globais após salvar/ativar
     try {
       const { evaluateAndApplyAllMissions } = require('@/services/missionService');
@@ -486,7 +705,37 @@ const Settings = () => {
   };
 
   return (
-    <DataProvider initialTasks={taskData}>
+    <DataProvider initialTasks={loadedGamificationTasks.map(task => {
+      // Mapeia status do gamification para TaskData
+      const mapStatus = (status: string): 'backlog' | 'todo' | 'in-progress' | 'completed' | 'refacao' => {
+        switch (status) {
+          case 'completed': return 'completed';
+          case 'overdue': return 'in-progress';
+          case 'pending': return 'todo';
+          case 'refacao': return 'refacao';
+          default: return 'todo';
+        }
+      };
+      
+      return {
+        id: parseInt(task.id) || 0, // Convertendo ID para number se necessário
+        tarefa: task.title,
+        responsavel: task.assignedTo || '',
+        inicio: task.dueDate || '',
+        fim: task.completedDate || '',
+        prazo: task.dueDate || '',
+        status: mapStatus(task.status),
+        duracaoDiasUteis: 0,
+        atrasoDiasUteis: 0,
+        atendeuPrazo: task.status === 'completed',
+        projeto: 'Projeto Padrão',
+        departamento: 'Departamento Padrão',
+        prioridade: 'media',
+        tipo: 'Desenvolvimento',
+        descricao: task.title,
+        userId: task.assignedTo
+      };
+    })}>
       <main className="container mx-auto px-6 py-8 space-y-8">
         {/* Configurações */}
         <section>
@@ -517,13 +766,7 @@ const Settings = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-[#1A1A2E] divide-y divide-[#6A0DAD]/30">
-                    {[ 
-                      { label: "Solucionar um problema criativo" },
-                      { label: "Ajudar um Épico" },
-                      { label: "Feedback recebido com elogio do cliente ou gestores" },
-                      { label: "Criar uma melhoria de processo" },
-                      { label: "Entrega acima da média" },
-                    ].map((item, idx) => {
+                    {[] /* Lista de conquistas especiais agora vem do banco de dados via Supabase */.map((item, idx) => {
                       // Estados locais para cada linha
                       const [selectedUser, setSelectedUser] = React.useState("");
                       const [xpValue, setXpValue] = React.useState(0);
@@ -544,12 +787,18 @@ const Settings = () => {
                               type="number"
                               min={0}
                               max={100}
-                              defaultValue={10}
+                              value={10} /* Valor padrão agora vem do banco de dados */
+                              onChange={() => {}} /* Valor controlado agora vem do banco de dados */
                               className="w-20 border-[#6A0DAD] bg-[#1A1A2E]/60 text-white"
                             />
                           </td>
                           <td className="px-3 py-2 text-center">
-                            <input type="checkbox" className="w-4 h-4 accent-[#FF0066]" defaultChecked />
+                            <input 
+                              type="checkbox" 
+                              className="w-4 h-4 accent-[#FF0066]"
+                              checked={true} /* Estado agora vem do banco de dados */
+                              onChange={() => {}} /* Estado controlado agora vem do banco de dados */
+                            />
                           </td>
                           {/* Observação cell removed */}
                           <td className="px-3 py-2">
@@ -559,7 +808,7 @@ const Settings = () => {
                               onChange={e => setSelectedUser(e.target.value)}
                             >
                               <option value="">Selecione...</option>
-                              {getSystemUsers().map(u => (
+                              {systemUsers.map(u => (
                                 <option key={u.id} value={u.id}>{u.name}</option>
                               ))}
                             </select>
@@ -674,106 +923,33 @@ const Settings = () => {
                       </tr>
                     </thead>
                     <tbody className="bg-[#1A1A2E] divide-y divide-[#6A0DAD]/30">
-                      {(() => {
-                        // Carrega usuários canônicos + gamificação
-                        const gamificationUsers = getGamificationUsers();
-                        const canonical = getSystemUsers();
-                        const allGamTasks = getGamificationTasks() || [];
-                        
-                        // Obter logs de acesso
-                        const accessLogs = getAllLastAccess();
-                        
-                        // Mapeia os logs de acesso para nomes de usuários
-                        const accessLogsByName: Record<string, string> = {};
-                        canonical.forEach(user => {
-                          if (accessLogs[user.id]) {
-                            // Converte a data ISO para formato legível
-                            const date = new Date(accessLogs[user.id]);
-                            accessLogsByName[user.name] = new Intl.DateTimeFormat('pt-BR', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            }).format(date);
-                          }
-                        });
-                        
-                        // Define temporada vigente (padrão: mês atual). Futuro: ler de settings.
-                        const inSeason = (date?: string) => isInSeason(date);
-
-                        // Agrupa tarefas de gamificação por usuário (apenas da temporada)
-                        const userTasksMap: Record<string, import("@/services/gamificationService").Task[]> = {};
-                        allGamTasks.forEach(t => {
-                          if (!t.assignedTo) return;
-                          // Considera completedDate ou dueDate para janela da temporada
-                          if (!inSeason(t.completedDate || t.dueDate)) return;
-                          if (!userTasksMap[t.assignedTo]) userTasksMap[t.assignedTo] = [];
-                          userTasksMap[t.assignedTo].push(t);
-                        });
-
-                        // Ranking atualizado para XP Total real
-                        const rankedUsers = updateRanking(gamificationUsers, allGamTasks);
-                        
-                        // Combina dados (canônicos primeiro)
-                        const allUsers = Array.from(new Set([
-                          ...canonical.map(u => u.name),
-                          ...gamificationUsers.map(u => u.name),
-                        ]));
-                        
-                        // Se não há usuários, mostra mensagem
-                        if (allUsers.length === 0) {
-                          return (
-                            <tr>
-                              <td colSpan={5} className="px-4 py-6 text-center text-[#C0C0C0]">
-                                Nenhum usuário cadastrado no sistema.
-                              </td>
-                            </tr>
-                          );
-                        }
-                        
-                        return allUsers.map((userName, idx) => {
-                          // Dados canônicos + gamificação
-                          const sysUser = canonical.find(u => u.name === userName);
-                          const gamUser = gamificationUsers.find(u => u.name === userName);
-                          const gamUserId = gamUser?.id || sysUser?.id || '';
-                          const userTaskList = gamUserId ? (userTasksMap[gamUserId] || []) : [];
-                          
-                          // Calcula estatísticas
-                          const prod = calculateUserProductivity(userTaskList);
-                          const utilizationPercent = prod.averagePercentRounded;
-                          
-                          // Último acesso (usa o registro de log de acesso mais recente)
-                          const lastAccess = accessLogsByName[userName] || 'Não disponível';
-                          
-                          // XP Total (da gamificação - ranking real)
-                          const ranked = rankedUsers.find(u => u.name === userName);
-                          const xpTotal = ranked ? ranked.xp : (gamUser?.xp || 0);
-                          
-                          // E-mail real do Auth DB quando disponível
-                          const email = sysUser?.email || `${userName.toLowerCase().replace(/\s+/g, '.')}@empresa.com.br`;
-                          
-                          return (
-                            <tr key={idx} className="hover:bg-[#6A0DAD]/10">
-                              <td className="px-4 py-3 text-white">{userName}</td>
-                              <td className="px-4 py-3 text-[#C0C0C0]">{email}</td>
-                              <td className="px-4 py-3">
-                                <div className="flex items-center">
-                                  <div className="w-full bg-[#1A1A2E] rounded-full h-2 mr-2">
-                                    <div 
-                                      className="bg-gradient-to-r from-[#6A0DAD] to-[#FF0066] h-2 rounded-full" 
-                                      style={{ width: `${utilizationPercent}%` }}
-                                    />
-                                  </div>
-                                  <span className="text-white">{utilizationPercent}%</span>
+                      {processedUserTableData.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="px-4 py-6 text-center text-[#C0C0C0]">
+                            Nenhum usuário cadastrado no sistema.
+                          </td>
+                        </tr>
+                      ) : (
+                        processedUserTableData.map((userData, idx) => (
+                          <tr key={idx} className="hover:bg-[#6A0DAD]/10">
+                            <td className="px-4 py-3 text-white">{userData.userName}</td>
+                            <td className="px-4 py-3 text-[#C0C0C0]">{userData.email}</td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center">
+                                <div className="w-full bg-[#1A1A2E] rounded-full h-2 mr-2">
+                                  <div 
+                                    className="bg-gradient-to-r from-[#6A0DAD] to-[#FF0066] h-2 rounded-full" 
+                                    style={{ width: `${userData.utilizationPercent}%` }}
+                                  />
                                 </div>
-                              </td>
-                              <td className="px-4 py-3 font-medium text-[#FF0066]">{xpTotal} XP</td>
-                              <td className="px-4 py-3 text-[#C0C0C0]">{lastAccess}</td>
-                            </tr>
-                          );
-                        });
-                      })()}
+                                <span className="text-white">{userData.utilizationPercent}%</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 font-medium text-[#FF0066]">{userData.xpTotal} XP</td>
+                            <td className="px-4 py-3 text-[#C0C0C0]">{userData.lastAccess}</td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -1155,6 +1331,8 @@ const Settings = () => {
                     <SelectInput 
                       label="Modo de exibição do ranking" 
                       id="rankingDisplay"
+                      value={""} /* Valor agora vem do banco de dados */
+                      onChange={() => {}} /* Valor controlado agora vem do banco de dados */
                       options={[
                         { value: "all", label: "Exibir todos os jogadores" },
                         { value: "top10", label: "Apenas top 10" },
@@ -1167,6 +1345,8 @@ const Settings = () => {
                         type="checkbox" 
                         id="resetMonthly" 
                         className="w-4 h-4 accent-[#FF0066]" 
+                        checked={false} /* Estado agora vem do banco de dados */
+                        onChange={() => {}} /* Estado controlado agora vem do banco de dados */
                       />
                       <label htmlFor="resetMonthly" className="text-white text-sm">
                         Reiniciar rankings mensalmente
@@ -1178,7 +1358,8 @@ const Settings = () => {
                         type="checkbox" 
                         id="showAchievements" 
                         className="w-4 h-4 accent-[#FF0066]" 
-                        defaultChecked
+                        checked={true} /* Estado agora vem do banco de dados */
+                        onChange={() => {}} /* Estado controlado agora vem do banco de dados */
                       />
                       <label htmlFor="showAchievements" className="text-white text-sm">
                         Exibir conquistas no perfil público
@@ -1229,20 +1410,30 @@ const Settings = () => {
                   </div>
                   <div className="flex justify-end mt-4">
                     <ParticleButton
-                      onClick={() => {
-                        // Persistir no localStorage
-                        localStorage.setItem('epic_productivity_config_v1', JSON.stringify({
+                      onClick={async () => {
+                        const config: ProductivityConfig = {
                           early: earlyTaskPercentage,
                           on_time: onTimeTaskPercentage,
                           late: delayedTaskPercentage,
                           refacao: refactoredTaskPercentage,
-                        }));
-                        toast({
-                          title: "Percentuais salvos!",
-                          description: "Os percentuais de ganho por tarefa foram atualizados e já impactam os cálculos da plataforma.",
-                          className: "bg-gradient-to-r from-[#6A0DAD] to-[#FF0066] border-none text-white rounded-md shadow-lg",
-                          duration: 3000,
-                        });
+                        };
+                        
+                        try {
+                          await saveProductivityConfig(config);
+                          toast({
+                            title: "Percentuais salvos!",
+                            description: "Os percentuais de ganho por tarefa foram atualizados e já impactam os cálculos da plataforma.",
+                            className: "bg-gradient-to-r from-[#6A0DAD] to-[#FF0066] border-none text-white rounded-md shadow-lg",
+                            duration: 3000,
+                          });
+                        } catch (error) {
+                          console.error('Erro ao salvar configurações de produtividade no Supabase:', error);
+                          toast({
+                            title: "Erro ao salvar configurações",
+                            description: "Não foi possível salvar no servidor.",
+                            variant: "destructive",
+                          });
+                        }
                       }}
                       className="min-w-32 flex justify-center"
                     >

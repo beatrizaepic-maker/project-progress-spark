@@ -1,9 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
 const LivingNebulaShader = () => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [mousePos, setMousePos] = useState({ x: -100, y: -100 });
 
   useEffect(() => {
     const container = containerRef.current;
@@ -135,7 +134,6 @@ const LivingNebulaShader = () => {
       const x = e.clientX - rect.left;
       const y = container.clientHeight - (e.clientY - rect.top);
       uniforms.iMouse.value.set(x, y);
-      setMousePos({ x: e.clientX, y: e.clientY });
     };
     window.addEventListener('mousemove', onMouseMove);
 

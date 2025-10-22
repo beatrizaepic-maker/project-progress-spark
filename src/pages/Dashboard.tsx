@@ -1,15 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import MetricsCards from "@/components/dashboard/MetricsCards";
 import DashboardKPIs from "@/components/dashboard/DashboardKPIs";
 import { DataProvider } from "@/contexts/DataContext";
-import { getTasksData } from "@/services/localStorageData";
 import { useKPIs } from "@/hooks/useKPIs";
 import jsPDF from 'jspdf';
+import { supabase } from '../lib/supabase';
 
 const Dashboard = () => {
-  const taskData = getTasksData();
+  const [taskData, setTaskData] = useState<any[]>([]);
   const kpis = useKPIs(taskData);
+
+  // Carregar dados do Supabase
+  useEffect(() => {
+    const fetchTasks = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('tasks') // Substitua 'tasks' pelo nome real da tabela no Supabase
+          .select('*');
+        
+        if (error) {
+          console.error('Erro ao carregar tarefas do Supabase:', error.message);
+          setTaskData([]); // Retorna array vazio em caso de erro
+        } else {
+          setTaskData(data || []);
+        }
+      } catch (err) {
+        console.error('Erro inesperado ao carregar tarefas:', err);
+        setTaskData([]);
+      }
+    };
+
+    fetchTasks();
+  }, []);
 
   // Função para exportar relatório em PDF
   const exportReport = () => {
@@ -50,13 +73,7 @@ const Dashboard = () => {
     doc.text(`Total de Tarefas: ${taskData.length}`, 20, y);
     y += 6;
     doc.text(`Tarefas Concluídas: ${taskData.filter(task => task.status === 'completed').length}`, 20, y);
-              <SummaryCard>
-                <h3 className="text-lg font-semibold mb-2">Status Geral</h3>
-                <p className="text-muted-foreground">
-                  {taskData.length === 0 ? 'Sem tarefas cadastradas' : 
-                   `${taskData.filter(task => task.status === 'completed').length} de ${taskData.length} tarefas concluídas`}
-                </p>
-              </SummaryCard>
+    y += 6;
     doc.setFontSize(10);
     doc.setTextColor(0, 0, 0);
     doc.text(`Média de Produção: ${kpiData.averageProduction.toFixed(1)} dias`, 20, y);

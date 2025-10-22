@@ -1,536 +1,351 @@
 // src/services/localStorageData.ts
-// Serviço centralizado para leitura e escrita de dados no localStorage
-// Substitui todos os dados mock do projeto por dados persistidos no navegador
+// Todas as funcionalidades de localStorage foram removidas para uso exclusivo do Supabase
+// Este arquivo agora contém apenas funções de interface para o banco de dados Supabase
+// Atualizado para lidar com tarefas e dados de projeto conforme item 2 do relatório de migração
 
+import { supabase } from '@/lib/supabase';
 import { TaskData } from '@/data/projectData';
-import { Task, User, calculateRankingXpFromTasks } from './gamificationService';
-import { addSimpleXpHistory } from '@/services/xpHistoryService';
-import { toOrderedRankingDTO, toPlayerProfileDTO } from './dtoTransformers';
+import { Task, User } from './gamificationService';
 import { RankingEntryDTO, PlayerProfileDTO } from '@/types/dto';
 import type { ActiveMission } from './missionService';
 
-// Chaves de localStorage e versionamento
-const STORAGE_KEYS = {
-  TASKS_DATA: 'epic_tasks_data_v1',
-  PROJECT_METRICS: 'epic_project_metrics_v1',
-  USERS: 'epic_users_v1',
-  GAMIFICATION_TASKS: 'epic_gamification_tasks_v1',
-  USER_MISSIONS: 'epic_user_missions_v1',
-  STORAGE_VERSION: 'epic_storage_version_v1',
-};
-
-// Versão atual do schema
-const CURRENT_SCHEMA_VERSION = 1;
-
-// Dados iniciais para usar como fallback se não houver nada no localStorage (sem mocks)
-const DEFAULT_TASKS_DATA: TaskData[] = [];
-
-// Dados iniciais para métricas do projeto
-const DEFAULT_PROJECT_METRICS = {
-  totalTarefas: 0,
-  tarefasNoPrazo: 0,
-  tarefasAtrasadas: 0,
-  mediaProducao: 0,
-  mediaAtrasos: 0,
-  desvioPadrao: 0,
-  moda: 0,
-  mediana: 0
-};
-
-// Não utilizar usuários fictícios: users derivam do DB de auth (epic_users_db)
-const DEFAULT_USERS: User[] = [];
-
-// Dados iniciais para tarefas do sistema de gamificação
-const DEFAULT_GAMIFICATION_TASKS: Task[] = [];
-
-/**
- * Migração segura para remover tarefas mock legadas do armazenamento local
- * Remove apenas o conjunto EXATO das 3 tarefas de demonstração conhecidas
- */
-function purgeLegacyMockTasksIfPresent(): void {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.TASKS_DATA);
-    if (!raw) return;
-    const tasks: TaskData[] = JSON.parse(raw);
-    if (!Array.isArray(tasks) || tasks.length === 0) return;
-
-    // Verifica se as 3 tarefas mock conhecidas estão presentes com as mesmas características
-    const isLegacySet = tasks.length === 3 && [
-      { tarefa: 'Análise de Requisitos', responsavel: 'Maria Silva' },
-      { tarefa: 'Design UI/UX', responsavel: 'João Santos' },
-      { tarefa: 'Desenvolvimento Frontend', responsavel: 'Ana Costa' }
-    ].every(sample => tasks.some(t => t.tarefa === sample.tarefa && t.responsavel === sample.responsavel));
-
-    if (isLegacySet) {
-      // Limpa completamente as tarefas e métricas associadas
-      localStorage.setItem(STORAGE_KEYS.TASKS_DATA, JSON.stringify([]));
-      localStorage.setItem(STORAGE_KEYS.PROJECT_METRICS, JSON.stringify(DEFAULT_PROJECT_METRICS));
-    }
-  } catch (err) {
-    console.warn('Falha ao purgar tarefas mock legadas:', err);
-  }
-}
-
-// ----- Leitura canônica dos usuários do sistema (Auth DB) -----
-type AuthDBUser = {
-  id: string;
-  email: string;
-  name: string;
-  role?: 'admin' | 'user' | 'dev' | string;
-  avatar?: string;
-};
-
-const AUTH_USERS_DB_KEY = 'epic_users_db';
-
-function readAuthUsersDB(): AuthDBUser[] {
-  try {
-    const raw = localStorage.getItem(AUTH_USERS_DB_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-function mapAuthToGamificationUsers(authUsers: AuthDBUser[]): User[] {
-  return authUsers.map(u => ({
-    id: u.id,
-    name: u.name || u.email,
-    avatar: u.avatar || '/avatars/default.png',
-    xp: 0,
-    level: 1,
-    weeklyXp: 0,
-    monthlyXp: 0,
-    missionsCompleted: 0,
-    consistencyBonus: 0,
-    streak: 0,
-  }));
-}
-
-// Inicializa o localStorage com versão e dados mínimos se necessário
-export function initializeLocalStorage(): void {
-  // Verifica se já existe uma versão armazenada
-  const storedVersion = localStorage.getItem(STORAGE_KEYS.STORAGE_VERSION);
-  
-  // Se não existe ou a versão é menor que a atual, inicializa com valores padrão
-  if (!storedVersion || parseInt(storedVersion) < CURRENT_SCHEMA_VERSION) {
-    // Salva a versão atual
-    localStorage.setItem(STORAGE_KEYS.STORAGE_VERSION, CURRENT_SCHEMA_VERSION.toString());
-    
-    // Inicializa com valores padrão apenas se não existirem dados
-    if (!localStorage.getItem(STORAGE_KEYS.TASKS_DATA)) {
-      // Não semear dados fictícios; inicia vazio
-      localStorage.setItem(STORAGE_KEYS.TASKS_DATA, JSON.stringify([]));
-    }
-    
-    if (!localStorage.getItem(STORAGE_KEYS.PROJECT_METRICS)) {
-      localStorage.setItem(STORAGE_KEYS.PROJECT_METRICS, JSON.stringify(DEFAULT_PROJECT_METRICS));
-    }
-    
-    if (!localStorage.getItem(STORAGE_KEYS.USERS)) {
-      // Semear usuários de gamificação a partir do DB de autenticação (quando existir)
-      const authUsers = readAuthUsersDB();
-      const seed = mapAuthToGamificationUsers(authUsers);
-      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(seed));
-    }
-    
-    if (!localStorage.getItem(STORAGE_KEYS.GAMIFICATION_TASKS)) {
-      localStorage.setItem(STORAGE_KEYS.GAMIFICATION_TASKS, JSON.stringify(DEFAULT_GAMIFICATION_TASKS));
-    }
-  }
-
-  // Purgar tarefas mock legadas se existirem
-  purgeLegacyMockTasksIfPresent();
-
-  // Migração: se ainda houver apenas "Usuário Demo", substituir por usuários do Auth DB
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.USERS);
-    const current: User[] = raw ? JSON.parse(raw) : [];
-    const onlyDemo = current.length === 1 && current[0]?.name === 'Usuário Demo';
-    const authUsers = readAuthUsersDB();
-    if ((onlyDemo || current.length === 0) && authUsers.length > 0) {
-      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(mapAuthToGamificationUsers(authUsers)));
-    }
-  } catch {
-    // ignore erros de migração
-  }
-}
+// Interfaces para as funções do Supabase
+// Estas funções usam o cliente Supabase para acesso a tarefas e dados de projeto
 
 // Funções para gerenciar tarefas (DataContext, componentes UI)
-
-export function getTasksData(): TaskData[] {
+export async function getTasksData(): Promise<TaskData[]> {
   try {
-    const data = localStorage.getItem(STORAGE_KEYS.TASKS_DATA);
-    let tasks: TaskData[] = data ? JSON.parse(data) : [];
-    
-    // Verificar e corrigir IDs duplicados
-    const idMap = new Map<number, boolean>();
-    let maxId = 0;
-
-    // Primeiro, encontrar o ID máximo e identificar duplicatas
-    for (const task of tasks) {
-      maxId = Math.max(maxId, task.id);
-      if (idMap.has(task.id)) {
-        // Se encontrar um ID duplicado, marca para corrigir
-      } else {
-        idMap.set(task.id, true);
-      }
-    }
-
-    // Se houver IDs duplicados, reconstruir com IDs únicos
-    if (tasks.length !== idMap.size) {
-      const uniqueTasks: TaskData[] = [];
-      const usedIds = new Set<number>();
-      
-      for (const task of tasks) {
-        if (usedIds.has(task.id)) {
-          // Gerar novo ID único
-          let newId = maxId + 1;
-          while (usedIds.has(newId)) {
-            newId++;
-          }
-          uniqueTasks.push({ ...task, id: newId });
-          usedIds.add(newId);
-          maxId = newId;
-        } else {
-          uniqueTasks.push(task);
-          usedIds.add(task.id);
-        }
-      }
-      
-      // Atualizar o localStorage com IDs únicos
-      try {
-        localStorage.setItem(STORAGE_KEYS.TASKS_DATA, JSON.stringify(uniqueTasks));
-      } catch (saveError) {
-        console.error('Erro ao salvar tarefas corrigidas no localStorage:', saveError);
-      }
-      
-      return uniqueTasks;
-    }
-    
-    return tasks;
+    const { data, error } = await supabase.from('tasks').select('*');
+    if (error) throw error;
+    return data as TaskData[];
   } catch (error) {
-    console.error('Erro ao carregar tarefas do localStorage:', error);
+    console.error('Erro ao buscar tarefas do Supabase:', error);
     return [];
   }
 }
 
-export function saveTasksData(tasks: TaskData[]): void {
+export async function saveTasksData(tasks: TaskData[]): Promise<void> {
   try {
-    // Aplica a migração automaticamente antes de salvar
-    const migratedTasks = migrateTaskResponsibles(tasks);
-    localStorage.setItem(STORAGE_KEYS.TASKS_DATA, JSON.stringify(migratedTasks));
-    // Atualiza também as métricas calculadas
-    updateProjectMetrics(migratedTasks);
-    // Espelha as tarefas do editor no modelo de gamificação (para ranking)
-    try {
-      // Snapshot anterior das tarefas de gamificação
-      const prevGamTasks = getGamificationTasks();
-      // Novo snapshot a partir do TaskData atual
-      const gamTasks = mapTaskDataToGamification(migratedTasks);
-
-      // Calcular delta de XP por usuário responsável
-      const usersSet = new Set<string>();
-      for (const t of prevGamTasks) if (t.assignedTo) usersSet.add(t.assignedTo);
-      for (const t of gamTasks) if (t.assignedTo) usersSet.add(t.assignedTo);
-
-      // Detectar tarefas que passaram a "completed" nesta gravação
-      const beforeById: Record<string, Task> = Object.fromEntries(prevGamTasks.map(t => [t.id, t]));
-      const newlyCompletedByUser: Record<string, string[]> = {};
-      for (const t of gamTasks) {
-        if (!t.assignedTo) continue;
-        const before = beforeById[t.id];
-        const becameCompleted = t.status === 'completed' && (!before || before.status !== 'completed');
-        if (becameCompleted) {
-          if (!newlyCompletedByUser[t.assignedTo]) newlyCompletedByUser[t.assignedTo] = [];
-          newlyCompletedByUser[t.assignedTo].push(t.title);
-        }
-      }
-
-      // Para cada usuário, comparar XP de ranking baseado em tarefas (sem streak)
-      for (const userId of usersSet) {
-        const beforeList = prevGamTasks.filter(t => t.assignedTo === userId);
-        const afterList = gamTasks.filter(t => t.assignedTo === userId);
-        const xpBefore = calculateRankingXpFromTasks(beforeList);
-        const xpAfter = calculateRankingXpFromTasks(afterList);
-        const delta = xpAfter - xpBefore;
-        if (delta !== 0) {
-          // Monta descrição amigável
-          const completed = newlyCompletedByUser[userId] || [];
-          let desc = 'Atualização de XP por tarefas';
-          if (completed.length === 1 && delta > 0) desc = `Tarefa concluída: ${completed[0]}`;
-          else if (completed.length > 1 && delta > 0) desc = `${completed.length} tarefas concluídas`;
-          else if (delta < 0) desc = 'Ajuste de XP por alterações de tarefas';
-          // Registra evento no histórico (fonte: task)
-          try { addSimpleXpHistory(userId, delta, 'task', desc); } catch {}
-        }
-      }
-
-      // Persistir o novo snapshot para o ranking
-      saveGamificationTasks(gamTasks);
-    } catch (e) {
-      console.warn('Falha ao espelhar tarefas para gamificação:', e);
-    }
-    // Notifica outras páginas/abas e provedores para recarregar as tarefas
-    try {
-      window.dispatchEvent(new CustomEvent('tasks:changed'));
-    } catch {}
+    const { error } = await supabase.from('tasks').upsert(tasks);
+    if (error) throw error;
   } catch (error) {
-    console.error('Erro ao salvar tarefas no localStorage:', error);
+    console.error('Erro ao salvar tarefas no Supabase:', error);
+    throw error;
   }
 }
 
-export function addTaskData(task: TaskData): void {
-  const tasks = getTasksData();
-  tasks.push(task);
-  saveTasksData(tasks);
-}
-
-export function updateTaskData(id: number, updates: Partial<TaskData>): void {
-  const tasks = getTasksData();
-  const index = tasks.findIndex(t => t.id === id);
-  
-  if (index !== -1) {
-    tasks[index] = { ...tasks[index], ...updates };
-    saveTasksData(tasks);
+export async function addTaskData(task: TaskData): Promise<void> {
+  try {
+    const { error } = await supabase.from('tasks').insert([task]);
+    if (error) throw error;
+  } catch (error) {
+    console.error('Erro ao adicionar tarefa no Supabase:', error);
+    throw error;
   }
 }
 
-export function deleteTaskData(id: number): void {
-  const tasks = getTasksData();
-  const filteredTasks = tasks.filter(t => t.id !== id);
-  saveTasksData(filteredTasks);
+export async function updateTaskData(id: number, updates: Partial<TaskData>): Promise<void> {
+  try {
+    const { error } = await supabase.from('tasks').update(updates).eq('id', id);
+    if (error) throw error;
+  } catch (error) {
+    console.error('Erro ao atualizar tarefa no Supabase:', error);
+    throw error;
+  }
+}
+
+export async function deleteTaskData(id: number): Promise<void> {
+  try {
+    const { error } = await supabase.from('tasks').delete().eq('id', id);
+    if (error) throw error;
+  } catch (error) {
+    console.error('Erro ao deletar tarefa no Supabase:', error);
+    throw error;
+  }
+}
+
+// Interface para métricas do projeto
+interface ProjectMetrics {
+  totalTarefas: number;
+  tarefasNoPrazo: number;
+  tarefasAtrasadas: number;
+  mediaProducao: number;
+  mediaAtrasos: number;
+  desvioPadrao: number;
+  moda: number;
+  mediana: number;
 }
 
 // Funções para métricas de projeto
-
-export function getProjectMetrics() {
+export async function getProjectMetrics(): Promise<ProjectMetrics> {
   try {
-    const data = localStorage.getItem(STORAGE_KEYS.PROJECT_METRICS);
-    return data ? JSON.parse(data) : DEFAULT_PROJECT_METRICS;
+    const { data, error } = await supabase.from('project_metrics').select('*').single();
+    if (error) throw error;
+    return data as ProjectMetrics;
   } catch (error) {
-    console.error('Erro ao carregar métricas do localStorage:', error);
-    return DEFAULT_PROJECT_METRICS;
+    console.error('Erro ao buscar métricas do projeto do Supabase:', error);
+    // Retorna métricas padrão em caso de erro
+    return {
+      totalTarefas: 0,
+      tarefasNoPrazo: 0,
+      tarefasAtrasadas: 0,
+      mediaProducao: 0,
+      mediaAtrasos: 0,
+      desvioPadrao: 0,
+      moda: 0,
+      mediana: 0
+    };
   }
 }
 
-export function updateProjectMetrics(tasks: TaskData[]): void {
-  // Cálculo básico de métricas a partir das tarefas
-  const totalTarefas = tasks.length;
-  const tarefasNoPrazo = tasks.filter(t => t.atendeuPrazo).length;
-  const tarefasAtrasadas = tasks.filter(t => !t.atendeuPrazo).length;
-  
-  const duracoes = tasks.map(t => t.duracaoDiasUteis).filter(d => !isNaN(d));
-  const atrasos = tasks.map(t => t.atrasoDiasUteis).filter(d => !isNaN(d));
-  
-  const mediaProducao = duracoes.length > 0 
-    ? duracoes.reduce((sum, d) => sum + d, 0) / duracoes.length 
-    : 0;
-    
-  const mediaAtrasos = atrasos.length > 0 
-    ? atrasos.reduce((sum, d) => sum + d, 0) / atrasos.length 
-    : 0;
-  
-  // Valores predefinidos para estatísticas mais complexas
-  // Em uma implementação completa, estas seriam calculadas dinamicamente
-  const desvioPadrao = 1.8;
-  const moda = 2;
-  const mediana = 5;
-  
-  const metrics = {
-    totalTarefas,
-    tarefasNoPrazo,
-    tarefasAtrasadas,
-    mediaProducao,
-    mediaAtrasos,
-    desvioPadrao,
-    moda,
-    mediana
-  };
-  
+export async function updateProjectMetrics(tasks: TaskData[]): Promise<void> {
   try {
-    localStorage.setItem(STORAGE_KEYS.PROJECT_METRICS, JSON.stringify(metrics));
+    // Calcula as métricas com base nas tarefas
+    const totalTarefas = tasks.length;
+    const tarefasNoPrazo = tasks.filter(t => t.atendeuPrazo).length;
+    const tarefasAtrasadas = tasks.filter(t => !t.atendeuPrazo).length;
+    
+    const duracoes = tasks.map(t => t.duracaoDiasUteis).filter(d => !isNaN(d));
+    const atrasos = tasks.map(t => t.atrasoDiasUteis).filter(d => !isNaN(d));
+    
+    const mediaProducao = duracoes.length > 0 
+      ? duracoes.reduce((sum, d) => sum + d, 0) / duracoes.length 
+      : 0;
+      
+    const mediaAtrasos = atrasos.length > 0 
+      ? atrasos.reduce((sum, d) => sum + d, 0) / atrasos.length 
+      : 0;
+    
+    // Valores predefinidos para estatísticas mais complexas
+    const desvioPadrao = 1.8;
+    const moda = 2;
+    const mediana = 5;
+    
+    const metrics: ProjectMetrics = {
+      totalTarefas,
+      tarefasNoPrazo,
+      tarefasAtrasadas,
+      mediaProducao,
+      mediaAtrasos,
+      desvioPadrao,
+      moda,
+      mediana
+    };
+
+    // Atualiza as métricas no Supabase
+    const { error } = await supabase.from('project_metrics').upsert(metrics);
+    if (error) throw error;
   } catch (error) {
-    console.error('Erro ao salvar métricas no localStorage:', error);
+    console.error('Erro ao atualizar métricas do projeto no Supabase:', error);
+    throw error;
   }
 }
 
 // Funções para o sistema de gamificação (perfis, ranking)
-
-export function getGamificationUsers(): User[] {
+export async function getGamificationUsers(): Promise<User[]> {
   try {
-    const data = localStorage.getItem(STORAGE_KEYS.USERS);
-    const parsed: User[] = data ? JSON.parse(data) : [];
-    if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    // Fallback canônico: derivar do Auth DB sem criar mocks
-    const auth = readAuthUsersDB();
-    return mapAuthToGamificationUsers(auth);
+    const { data, error } = await supabase
+      .from('player_profiles')
+      .select('*')
+      .eq('is_active', true);
+    if (error) throw error;
+    return data as User[];
   } catch (error) {
-    console.error('Erro ao carregar usuários do localStorage:', error);
+    console.error('Erro ao carregar usuários de gamificação do Supabase:', error);
     return [];
   }
 }
 
 // Função para mapear nome de usuário para ID no formato compatível com gamificação
-export function resolveUserIdByName(name?: string): string | undefined {
+export async function resolveUserIdByName(name?: string): Promise<string | undefined> {
   if (!name) return undefined;
   try {
-    const authUsers = readAuthUsersDB();
-    const trimmed = name.trim().toLowerCase();
-    // 1) match exato por nome completo
-    let hit = authUsers.find(u => (u.name || u.email).trim().toLowerCase() === trimmed);
-    if (hit) return hit.id;
-    // 2) match por primeiro nome contido
-    const first = trimmed.split(' ')[0];
-    hit = authUsers.find(u => (u.name || '').toLowerCase().includes(first));
-    if (hit) return hit.id;
-    return undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-// Função para migrar tarefas existentes do formato antigo (por nome) para o novo (por ID)
-export function migrateTaskResponsibles(tasks: TaskData[]): TaskData[] {
-  return tasks.map(task => {
-    // Se já tem userId, mantém como está
-    if (task.userId) {
-      return task;
+    const { data, error } = await supabase
+      .from('users')
+      .select('id')
+      .eq('name', name)
+      .single();
+    
+    if (error) {
+      console.error('Erro ao resolver ID do usuário por nome:', error);
+      return undefined;
     }
     
-    // Caso contrário, tenta converter do nome para ID
-    if (task.responsavel) {
-      const userId = resolveUserIdByName(task.responsavel);
-      if (userId) {
-        return {
-          ...task,
-          userId
-        };
-      }
-    }
+    return data?.id;
+  } catch (error) {
+    console.error('Erro ao resolver ID do usuário por nome:', error);
+    return undefined;
+  }
+}
+
+export async function saveGamificationUsers(users: User[]): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('player_profiles')
+      .upsert(users, { onConflict: 'id' });
+    if (error) throw error;
+  } catch (error) {
+    console.error('Erro ao salvar usuários de gamificação no Supabase:', error);
+  }
+}
+
+export async function getGamificationTasks(): Promise<Task[]> {
+  try {
+    const { data, error } = await supabase
+      .from('tasks')
+      .select('id, title, status, completed_date, due_date, assigned_to');
     
-    // Se não conseguir converter, retorna a tarefa original
-    return task;
-  });
-}
-
-export function saveGamificationUsers(users: User[]): void {
-  try {
-    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+    if (error) throw error;
+    
+    // Mapeia os dados recebidos para o formato Task
+    return data.map(t => ({
+      id: t.id,
+      title: t.title,
+      status: t.status,
+      completedDate: t.completed_date,
+      dueDate: t.due_date || '',
+      assignedTo: t.assigned_to
+    }));
   } catch (error) {
-    console.error('Erro ao salvar usuários no localStorage:', error);
-  }
-}
-
-export function getGamificationTasks(): Task[] {
-  try {
-    const data = localStorage.getItem(STORAGE_KEYS.GAMIFICATION_TASKS);
-    return data ? JSON.parse(data) : DEFAULT_GAMIFICATION_TASKS;
-  } catch (error) {
-    console.error('Erro ao carregar tarefas de gamificação do localStorage:', error);
-    return DEFAULT_GAMIFICATION_TASKS;
-  }
-}
-
-export function saveGamificationTasks(tasks: Task[]): void {
-  try {
-    localStorage.setItem(STORAGE_KEYS.GAMIFICATION_TASKS, JSON.stringify(tasks));
-  } catch (error) {
-    console.error('Erro ao salvar tarefas de gamificação no localStorage:', error);
-  }
-}
-
-// --------- Mapeamento TaskData -> Gamification Task ---------
-
-export function mapTaskDataToGamification(tasks: TaskData[]): Task[] {
-  const now = new Date();
-  return tasks.map<Task>((t) => {
-    const assignedTo = resolveUserIdByName(t.responsavel) || '';
-    // Status de gamificação
-    let status: Task['status'] = 'pending';
-    if (t.status === 'refacao') status = 'refacao';
-    else if (t.status === 'completed' || (!!t.fim && t.fim !== '')) status = 'completed';
-    else if (t.prazo && new Date(t.prazo) < now) status = 'overdue';
-    else status = 'pending';
-
-    const completedDate = t.fim && t.fim !== '' ? new Date(t.fim).toISOString() : undefined;
-    const dueDate = t.prazo ? new Date(t.prazo).toISOString() : '';
-
-    return {
-      id: String(t.id ?? `td-${Math.random().toString(36).slice(2,8)}`),
-      title: t.tarefa || `Tarefa ${t.id ?? ''}`,
-      status,
-      completedDate,
-      dueDate,
-      assignedTo,
-      completedEarly: undefined,
-    };
-  });
-}
-
-// Exportar funções para armazenamento e recuperação de missões de usuário
-
-export function getUserMissions(userId: string): ActiveMission[] {
-  try {
-    const allMissions = localStorage.getItem(STORAGE_KEYS.USER_MISSIONS);
-    if (!allMissions) return [];
-    const allMissionsObj = JSON.parse(allMissions);
-    return allMissionsObj[userId] || [];
-  } catch (error) {
-    console.error('Erro ao carregar missões do usuário do localStorage:', error);
+    console.error('Erro ao buscar tarefas de gamificação do Supabase:', error);
     return [];
   }
 }
 
-export function saveUserMissions(userId: string, missions: ActiveMission[]): void {
+export async function saveGamificationTasks(tasks: Task[]): Promise<void> {
   try {
-    const allMissions = localStorage.getItem(STORAGE_KEYS.USER_MISSIONS);
-    const allMissionsObj = allMissions ? JSON.parse(allMissions) : {};
-    allMissionsObj[userId] = missions;
-    localStorage.setItem(STORAGE_KEYS.USER_MISSIONS, JSON.stringify(allMissionsObj));
+    // Prepara os dados para inserção no Supabase
+    const tasksToSave = tasks.map(t => ({
+      id: t.id,
+      title: t.title,
+      status: t.status,
+      completed_date: t.completedDate || null,
+      due_date: t.dueDate || null,
+      assigned_to: t.assignedTo
+    }));
+    
+    const { error } = await supabase
+      .from('tasks')
+      .upsert(tasksToSave, { onConflict: 'id' });
+    
+    if (error) throw error;
   } catch (error) {
-    console.error('Erro ao salvar missões do usuário no localStorage:', error);
+    console.error('Erro ao salvar tarefas de gamificação no Supabase:', error);
+    throw error;
   }
 }
 
-// Mock API service simulados com dados do localStorage
+// Funções para armazenamento e recuperação de missões de usuário
+export async function getUserMissions(userId: string): Promise<ActiveMission[]> {
+  try {
+    const { data, error } = await supabase
+      .from('user_missions')
+      .select('*')
+      .eq('user_id', userId);
+    
+    if (error) throw error;
+    
+    // Mapeia os dados para o formato ActiveMission
+    return data.map(mission => ({
+      id: mission.id,
+      userId: mission.user_id,
+      configId: mission.config_id,
+      type: mission.type,
+      name: mission.name,
+      description: mission.description,
+      target: mission.target,
+      currentProgress: mission.current_progress,
+      xpReward: mission.xp_reward,
+      deadline: mission.deadline,
+      completed: mission.completed,
+      completedAt: mission.completed_at,
+      createdAt: mission.created_at
+    }));
+  } catch (error) {
+    console.error('Erro ao buscar missões do usuário do Supabase:', error);
+    return [];
+  }
+}
+
+export async function saveUserMissions(userId: string, missions: ActiveMission[]): Promise<void> {
+  try {
+    // Prepara os dados para inserção no Supabase
+    const missionsToSave = missions.map(mission => ({
+      id: mission.id,
+      user_id: userId,
+      config_id: mission.configId,
+      type: mission.type,
+      name: mission.name,
+      description: mission.description,
+      target: mission.target,
+      current_progress: mission.currentProgress,
+      xp_reward: mission.xpReward,
+      deadline: mission.deadline,
+      completed: mission.completed,
+      completed_at: mission.completedAt,
+      created_at: mission.createdAt
+    }));
+    
+    const { error } = await supabase
+      .from('user_missions')
+      .upsert(missionsToSave, { onConflict: 'id' });
+    
+    if (error) throw error;
+  } catch (error) {
+    console.error('Erro ao salvar missões do usuário no Supabase:', error);
+    throw error;
+  }
+}
 
 export async function fetchRanking(): Promise<RankingEntryDTO[]> {
-  // Simula latência de rede
-  await new Promise(resolve => setTimeout(resolve, 50));
-  
-  const users = getGamificationUsers();
-  const tasks = getGamificationTasks();
-  
-  // Usa a mesma lógica de transformação do mockApi original
-  return toOrderedRankingDTO(users, tasks);
+  try {
+    const { data, error } = await supabase
+      .from('ranking')
+      .select('*')
+      .order('xp', { ascending: false });
+    if (error) throw error;
+    return data as RankingEntryDTO[];
+  } catch (error) {
+    console.error('Erro ao buscar ranking do Supabase:', error);
+    return [];
+  }
 }
 
 export async function fetchPlayerProfile(userId: string): Promise<PlayerProfileDTO | null> {
-  // Simula latência de rede
-  await new Promise(resolve => setTimeout(resolve, 50));
-  
-  const users = getGamificationUsers();
-  const tasks = getGamificationTasks();
-  
-  const user = users.find(u => u.id === userId);
-  if (!user) return null;
-  
-  // Usa a mesma lógica de transformação do mockApi original
-  return toPlayerProfileDTO(user, tasks);
+  try {
+    const { data, error } = await supabase
+      .from('player_profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+    if (error) throw error;
+    return data as PlayerProfileDTO;
+  } catch (error) {
+    console.error('Erro ao buscar perfil do jogador do Supabase:', error);
+    return null;
+  }
 }
 
-export function seedMockData(users: User[], tasks: Task[]): void {
-  saveGamificationUsers(users);
-  saveGamificationTasks(tasks);
-}
 
-// API para obter os usuários canônicos do sistema (Auth DB)
-export function getSystemUsers(): Array<{ id: string; name: string; email: string; role?: string; avatar?: string }> {
-  const authUsers = readAuthUsersDB();
-  return authUsers.map(u => ({ id: u.id, name: u.name || u.email, email: u.email, role: u.role, avatar: u.avatar }));
-}
 
-// Inicializa o localStorage na importação do módulo
-initializeLocalStorage();
+// API para obter os usuários canônicos do sistema
+export async function getSystemUsers(): Promise<Array<{ id: string; name: string; email: string; role?: string; avatar?: string }>> {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('id, name, email, role, avatar');
+    
+    if (error) throw error;
+    
+    return data.map(user => ({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      avatar: user.avatar
+    }));
+  } catch (error) {
+    console.error('Erro ao buscar usuários do sistema do Supabase:', error);
+    return [];
+  }
+}

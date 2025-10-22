@@ -25,17 +25,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireRole }
       : 'user';
   const pathname = location.pathname;
 
-  // Regras de acesso por papel
+  // Regras de acesso por papel - agora todos os usuários podem acessar todas as páginas
+  // exceto aquelas que exigem papéis específicos (verificação mais abaixo)
   const isUserAllowedPath = (path: string) => {
-    // Usuário (player) pode acessar apenas: /tasks, /ranking, /profile/*
-    return (
-      path === '/tasks' ||
-      path.startsWith('/tasks/') ||
-      path === '/ranking' ||
-      path.startsWith('/ranking/') ||
-      path === '/profile' ||
-      path.startsWith('/profile/')
-    );
+    return true;
   };
 
   // Mostra loading enquanto verifica autenticação

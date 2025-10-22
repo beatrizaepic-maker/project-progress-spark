@@ -18,14 +18,7 @@ import FileText from 'lucide-react/dist/esm/icons/file-text';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { 
-  calculateLevelFromXp,
-  getLevelProgress,
-  calculateConsistencyBonus,
-  updateRanking,
-  Task,
-  User as UserType
-} from '@/services/gamificationService';
+import { calculateLevelFromXpSync } from '@/services/gamificationService';
 import { 
   createWeeklyMissionsForUser, 
   processWeeklyMissions,
@@ -33,9 +26,9 @@ import {
 } from '@/services/missionService';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-// Usando localStorage para persistência dos dados
-import { fetchRanking } from '@/services/localStorageData';
-import { getUserXpHistory } from '@/services/xpHistoryService';
+
+import { getUserXpHistorySync } from '@/services/xpHistoryService';
+import { getGamificationUsers } from '@/services/supabaseUserService';
 
 // Tipos para o sistema de gameficação
 interface UserRanking {
@@ -80,6 +73,8 @@ interface PerformanceDetails {
   totalXp?: number; // Campo opcional para XP total calculado
 }
 
+import { supabase } from '@/lib/supabase';
+
 // Componente principal da página de ranking
 const RankingPage: React.FC = () => {
   const { user } = useAuth();
@@ -90,25 +85,17 @@ const RankingPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<string>('');
 
-  const [recentTasks, setRecentTasks] = useState<Task[]>([]);
 
   // Temporadas: lista e seleção
-  const [seasonList, setSeasonList] = useState(() => {
-    try {
-      const stored = localStorage.getItem('epic_season_list_v1');
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      // Erros de parsing são tratados retornando listas vazias
-    }
-  });
-  const [selectedSeasonIdx, setSelectedSeasonIdx] = useState<number>(seasonList.length - 1);
+  const [seasonList, setSeasonList] = useState<any[]>([]);
+  const [selectedSeasonIdx, setSelectedSeasonIdx] = useState<number>(-1);
 
   // Função auxiliar para calcular o rankingData
   const calculateRankingData = useCallback(() => {
     return [...allUsers]
       .map(user => ({
         ...user,
-        level: calculateLevelFromXp(user.xp) // Atualiza o nível com base no XP total
+        level: calculateLevelFromXpSync(user.xp) // Atualiza o nível com base no XP total
       }))
       .sort((a, b) => {
         // Ordena primeiro pelo XP relevante para o período
@@ -129,13 +116,16 @@ const RankingPage: React.FC = () => {
 
   // Atualiza lista de temporadas ao montar
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('epic_season_list_v1');
-      setSeasonList(stored ? JSON.parse(stored) : []);
-      setSelectedSeasonIdx(stored ? JSON.parse(stored).length - 1 : -1);
-    } catch {
-      // Erros de parsing são tratados retornando listas vazias
-    }
+    // Buscar temporadas do Supabase
+    supabase.from('seasons').select('*').then(({ data, error }) => {
+      if (error) {
+        setSeasonList([]);
+        setSelectedSeasonIdx(-1);
+      } else {
+        setSeasonList(data || []);
+        setSelectedSeasonIdx(data && data.length > 0 ? data.length - 1 : -1);
+      }
+    });
   }, []);
 
   // Temporada selecionada
@@ -160,36 +150,36 @@ const RankingPage: React.FC = () => {
   // Função para atualizar os dados do ranking
   const updateRankingData = useCallback(() => {
     setIsLoading(true);
-    // Primeiro tenta backend real
-    fetch('http://localhost:3001/api/ranking')
-      .then(r => r.json())
-      .then((dto: UserRanking[]) => {
-        if (Array.isArray(dto) && dto.length) {
-          setAllUsers(dto.map(u => ({ ...u, position: 0 })) as unknown as UserRanking[]);
+    getGamificationUsers()
+      .then((profiles) => {
+        if (Array.isArray(profiles) && profiles.length) {
+          const normalizedUsers: UserRanking[] = profiles.map((profile) => ({
+            id: profile.id,
+            name: profile.name,
+            avatar: profile.avatar || '/avatars/default.png',
+            xp: profile.xp ?? 0,
+            level: profile.level ?? calculateLevelFromXpSync(profile.xp ?? 0),
+            weeklyXp: profile.weeklyXp ?? 0,
+            monthlyXp: profile.monthlyXp ?? 0,
+            missionsCompleted: profile.missionsCompleted ?? 0,
+            consistencyBonus: profile.consistencyBonus ?? 0,
+            streak: profile.streak ?? 0,
+            position: 0,
+          }));
+          setAllUsers(normalizedUsers);
           setLastUpdated(new Date().toLocaleTimeString('pt-BR'));
-          setIsLoading(false);
-          return;
+        } else {
+          setAllUsers([]);
         }
-        throw new Error('empty');
       })
-      .catch(() => {
-        // Busca dados do ranking via localStorage
-        fetchRanking()
-          .then(dto => {
-            setAllUsers(dto.map(u => ({ ...u, position: 0 })) as unknown as UserRanking[]);
-          })
-          .catch(() => {
-            // Fallback caso haja algum problema com o localStorage
-            // Usando array vazio como fallback seguro, já que updateRanking pode lidar com array vazio
-            const updatedUsers = updateRanking([], recentTasks);
-            setAllUsers(updatedUsers as unknown as UserRanking[]);
-          })
-          .finally(() => {
-            setLastUpdated(new Date().toLocaleTimeString('pt-BR'));
-            setIsLoading(false);
-          });
+      .catch((error) => {
+        console.error('Erro ao buscar dados do ranking no Supabase:', error);
+        setAllUsers([]);
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
-  }, [recentTasks]);
+  }, []);
 
   // Carrega os dados iniciais
   useEffect(() => {
@@ -198,15 +188,7 @@ const RankingPage: React.FC = () => {
   
   // Configura atualização automática e ouve eventos SSE do backend
   useEffect(() => {
-    // SSE
-    let evtSource: EventSource | null = null;
-    try {
-      evtSource = new EventSource('http://localhost:3001/api/events');
-      evtSource.addEventListener('ranking:update', () => updateRankingData());
-    } catch {
-      // Erros na conexão SSE são tratados silenciosamente
-    }
-
+    // Substituir SSE por polling para atualizações
     const interval = setInterval(() => {
       // Simula atualização automática apenas se a página estiver visível
       if (!document.hidden) {
@@ -216,13 +198,10 @@ const RankingPage: React.FC = () => {
 
     return () => {
       clearInterval(interval);
-      try { evtSource?.close(); } catch {
-        // Erros ao fechar o EventSource são tratados silenciosamente
-      }
     };
   }, [updateRankingData]);
 
-  // Reagir imediatamente a alterações de tarefas (salvas no localStorage)
+  // Reagir imediatamente a alterações de tarefas
   useEffect(() => {
     const onTasksChanged = () => updateRankingData();
     window.addEventListener('tasks:changed', onTasksChanged);
@@ -324,29 +303,11 @@ const RankingPage: React.FC = () => {
       });
       return;
     }
-    // Buscar detalhes reais do usuário via API
-    fetch(`http://localhost:3001/api/users/${clicked.id}/details`)
-      .then(response => response.json())
-      .then((userData: PerformanceDetails) => {
-        // Mesclar histórico local e garantir totalXp do ranking
-        const localHist = getUserXpHistory(clicked.id);
-        const mergedHistory = Array.isArray(userData.xpHistory) && userData.xpHistory.length
-          ? [...userData.xpHistory, ...localHist]
-          : localHist;
-        setSelectedUser({
-          ...userData,
-          userId: clicked.id,
-          userName: clicked.name,
-          xpHistory: mergedHistory,
-          consistencyBonus: clicked.consistencyBonus,
-          currentStreak: clicked.streak,
-          bestStreak: userData.bestStreak ?? clicked.streak,
-          totalXp: clicked.xp,
-        });
-      })
-      .catch(() => {
+    // Buscar detalhes reais do usuário via Supabase
+    supabase.from('user_gamification_profiles').select('*').eq('user_id', clicked.id).single().then(({ data, error }) => {
+      if (error) {
         // Fallback com dados mínimos baseados no usuário clicado
-        const hist = getUserXpHistory(clicked.id);
+        const hist = getUserXpHistorySync(clicked.id);
         setSelectedUser({
           userId: clicked.id,
           userName: clicked.name,
@@ -358,7 +319,24 @@ const RankingPage: React.FC = () => {
           bestStreak: clicked.streak,
           totalXp: clicked.xp,
         });
-      });
+      } else {
+        // Mesclar histórico local e garantir totalXp do ranking
+        const localHist = getUserXpHistorySync(clicked.id);
+        const mergedHistory = Array.isArray(data.xpHistory) && data.xpHistory.length
+          ? [...data.xpHistory, ...localHist]
+          : localHist;
+        setSelectedUser({
+          ...data,
+          userId: clicked.id,
+          userName: clicked.name,
+          xpHistory: mergedHistory,
+          consistencyBonus: clicked.consistencyBonus,
+          currentStreak: clicked.streak,
+          bestStreak: data.bestStreak ?? clicked.streak,
+          totalXp: clicked.xp,
+        });
+      }
+    });
   };
 
   // Função para mostrar ícone de posição
@@ -602,7 +580,9 @@ const RankingPage: React.FC = () => {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-3 text-foreground">
                 <Avatar className="h-12 w-12">
-                  <AvatarImage src={selectedUser.userId.includes('1') ? '/avatars/user1.png' : selectedUser.userId.includes('2') ? '/avatars/user2.png' : '/avatars/user3.png'} />
+                  {selectedUser.userId && (
+                    <AvatarImage src={selectedUser.userId} alt={selectedUser.userName} />
+                  )}
                   <AvatarFallback className="bg-accent">
                     <User className="h-6 w-6 text-primary" />
                   </AvatarFallback>
@@ -624,7 +604,7 @@ const RankingPage: React.FC = () => {
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Nível Atual:</span>
-                      <span className="font-bold text-foreground">{calculateLevelFromXp(selectedUser.totalXp || 0)}</span>
+                      <span className="font-bold text-foreground">{calculateLevelFromXpSync(selectedUser.totalXp || 0)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">XP Total:</span>

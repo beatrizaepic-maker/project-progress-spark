@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import logoEpic from "@/LOGOEPIC.png";
 import LivingNebulaShader from "./effects/LivingNebulaShader";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,6 +22,45 @@ const Navigation = () => {
   const { state } = usePlayer();
   const [openProfileModal, setOpenProfileModal] = React.useState(false);
   const navigate = useNavigate();
+
+  const fallbackProfile = useMemo((): PlayerProfile | null => {
+    if (!user) return null;
+    return {
+      id: String(user.id),
+      name: user.name || 'Usuário',
+      username: undefined,
+      avatar: user.avatar || '/avatars/user1.png',
+      role: user.position || 'Membro da Equipe',
+      department: undefined,
+      joinedDate: new Date().toISOString(),
+      isActive: true,
+      xp: 0,
+      level: 1,
+      weeklyXp: 0,
+      monthlyXp: 0,
+      streak: 0,
+      bestStreak: 0,
+      missionsCompleted: 0,
+      tasksCompleted: 0,
+      notificationPreferences: {
+        email: true,
+        inApp: true,
+        push: false,
+        weeklySummary: true,
+        missionUpdates: true,
+        taskReminders: true,
+      },
+      privacySettings: {
+        profileVisibility: 'team',
+        xpVisibility: 'team',
+        activityVisibility: 'team',
+        shareWithTeam: true,
+      },
+      theme: 'dark',
+    };
+  }, [user]);
+
+  const profileToUse = state.profile || fallbackProfile;
 
   const handleLogout = () => {
     logout();
@@ -88,51 +127,13 @@ const Navigation = () => {
       </div>
 
       {/* Modal de Edição de Perfil (Shift+Click) */}
-      {(() => {
-        const fallbackProfile: PlayerProfile | null = user
-          ? {
-              id: String(user.id),
-              name: user.name || 'Usuário',
-              username: undefined,
-              avatar: user.avatar || '/avatars/user1.png',
-              role: user.position || 'Membro da Equipe',
-              department: undefined,
-              joinedDate: new Date().toISOString(),
-              isActive: true,
-              xp: 0,
-              level: 1,
-              weeklyXp: 0,
-              monthlyXp: 0,
-              streak: 0,
-              bestStreak: 0,
-              missionsCompleted: 0,
-              tasksCompleted: 0,
-              notificationPreferences: {
-                email: true,
-                inApp: true,
-                push: false,
-                weeklySummary: true,
-                missionUpdates: true,
-                taskReminders: true,
-              },
-              privacySettings: {
-                profileVisibility: 'team',
-                xpVisibility: 'team',
-                activityVisibility: 'team',
-                shareWithTeam: true,
-              },
-              theme: 'dark',
-            }
-          : null;
-        const profileToUse = state.profile || fallbackProfile;
-        return profileToUse ? (
-          <ProfileEditModal
-            open={openProfileModal}
-            onOpenChange={setOpenProfileModal}
-            profile={profileToUse}
-          />
-        ) : null;
-      })()}
+      {profileToUse ? (
+        <ProfileEditModal
+          open={openProfileModal}
+          onOpenChange={setOpenProfileModal}
+          profile={profileToUse}
+        />
+      ) : null}
     </nav>
   );
 };

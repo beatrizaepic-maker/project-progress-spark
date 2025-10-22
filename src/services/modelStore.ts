@@ -1,5 +1,5 @@
 // src/services/modelStore.ts
-// Modelo de dados e persistência (simulado via localStorage) + migração/backfill
+// Modelo de dados e persistência (via Supabase) + migração/backfill
 
 import { Task } from './gamificationService';
 import { getPercentageForClass } from '@/config/gamification';
@@ -67,12 +67,25 @@ function percentualPorClassificacao(cls: ClassificacaoEntrega): number {
   }
 }
 
-export function migrateAndBackfillFromTasks(tasks: Task[], competitionId?: string | null): PersistentTask[] {
-  const schema = Number(localStorage.getItem(STORAGE_SCHEMA_KEY) || '0');
+export async function migrateAndBackfillFromTasks(tasks: Task[], competitionId?: string | null): Promise<PersistentTask[]> {
+  // Exemplo de chamada para Supabase para obter schema
+  // const { data: schemaData, error: schemaError } = await supabase
+  //   .from('model_schema')
+  //   .select('version')
+  //   .eq('id', 'model_store_schema')
+  //   .single();
+  
+  // let schema = schemaData?.version || 0;
+  
   // Para este projeto, apenas definimos a versão 1 como atual
-  if (schema < 1) {
-    localStorage.setItem(STORAGE_SCHEMA_KEY, '1');
-  }
+  // if (schema < 1) {
+  //   const { error } = await supabase
+  //   .from('model_schema')
+  //   .upsert({
+  //     id: 'model_store_schema',
+  //     version: 1
+  //   });
+  // }
 
   const persisted: PersistentTask[] = tasks.map(t => {
     const cls = classificarEntrega(t);
@@ -91,15 +104,21 @@ export function migrateAndBackfillFromTasks(tasks: Task[], competitionId?: strin
     };
   });
 
-  localStorage.setItem(STORAGE_TASKS_KEY, JSON.stringify(persisted));
+  // Exemplo de chamada para Supabase para salvar tarefas
+  // const { error } = await supabase
+  //   .from('persistent_tasks')
+  //   .upsert(persisted);
+  
   return persisted;
 }
 
-export function loadPersistentTasks(): PersistentTask[] {
+export async function loadPersistentTasks(): Promise<PersistentTask[]> {
   try {
-    const raw = localStorage.getItem(STORAGE_TASKS_KEY);
-    if (!raw) return [];
-    return JSON.parse(raw) as PersistentTask[];
+    // Exemplo de chamada para Supabase
+    // const { data, error } = await supabase.from('persistent_tasks').select('*');
+    // if (error) throw error;
+    // return data as PersistentTask[];
+    return [];
   } catch {
     return [];
   }
@@ -146,30 +165,32 @@ export function computeAggregates(tasks?: PersistentTask[]): PlayerAggregate[] {
 }
 
 // Registro/Leitura de submissões incorretas
-export function recordIncorrectSubmission(playerId: string, taskId?: string, competitionId?: string | null, timestamp?: string) {
-  const list = loadIncorrectSubmissions();
+export async function recordIncorrectSubmission(playerId: string, taskId?: string, competitionId?: string | null, timestamp?: string) {
+  const list = await loadIncorrectSubmissions();
   const entry: IncorrectSubmission = {
     id: `${Date.now()}_${Math.random().toString(36).slice(2)}`,
     playerId, taskId, competitionId: competitionId ?? null,
     timestamp: timestamp ?? new Date().toISOString()
   };
   list.push(entry);
-  localStorage.setItem(STORAGE_INCORRECT_SUB_KEY, JSON.stringify(list));
+  await updateIncorrectSubmissions(list);
 }
 
-export function loadIncorrectSubmissions(): IncorrectSubmission[] {
+export async function loadIncorrectSubmissions(): Promise<IncorrectSubmission[]> {
   try {
-    const raw = localStorage.getItem(STORAGE_INCORRECT_SUB_KEY);
-    if (!raw) return [];
-    return JSON.parse(raw) as IncorrectSubmission[];
+    // Exemplo de chamada para Supabase
+    // const { data, error } = await supabase.from('incorrect_submissions').select('*');
+    // if (error) throw error;
+    // return data as IncorrectSubmission[];
+    return [];
   } catch {
     return [];
   }
 }
 
 // Upsert idempotente de tarefas a partir de eventos
-export function upsertTaskFromEvent(eventTask: Task, competitionId?: string | null) {
-  const current = loadPersistentTasks();
+export async function upsertTaskFromEvent(eventTask: Task, competitionId?: string | null) {
+  const current = await loadPersistentTasks();
   const idx = current.findIndex(x => x.id === eventTask.id);
   const cls = classificarEntrega(eventTask);
   const isRef = eventTask.status === 'refacao';
@@ -186,7 +207,9 @@ export function upsertTaskFromEvent(eventTask: Task, competitionId?: string | nu
     percentualProdutividade: Math.max(0, Math.min(100, Math.round(pct))),
   };
   if (idx >= 0) current[idx] = formatted; else current.push(formatted);
-  localStorage.setItem(STORAGE_TASKS_KEY, JSON.stringify(current));
+  // Exemplo de chamada para Supabase
+  // const { error } = await supabase.from('persistent_tasks').upsert(current);
+  // if (error) throw error;
 }
 
 // Recalcular agregados on-demand (retorna lista); cache é responsabilidade do chamador
